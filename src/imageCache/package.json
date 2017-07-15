@@ -1,0 +1,12 @@
+{
+  "name": "brickrecon-imagelookup",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --watchAll"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.58.0",
+    "jest": "^19.0.2"
+  }
+}
