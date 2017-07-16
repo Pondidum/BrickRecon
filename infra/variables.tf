@@ -14,3 +14,7 @@ data "aws_caller_identity" "current" {
 variable "environment" {
   default = "dev"
 }
+
+variable "bucket" {
+  default = "brickrecon"
+}

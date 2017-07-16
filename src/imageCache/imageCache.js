@@ -1,13 +1,10 @@
-const s3storage = require('./s3storage')
-const fetchImage = require('./fetchImage')
-
 const buildKey = part =>
-  `website\\images\\parts\\${part.partno}-${part.colour}.png`
+  `website/images/parts/${part.partno}-${part.colour}.png`
 
 const buildUrl = part =>
   `https://img.bricklink.com/ItemImage/PN/${part.colour}/${part.partno}.png`
 
-const put = (part, fetch = fetchImage, storage = s3storage) => {
+const put = (fetch, storage, part) => {
   const key = buildKey(part)
 
   return storage
@@ -18,7 +15,6 @@ const put = (part, fetch = fetchImage, storage = s3storage) => {
     .then(image => {
       if (image) return storage.write(key, image)
     })
-    .catch(err => console.log(err))
 }
 
 module.exports = {

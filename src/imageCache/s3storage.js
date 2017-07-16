@@ -1,9 +1,9 @@
 const aws = require('aws-sdk')
 const s3 = new aws.S3()
 
-const exists = key => {
+const exists = (bucket, key) => {
   const query = {
-    Bucket: 'brickrecon',
+    Bucket: bucket,
     Key: key
   }
 
@@ -16,9 +16,9 @@ const exists = key => {
   )
 }
 
-const write = (key, contents) => {
+const write = (bucket, key, contents) => {
   const command = {
-    Bucket: 'brickrecon',
+    Bucket: bucket,
     Key: key,
     Body: contents,
     ContentType: 'image/png'
@@ -27,7 +27,9 @@ const write = (key, contents) => {
   return s3.putObject(command).promise()
 }
 
-module.exports = {
-  exists: key => exists,
-  write: write
+module.exports = bucket => {
+  return {
+    exists: key => exists(bucket, key),
+    write: (key, contents) => write(bucket, key, contents)
+  }
 }
