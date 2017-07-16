@@ -1,0 +1,50 @@
+data "template_file" "bsxprocessor_policy" {
+  template = "${file("policies/bsxprocessor-role-policy.json")}"
+  vars {
+    bucket = "${var.bucket}-${var.environment}"
+  }
+}
+
+resource "aws_iam_role" "bsxprocessor_role" {
+  name = "brickrecon_bsxprocessor_role"
+  assume_role_policy = "${file("policies/bsxprocessor-role.json")}"
+}
+
+resource "aws_iam_role_policy" "bsxprocessor_role_policy" {
+  name = "brickrecon_bsxprocessor_role_policy"
+  role = "${aws_iam_role.bsxprocessor_role.id}"
+  policy = "${data.template_file.bsxprocessor_policy.rendered}"
+}
+
+
+
+data "archive_file" "bsxprocessor_source" {
+  type = "zip"
+  source_dir = "../src/bsxprocessor/.build"
+  output_path = "./build/bsxprocessor.zip"
+}
+
+resource "aws_lambda_function" "bsxprocessor" {
+  function_name = "brickrecon_bsxprocessor"
+  role = "${aws_iam_role.bsxprocessor_role.arn}"
+  filename = "${data.archive_file.bsxprocessor_source.output_path}"
+  handler = "BsxProcessor::BsxProcessor.Handler::Handle"
+  runtime = "dotnetcore1.0"
+  source_code_hash = "${base64sha256(file("${data.archive_file.bsxprocessor_source.output_path}"))}"
+  timeout = 20
+
+  tags = {
+    environment = "${var.environment}"
+  }
+}
+
+resource "aws_s3_bucket_notification" "bsxprocessor_trigger" {
+  bucket = "${var.bucket}-${var.environment}"
+
+  lambda_function {
+    lambda_function_arn = "${aws_lambda_function.bsxprocessor.arn}"
+    events = ["s3:ObjectCreated:*"]
+    filter_prefix = "upload/"
+    filter_suffix = ".bsx"
+  }
+}

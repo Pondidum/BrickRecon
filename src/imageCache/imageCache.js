@@ -1,5 +1,4 @@
-const buildKey = part =>
-  `website/images/parts/${part.partno}-${part.colour}.png`
+const buildKey = part => `images/parts/${part.partno}-${part.colour}.png`
 
 const buildUrl = part =>
   `https://img.bricklink.com/ItemImage/PN/${part.colour}/${part.partno}.png`

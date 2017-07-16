@@ -34,7 +34,7 @@ namespace BsxProcessor
 				var document = await reader.Read(record.S3.Bucket.Name, record.S3.Object.Key);
 				var model = modelBuilder.Build(document);
 
-				var outputPath = "website/models/" + Path.GetFileNameWithoutExtension(record.S3.Object.Key) + ".json";
+				var outputPath = "/models/" + Path.GetFileNameWithoutExtension(record.S3.Object.Key) + ".json";
 
 				await writer.Write(record.S3.Bucket.Name, outputPath, model);
 			}
