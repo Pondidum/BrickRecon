@@ -2,7 +2,7 @@ const lambda = require('./index')
 
 it('should handle multiple part lookups', () => {
   const event = {
-    parts: [{ partno: 1, colour: 'a' }, { partno: 2, colour: 'b' }]
+    parts: [{ partno: 1, color: 'a' }, { partno: 2, color: 'b' }]
   }
 
   const callback = jest.fn()

@@ -1,6 +1,6 @@
 const imageCache = require('./imageCache')
 
-const part = { partno: 123, colour: 1 }
+const part = { partno: 123, color: 1 }
 
 it('should not fetch an image if one is in storage', () => {
   const storage = {

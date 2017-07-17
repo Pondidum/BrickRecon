@@ -1,7 +1,7 @@
-const buildKey = part => `images/parts/${part.partno}-${part.colour}.png`
+const buildKey = part => `images/parts/${part.partno}-${part.color}.png`
 
 const buildUrl = part =>
-  `https://img.bricklink.com/ItemImage/PN/${part.colour}/${part.partno}.png`
+  `https://img.bricklink.com/ItemImage/PN/${part.color}/${part.partno}.png`
 
 const put = (fetch, storage, part) => {
   const key = buildKey(part)
