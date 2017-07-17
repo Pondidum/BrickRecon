@@ -12,10 +12,11 @@ namespace BsxProcessor.Tests
 		public void When_mapping_a_file()
 		{
 			var document = XDocument.Parse(Xml);
-			var model = new BsxModelBuilder().Build(document);
+			var model = new BsxModelBuilder().Build("som/path/to/a/model.bsx", document);
 
 			var part = model.Parts.First();
-			model.Parts.ShouldSatisfyAllConditions(
+			model.ShouldSatisfyAllConditions(
+				() => model.Name.ShouldBe("model"),
 				() => model.Parts.Count().ShouldBe(2),
 				() => part.PartNumber.ShouldBe("3039"),
 				() => part.Name.ShouldBe("Slope 45 2 x 2"),
