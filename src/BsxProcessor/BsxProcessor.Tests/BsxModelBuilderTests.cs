@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
+using BsxProcessor.Domain;
 using Shouldly;
 using Xunit;
 
@@ -16,7 +17,7 @@ namespace BsxProcessor.Tests
 			var part = model.Parts.First();
 			model.Parts.ShouldSatisfyAllConditions(
 				() => model.Parts.Count().ShouldBe(2),
-				() => part.PartNumber.ShouldBe(3039),
+				() => part.PartNumber.ShouldBe("3039"),
 				() => part.Name.ShouldBe("Slope 45 2 x 2"),
 				() => part.Category.ShouldBe("Slope"),
 				() => part.Color.ShouldBe(Colors.Black),

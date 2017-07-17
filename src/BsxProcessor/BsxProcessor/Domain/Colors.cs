@@ -1,4 +1,4 @@
-﻿namespace BsxProcessor
+﻿namespace BsxProcessor.Domain
 {
 	public enum Colors
 	{

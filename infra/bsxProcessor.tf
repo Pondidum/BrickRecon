@@ -31,7 +31,7 @@ resource "aws_lambda_function" "bsxprocessor" {
   handler = "BsxProcessor::BsxProcessor.Handler::Handle"
   runtime = "dotnetcore1.0"
   source_code_hash = "${base64sha256(file("${data.archive_file.bsxprocessor_source.output_path}"))}"
-  timeout = 20
+  timeout = 60
 
   tags = {
     environment = "${var.environment}"

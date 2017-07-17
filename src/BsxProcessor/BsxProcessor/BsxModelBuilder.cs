@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Xml.Linq;
+using BsxProcessor.Domain;
 
 namespace BsxProcessor
 {
@@ -18,7 +19,7 @@ namespace BsxProcessor
 		{
 			return new Part
 			{
-				PartNumber = int.Parse(element.Element("ItemID").Value),
+				PartNumber = element.Element("ItemID").Value,
 				Name = element.Element("ItemName").Value,
 				Category = element.Element("CategoryName").Value,
 				Color = (Colors)Enum.Parse(typeof(Colors), element.Element("ColorID").Value),
