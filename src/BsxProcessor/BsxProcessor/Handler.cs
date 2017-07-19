@@ -35,6 +35,8 @@ namespace BsxProcessor
 				
 				await writer.Write(record.S3.Bucket.Name,  $"models/{model.Name}.json", model);
 			}
+
+			await imageCacheDispatch.Dispatch();
 		}
 	}
 }
