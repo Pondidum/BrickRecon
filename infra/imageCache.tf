@@ -30,6 +30,7 @@ resource "aws_lambda_function" "imagecache" {
   filename = "${data.archive_file.imagecache_source.output_path}"
   handler = "index.handler"
   runtime = "nodejs6.10"
+  timeout = 20
   source_code_hash = "${base64sha256(file("${data.archive_file.imagecache_source.output_path}"))}"
 
   tags = {
