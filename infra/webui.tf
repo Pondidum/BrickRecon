@@ -15,15 +15,14 @@ resource "aws_s3_bucket" "webui" {
     index_document = "index.html"
   }
 
+  cors_rule {
+    allowed_headers = [ "*" ]
+    allowed_methods = [ "GET" ]
+    allowed_origins = [ "http://localhost:3000" ] # todo, allow the webui when hosted by s3 here
+    max_age_seconds = 3000
+  }
+
   tags = {
     environment = "${var.environment}"
   }
-}
-
-resource "aws_s3_bucket_object" "index" {
-  bucket = "${aws_s3_bucket.webui.bucket}"
-  key = "index.html"
-  source = "../src/webui/index.html"
-  content_type = "text/html"
-  etag = "${md5(file("../src/webui/index.html"))}"
 }
