@@ -31,7 +31,7 @@ render(
   <Provider store={store}>
     <ConnectedRouter history={history}>
       <div>
-        <Route path="/" exact component={LandingPage} />
+        <Route path="/" component={LandingPage} />
       </div>
     </ConnectedRouter>
   </Provider>,
