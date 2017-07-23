@@ -2,6 +2,7 @@ import React from 'react'
 import { Col } from 'react-bootstrap'
 import { connect } from 'react-redux'
 import { loadModel } from '../modelPicker/actions'
+import PartList from '../partList'
 
 const mapStateToProps = (state, ownProps) => {
   return {
@@ -22,12 +23,19 @@ const ModelPage = ({ model, loadModel, match }) => {
     loadModel(modelName)
   }
 
+  if (!model) {
+    return null
+  }
+
   return (
     <div className="row">
       <Col sm={12} className="main">
         <h1>
           {model ? model.name : 'none'}
         </h1>
+        <hr />
+        <h2>Parts</h2>
+        <PartList parts={model.parts} />
       </Col>
     </div>
   )
