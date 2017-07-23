@@ -1,7 +1,10 @@
 import xpath from 'xpath'
 import { DOMParser as dom } from 'xmldom'
 
-const defaultState = []
+const defaultState = {
+  available: [],
+  selected: null
+}
 
 const transform = xml => {
   const doc = new dom().parseFromString(xml)
@@ -21,11 +24,23 @@ export default (state = defaultState, action) => {
     }
 
     case 'LIST_ALL_MODELS_SUCCESS': {
-      return transform(action.payload)
+      return Object.assign({}, state, { available: transform(action.payload) })
     }
 
     case 'LIST_ALL_MODELS_FAILURE': {
       return state
+    }
+
+    case 'LOAD_MODEL_REQUEST': {
+      return Object.assign({}, state, { selected: null })
+    }
+
+    case 'LOAD_MODEL_SUCCESS': {
+      return Object.assign({}, state, { selected: action.payload })
+    }
+
+    case 'LOAD_MODEL_FAILURE': {
+      return Object.assign({}, state, { selected: null })
     }
 
     default: {

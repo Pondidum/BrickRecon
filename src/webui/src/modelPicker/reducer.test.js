@@ -16,13 +16,41 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
   </Contents>
 </ListBucketResult>
   `
+describe('LIST_ALL_MODELS_SUCCESS', () => {
+  it('should handle bucket xml', () => {
+    const event = {
+      type: 'LIST_ALL_MODELS_SUCCESS',
+      payload: xml
+    }
+    const state = reduce(undefined, event)
 
-it('should handle bucket xml', () => {
-  const event = {
-    type: 'LIST_ALL_MODELS_SUCCESS',
-    payload: xml
-  }
-  const state = reduce([], event)
+    expect(state).toEqual({
+      selected: null,
+      available: ['models/dual-rail-gun.json']
+    })
+  })
+})
 
-  expect(state).toEqual(['models/dual-rail-gun.json'])
+describe('LOAD_MODEL_REQUEST', () => {
+  it('should clear out the existing model', () => {
+    const event = { type: 'LOAD_MODEL_REQUEST' }
+    const state = reduce({ available: [], selected: { wat: 'is this' } }, event)
+
+    expect(state).toEqual({
+      available: [],
+      selected: null
+    })
+  })
+})
+
+describe('LOAD_MODEL_SUCCESS', () => {
+  it('should update the state with the model', () => {
+    const event = { type: 'LOAD_MODEL_SUCCESS', payload: { some: 'thing' } }
+    const state = reduce(undefined, event)
+
+    expect(state).toEqual({
+      available: [],
+      selected: { some: 'thing' }
+    })
+  })
 })

@@ -5,7 +5,7 @@ import ModelLink from './modelLink'
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    models: state.models
+    models: state.models.available
   }
 }
 
