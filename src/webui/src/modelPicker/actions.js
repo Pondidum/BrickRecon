@@ -18,10 +18,10 @@ export const listModels = () => {
   }
 }
 
-export const loadModel = modelPath => {
+export const loadModel = modelName => {
   return {
     [CALL_API]: {
-      endpoint: S3_URL + modelPath,
+      endpoint: S3_URL + 'models/' + modelName + '.json',
       method: 'GET',
       types: ['LOAD_MODEL_REQUEST', 'LOAD_MODEL_SUCCESS', 'LOAD_MODEL_FAILURE']
     }

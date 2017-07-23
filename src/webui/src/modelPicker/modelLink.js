@@ -4,7 +4,7 @@ import path from 'path'
 
 const ModelLink = ({ modelPath }) => {
   const name = path.basename(modelPath, path.extname(modelPath))
-  const link = '/model/' + path.basename(modelPath)
+  const link = '/model/' + name
 
   return (
     <Route
