@@ -18,11 +18,18 @@ resource "aws_s3_bucket" "webui" {
   cors_rule {
     allowed_headers = [ "*" ]
     allowed_methods = [ "GET" ]
-    allowed_origins = [ "http://localhost:3000" ] # todo, allow the webui when hosted by s3 here
+    allowed_origins = [
+      "http://localhost:3000",
+      "http://${var.bucket}-${var.environment}.s3-website-${var.region}.amazonaws.com"
+    ]
     max_age_seconds = 3000
   }
 
   tags = {
     environment = "${var.environment}"
   }
+}
+
+output "event_api_url" {
+  value = "http://${var.bucket}-${var.environment}.s3-website-${var.region}.amazonaws.com"
 }
