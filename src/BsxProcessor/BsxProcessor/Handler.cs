@@ -5,6 +5,7 @@ using Amazon.Lambda;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
 using Amazon.Lambda.Serialization.Json;
+using Amazon.S3;
 using Amazon.S3.Util;
 
 namespace BsxProcessor
@@ -20,8 +21,10 @@ namespace BsxProcessor
 		private async Task HandleRecords(IEnumerable<S3EventNotification.S3EventNotificationRecord> records)
 		{
 			var lambdaClient = new AmazonLambdaClient();
+			var s3Client = new AmazonS3Client();
+
 			var reader = new FileReader();
-			var writer = new FileWriter();
+			var writer = new FileWriter(s3Client);
 			var modelBuilder = new BsxModelBuilder();
 
 			var imageCacheDispatch = new ImageCacheDispatcher(req => lambdaClient.InvokeAsync(req));
