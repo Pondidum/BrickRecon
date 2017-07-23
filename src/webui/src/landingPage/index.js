@@ -1,15 +1,13 @@
 import React from 'react'
 import { Col } from 'react-bootstrap'
+import { Route } from 'react-router'
 import Sidebar from '../headerBar'
+import ModelPage from '../modelPage'
 
-const LandingPage = () =>
+const LandingPage = ({ match }) =>
   <div>
-    <Sidebar />
-    <div className="row">
-      <Col sm={12} className="main">
-        <h1>Content</h1>
-      </Col>
-    </div>
+    <Sidebar match={match} />
+    <Route path="/model/:name" component={ModelPage} />
   </div>
 
 export default LandingPage

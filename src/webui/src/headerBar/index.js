@@ -3,7 +3,7 @@ import { Navbar } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import ModelPicker from '../modelPicker'
 
-const sidebar = () =>
+const sidebar = ({ match }) =>
   <div className="row">
     <Navbar>
       <Navbar.Header>
@@ -11,7 +11,7 @@ const sidebar = () =>
           <Link to="/">BrickRecon</Link>
         </Navbar.Brand>
       </Navbar.Header>
-      <ModelPicker />
+      <ModelPicker match={match} />
     </Navbar>
   </div>
 
