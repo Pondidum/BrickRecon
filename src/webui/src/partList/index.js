@@ -11,7 +11,8 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'color', label: 'Color' },
   { key: 'quantity', label: 'Quantity' },
-  { key: 'category', label: 'Category' }
+  { key: 'category', label: 'Category' },
+  { key: 'links', label: 'Links' }
 ]
 
 const header = (col, i) =>
@@ -21,17 +22,33 @@ const header = (col, i) =>
     </strong>
   </Th>
 
+const createImage = part =>
+  <img
+    src={`/images/parts/${part.partNumber}-${part.color}.png`}
+    alt={`part ${part.partNumber}`}
+    width={imageSize.width + 'px'}
+    height={imageSize.height + 'px'}
+  />
+
+const createLinks = part =>
+  <ul className="list-unstyled">
+    <li>
+      <a
+        href={`http://www.brickowl.com/search/catalog?query=${part.partNumber}&cat=1`}
+      >
+        BrickOwl
+      </a>
+    </li>
+    <li>
+      <a href={`http://peeron.com/inv/parts/${part.partNumber}`}>Peeron</a>
+    </li>
+  </ul>
+
 const PartList = ({ parts }) => {
   const withImages = parts.map(part =>
     Object.assign({}, part, {
-      image: (
-        <img
-          src={`/images/parts/${part.partNumber}-${part.color}.png`}
-          alt={`part ${part.partNumber}`}
-          width={imageSize.width + 'px'}
-          height={imageSize.height + 'px'}
-        />
-      )
+      image: createImage(part),
+      links: createLinks(part)
     })
   )
   return (
