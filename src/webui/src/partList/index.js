@@ -9,7 +9,7 @@ const columns = [
   { key: 'image', label: 'Image', ...imageSize },
   { key: 'partNumber', label: 'Part No' },
   { key: 'name', label: 'Name' },
-  { key: 'color', label: 'Color' },
+  { key: 'colorName', label: 'Color' },
   { key: 'quantity', label: 'Quantity' },
   { key: 'category', label: 'Category' },
   { key: 'links', label: 'Links' }
