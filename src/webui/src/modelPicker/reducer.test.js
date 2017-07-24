@@ -45,12 +45,40 @@ describe('LOAD_MODEL_REQUEST', () => {
 
 describe('LOAD_MODEL_SUCCESS', () => {
   it('should update the state with the model', () => {
-    const event = { type: 'LOAD_MODEL_SUCCESS', payload: { some: 'thing' } }
+    const event = { type: 'LOAD_MODEL_SUCCESS', payload: { parts: [] } }
     const state = reduce(undefined, event)
 
     expect(state).toEqual({
       available: [],
-      selected: { some: 'thing' }
+      selected: { parts: [] }
     })
+  })
+
+  it('should hydrate in the colorName', () => {
+    const event = {
+      type: 'LOAD_MODEL_SUCCESS',
+      payload: {
+        parts: [
+          {
+            partNumber: '3039',
+            name: 'Slope 45 2 x 2',
+            color: 11,
+            quantity: 0,
+            category: 'Slope'
+          },
+          {
+            partNumber: '14769',
+            name: 'Tile, Round 2 x 2 with Bottom Stud Holder',
+            color: 86,
+            quantity: 2,
+            category: 'Tile, Round'
+          }
+        ]
+      }
+    }
+    const state = reduce(undefined, event)
+
+    expect(state.selected.parts[0].colorName).toEqual('Black')
+    expect(state.selected.parts[1].colorName).toEqual('Light Bluish Gray')
   })
 })
