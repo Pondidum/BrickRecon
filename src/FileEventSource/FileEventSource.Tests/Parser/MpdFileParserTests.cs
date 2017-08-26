@@ -50,7 +50,7 @@ namespace FileEventSource.Tests.Parser
 					() => model.Title.ShouldBe("Untitled"),
 					() => model.Name.ShouldBe("dual-rail-gun.ldr"),
 					() => model.Author.ShouldBe("LDraw"),
-					() => model.Comments.ShouldBe(new[] { "Unofficial Model", "ROTATION CENTER 0 0 0 1 \"Custom\"", "ROTATION CONFIG 0 0" }),
+					() => model.Comments.ShouldBe(new[] { "Unofficial Model" }),
 					() => model.Parts.Count().ShouldBe(19)
 				);
 			}
