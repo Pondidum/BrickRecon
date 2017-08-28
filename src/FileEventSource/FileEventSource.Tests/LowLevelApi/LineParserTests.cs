@@ -1,12 +1,13 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Text;
+using FileEventSource.LowLevelApi;
 using Shouldly;
 using Xunit;
 
-namespace FileEventSource.Tests.Parser
+namespace FileEventSource.Tests.LowLevelApi
 {
-	public class MpdFileParserTests
+	public class LineParserTests
 	{
 		private const string SingleModelFile =
 			@"0 Untitled
@@ -40,20 +41,18 @@ namespace FileEventSource.Tests.Parser
 		[Fact]
 		public void When_parsing_a_single_model_file()
 		{
-			var parser = new MpdFileParser();
+			var parser = new LineParser();
+			var lines = parser.Parse(SingleModelFile.Split('\n'));
 
-			using (var ms = new MemoryStream(Encoding.UTF8.GetBytes(SingleModelFile)))
+			lines.Select(line => line.GetType()).ShouldBe(new[]
 			{
-				var model = parser.Parse(ms);
-
-				model.ShouldSatisfyAllConditions(
-					() => model.Title.ShouldBe("Untitled"),
-					() => model.Name.ShouldBe("dual-rail-gun.ldr"),
-					() => model.Author.ShouldBe("LDraw"),
-					() => model.Comments.ShouldBe(new[] { "Unofficial Model" }),
-					() => model.Parts.Count().ShouldBe(19)
-				);
-			}
+				typeof(TitleLine),
+				typeof(CommandLine),
+				typeof(CommandLine),
+				typeof(CommentLine),
+				typeof(CommandLine),
+				typeof(CommandLine)
+			});
 		}
 	}
 }
