@@ -6,34 +6,38 @@ namespace FileEventSource.LowLevelApi
 {
 	public class LineParser
 	{
+		private readonly Dictionary<LineTypes, Func<int, string[], Line>> _builders;
+
+		public LineParser()
+		{
+			_builders = new Dictionary<LineTypes, Func<int, string[], Line>>
+			{
+				{ LineTypes.CommentOrMeta, BuildMetaOrCommentLine }
+			};
+		}
+
 		public IEnumerable<Line> Parse(IEnumerable<string> lines)
 		{
 			var lineNumber = 0;
 			foreach (var line in lines)
 			{
-				var tokens = TokensFromLine(line);
+				var tokens = line.Split(' ');
 
 				if (tokens.Length == 0 || string.IsNullOrWhiteSpace(tokens.First()))
 					continue;
 
 				var type = (LineTypes)Enum.Parse(typeof(LineTypes), tokens.First());
 
-				Line command = null;
-				if (type == LineTypes.CommentOrMeta)
-					command = BuildMetaOrCommentLine(lineNumber, tokens);
+				Func<int, string[], Line> builder;
 
-				lineNumber++;
-
-				if (command == null)
+				if (!_builders.TryGetValue(type, out builder))
 					continue;
 
-				yield return command;
-			}
-		}
+				var command = builder(lineNumber++, tokens);
 
-		private string[] TokensFromLine(string line)
-		{
-			return line.Split(' ');
+				if (command != null)
+					yield return command;
+			}
 		}
 
 		private Line BuildMetaOrCommentLine(int lineNumber, string[] tokens)
