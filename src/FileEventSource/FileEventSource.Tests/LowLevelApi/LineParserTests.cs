@@ -44,15 +44,17 @@ namespace FileEventSource.Tests.LowLevelApi
 			var parser = new LineParser();
 			var lines = parser.Parse(SingleModelFile.Split('\n'));
 
-			lines.Select(line => line.GetType()).ShouldBe(new[]
-			{
-				typeof(TitleLine),
-				typeof(CommandLine),
-				typeof(CommandLine),
-				typeof(CommentLine),
-				typeof(CommandLine),
-				typeof(CommandLine)
-			});
+			var types = lines.ToArray();
+			
+			types.ShouldSatisfyAllConditions(
+				() => types[0].ShouldBeOfType<TitleLine>(),
+				() => types[1].ShouldBeOfType<CommandLine>(),
+				() => types[2].ShouldBeOfType<CommandLine>(),
+				() => types[3].ShouldBeOfType<CommentLine>(),
+				() => types[4].ShouldBeOfType<CommandLine>(),
+				() => types[5].ShouldBeOfType<CommandLine>(),
+				() => types.OfType<PartLine>().Count().ShouldBe(19)
+			);
 		}
 	}
 }

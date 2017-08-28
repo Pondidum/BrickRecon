@@ -12,7 +12,8 @@ namespace FileEventSource.LowLevelApi
 		{
 			_builders = new Dictionary<LineTypes, Func<int, string[], Line>>
 			{
-				{ LineTypes.CommentOrMeta, BuildMetaOrCommentLine }
+				{ LineTypes.CommentOrMeta, BuildMetaOrCommentLine },
+				{ LineTypes.SubFileReference, BuildSubReferenceLine }
 			};
 		}
 
@@ -54,6 +55,26 @@ namespace FileEventSource.LowLevelApi
 				return new TitleLine(command);
 
 			return new CommentLine(string.Join(" ", tokens.Skip(1)));
+		}
+
+		private Line BuildSubReferenceLine(int lineNumber, string[] tokens)
+		{
+			if (tokens.Length == 1)
+				return null;
+
+			var part = tokens.Last();
+
+			return new PartLine(part); // this will clearly need a lot more
+		}
+	}
+
+	public class PartLine : Line
+	{
+		public string Part { get; }
+
+		public PartLine(string part)
+		{
+			Part = part;
 		}
 	}
 
