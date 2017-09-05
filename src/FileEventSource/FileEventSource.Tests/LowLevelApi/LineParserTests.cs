@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text;
 using FileEventSource.LowLevelApi;
+using FileEventSource.LowLevelApi.Lines;
 using Shouldly;
 using Xunit;
 

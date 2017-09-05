@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using FileEventSource.LowLevelApi.Lines;
 
 namespace FileEventSource.LowLevelApi
 {
@@ -72,71 +73,5 @@ namespace FileEventSource.LowLevelApi
 
 			return new PartLine(part); // this will clearly need a lot more
 		}
-	}
-
-	public class PartLine : Line
-	{
-		public string Part { get; }
-
-		public PartLine(string part)
-		{
-			Part = part;
-		}
-	}
-
-	public class CommentLine : Line
-	{
-		public string Comment { get; }
-
-		public CommentLine(string comment)
-		{
-			Comment = comment;
-		}
-	}
-
-	public class TitleLine : Line
-	{
-		public string Title { get; }
-
-		public TitleLine(string title)
-		{
-			Title = title;
-		}
-	}
-
-	public class NameLine : Line
-	{
-		public string Name { get; }
-
-		public NameLine(string name)
-		{
-			Name = name;
-		}
-	}
-
-	public class AuthorLine : Line
-	{
-		public string Author { get; }
-
-		public AuthorLine(string author)
-		{
-			Author = author;
-		}
-	}
-
-	public class CommandLine : Line
-	{
-		public string Command { get; }
-		public string Arguments { get; }
-
-		public CommandLine(string command, string arguments)
-		{
-			Command = command;
-			Arguments = arguments;
-		}
-	}
-
-	public class Line
-	{
 	}
 }
