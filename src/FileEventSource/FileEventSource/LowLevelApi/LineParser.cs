@@ -48,6 +48,12 @@ namespace FileEventSource.LowLevelApi
 
 			var command = tokens[1].TrimEnd(':');
 
+			if (command.EqualsIgnore("Name"))
+				return new NameLine(string.Join(" ", tokens.Skip(2)));
+
+			if (command.EqualsIgnore("Author"))
+				return new AuthorLine(string.Join(" ", tokens.Skip(2)));
+
 			if (LineCommands.Official.Contains(command) || LineCommands.Unofficial.Contains(command))
 				return new CommandLine(command, string.Join(" ", tokens.Skip(2)));
 
@@ -95,6 +101,26 @@ namespace FileEventSource.LowLevelApi
 		public TitleLine(string title)
 		{
 			Title = title;
+		}
+	}
+
+	public class NameLine : Line
+	{
+		public string Name { get; }
+
+		public NameLine(string name)
+		{
+			Name = name;
+		}
+	}
+
+	public class AuthorLine : Line
+	{
+		public string Author { get; }
+
+		public AuthorLine(string author)
+		{
+			Author = author;
 		}
 	}
 

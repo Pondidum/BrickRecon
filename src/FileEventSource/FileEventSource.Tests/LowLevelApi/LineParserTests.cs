@@ -48,8 +48,8 @@ namespace FileEventSource.Tests.LowLevelApi
 			
 			types.ShouldSatisfyAllConditions(
 				() => types[0].ShouldBeOfType<TitleLine>(),
-				() => types[1].ShouldBeOfType<CommandLine>(),
-				() => types[2].ShouldBeOfType<CommandLine>(),
+				() => types[1].ShouldBeOfType<NameLine>(),
+				() => types[2].ShouldBeOfType<AuthorLine>(),
 				() => types[3].ShouldBeOfType<CommentLine>(),
 				() => types[4].ShouldBeOfType<CommandLine>(),
 				() => types[5].ShouldBeOfType<CommandLine>(),
