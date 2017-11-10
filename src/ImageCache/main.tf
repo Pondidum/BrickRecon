@@ -20,7 +20,7 @@ resource "aws_iam_role_policy" "imagecache_role_policy" {
 
 data "archive_file" "imagecache_source" {
   type = "zip"
-  source_dir = "../src/imagecache"
+  source_dir = "src"
   output_path = "./build/imagecache.zip"
 }
 
