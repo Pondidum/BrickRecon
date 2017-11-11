@@ -1,4 +1,4 @@
 #! /bin/sh
 
-./src/BsxProcessor/build.sh
-./src/webui/build.sh
+./projects/BsxProcessor/build.sh
+./projects/webui/build.sh

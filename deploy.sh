@@ -2,6 +2,6 @@
 
 ./build.sh
 
-(cd infra && terraform plan -out=infra.tfplan)
-read -p "Press enter to confirm"
-(cd infra && terraform apply infra.tfplan)
+(cd projects/webui && terraform apply)
+(cd projects/ImageCache && terraform apply)
+(cd projects/BsxProcessor && terraform apply)
