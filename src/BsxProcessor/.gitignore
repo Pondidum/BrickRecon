@@ -8,3 +8,7 @@ bin
 .vs/
 .idea/
 .build/
+
+.terraform/
+*.tfstate*
+*.tfplan
