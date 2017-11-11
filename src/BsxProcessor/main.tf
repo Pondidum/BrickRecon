@@ -20,8 +20,8 @@ resource "aws_iam_role_policy" "bsxprocessor_role_policy" {
 
 data "archive_file" "bsxprocessor_source" {
   type = "zip"
-  source_dir = "../src/bsxprocessor/.build"
-  output_path = "./build/bsxprocessor.zip"
+  source_dir = "./src/.build"
+  output_path = ".build/bsxprocessor.zip"
 }
 
 resource "aws_lambda_function" "bsxprocessor" {
