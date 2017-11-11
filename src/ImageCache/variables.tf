@@ -1,3 +1,10 @@
+terraform {
+  backend "s3" {
+    key = "brickrecon/imagecache/terraform.tfstate"
+    region = "eu-west-1"
+  }
+}
+
 variable "region" {
   default = "eu-west-1" # Irish region best region!
 }
