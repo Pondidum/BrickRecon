@@ -20,7 +20,8 @@ resource "aws_s3_bucket" "webui" {
     allowed_methods = [ "GET" ]
     allowed_origins = [
       "http://localhost:3000",
-      "http://${local.bucket}.s3-website-${var.region}.amazonaws.com"
+      "http://${local.bucket}.s3-website-${var.region}.amazonaws.com",
+      "http://${local.bucket}"
     ]
     max_age_seconds = 3000
   }
