@@ -22,6 +22,6 @@ variable "environment" {
   default = "dev"
 }
 
-variable "bucket" {
-  default = "brickrecon"
+locals {
+  bucket = "brickrecon-${var.environment}"
 }

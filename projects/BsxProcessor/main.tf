@@ -1,7 +1,7 @@
 data "template_file" "bsxprocessor_policy" {
   template = "${file("policies/bsxprocessor-role-policy.json")}"
   vars {
-    bucket = "${var.bucket}-${var.environment}"
+    bucket = "${local.bucket}"
   }
 }
 
@@ -39,7 +39,7 @@ resource "aws_lambda_function" "bsxprocessor" {
 }
 
 resource "aws_s3_bucket_notification" "bsxprocessor_trigger" {
-  bucket = "${var.bucket}-${var.environment}"
+  bucket = "${local.bucket}"
 
   lambda_function {
     lambda_function_arn = "${aws_lambda_function.bsxprocessor.arn}"
