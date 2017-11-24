@@ -22,6 +22,10 @@ variable "environment" {
   default = "dev"
 }
 
+variable "domain" {
+  default = ".stormbase.net"
+}
+
 locals {
-  bucket = "brickrecon-${var.environment}"
+  bucket = "brickrecon-${var.environment}${var.domain}"
 }
