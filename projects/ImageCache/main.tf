@@ -1,7 +1,7 @@
 data "template_file" "imagecache_policy" {
   template = "${file("policies/imagecache-role-policy.json")}"
   vars {
-    bucket = "${local.bucket}"
+    bucket = "${var.bucket}"
   }
 }
 
@@ -39,7 +39,7 @@ resource "aws_lambda_function" "imagecache" {
 
   environment {
     variables = {
-      bucket = "${local.bucket}"
+      bucket = "${var.bucket}"
     }
   }
 }

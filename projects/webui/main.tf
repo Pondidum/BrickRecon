@@ -1,12 +1,12 @@
 data "template_file" "s3_public_policy" {
   template = "${file("policies/s3-static-site.json")}"
   vars {
-    bucket_name = "${local.bucket}"
+    bucket_name = "${var.bucket}"
   }
 }
 
 resource "aws_s3_bucket" "webui" {
-  bucket = "${local.bucket}"
+  bucket = "${var.bucket}"
 
   acl = "public-read" # lock this down to just the website later
   policy = "${data.template_file.s3_public_policy.rendered}"
@@ -20,8 +20,8 @@ resource "aws_s3_bucket" "webui" {
     allowed_methods = [ "GET" ]
     allowed_origins = [
       "http://localhost:3000",
-      "http://${local.bucket}.s3-website-${var.region}.amazonaws.com",
-      "http://${local.bucket}"
+      "http://${var.bucket}.s3-website-${var.region}.amazonaws.com",
+      "http://${var.bucket}"
     ]
     max_age_seconds = 3000
   }
@@ -32,5 +32,5 @@ resource "aws_s3_bucket" "webui" {
 }
 
 output "event_api_url" {
-  value = "http://${local.bucket}.s3-website-${var.region}.amazonaws.com"
+  value = "http://${var.bucket}.s3-website-${var.region}.amazonaws.com"
 }

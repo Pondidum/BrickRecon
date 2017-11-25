@@ -18,14 +18,5 @@ provider "aws" {
 data "aws_caller_identity" "current" {
 }
 
-variable "environment" {
-  default = "dev"
-}
-
-variable "domain" {
-  default = ".stormbase.net"
-}
-
-locals {
-  bucket = "brickrecon-${var.environment}${var.domain}"
-}
+variable "environment" {}
+variable "bucket" {}
