@@ -1,6 +1,8 @@
 import { CALL_API } from 'redux-api-middleware'
+import variables from '../variables.dev.json'
 
-const S3_URL = 'http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/'
+const S3_URL = `http://${variables.bucket}.s3-eu-west-1.amazonaws.com/`
+
 export const listModels = () => {
   return {
     [CALL_API]: {
