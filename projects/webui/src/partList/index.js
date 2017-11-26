@@ -1,5 +1,6 @@
 import React from 'react'
 import { Table, Thead, Th } from 'reactable'
+import variables from '../variables'
 
 const imageSize = {
   width: 66,
@@ -24,7 +25,7 @@ const header = (col, i) =>
 
 const createImage = part =>
   <img
-    src={`/images/parts/${part.partNumber}-${part.color}.png`}
+    src={part.imageUrl}
     alt={`part ${part.partNumber}`}
     width={imageSize.width + 'px'}
     height={imageSize.height + 'px'}

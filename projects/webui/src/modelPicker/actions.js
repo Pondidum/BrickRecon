@@ -1,12 +1,10 @@
 import { CALL_API } from 'redux-api-middleware'
-import variables from '../variables.dev.json'
-
-const S3_URL = `http://${variables.bucket}.s3-eu-west-1.amazonaws.com/`
+import variables from '../variables'
 
 export const listModels = () => {
   return {
     [CALL_API]: {
-      endpoint: S3_URL + '?prefix=models/',
+      endpoint: variables.s3url + '?prefix=models/',
       method: 'GET',
       types: [
         'LIST_ALL_MODELS_REQUEST',
@@ -23,7 +21,7 @@ export const listModels = () => {
 export const loadModel = modelName => {
   return {
     [CALL_API]: {
-      endpoint: S3_URL + 'models/' + modelName + '.json',
+      endpoint: variables.s3url + 'models/' + modelName + '.json',
       method: 'GET',
       types: ['LOAD_MODEL_REQUEST', 'LOAD_MODEL_SUCCESS', 'LOAD_MODEL_FAILURE']
     }
