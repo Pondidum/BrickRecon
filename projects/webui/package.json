@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "bootstrap-material-design": "^0.5.10",
+    "javascript-natural-sort": "^0.7.1",
     "react": "^15.6.1",
     "react-bootstrap": "^0.31.1",
     "react-dom": "^15.6.1",

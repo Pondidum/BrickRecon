@@ -2,6 +2,7 @@ import React from "react";
 import { Table, Thead, Th } from "reactable";
 import PartImage from "./partImage";
 import PartLinks from "./partLinks";
+import naturalSort from "javascript-natural-sort";
 
 const imageSize = {
   width: 66,
@@ -30,8 +31,25 @@ const PartList = ({ parts }) => {
       links: <PartLinks part={part} />
     })
   );
+  const sort = [
+    { column: "partNumber", sortFunction: naturalSort },
+    { column: "name", sortFunction: naturalSort },
+    { column: "colorName" },
+    { column: "quantity", sortFunction: naturalSort },
+    { column: "category" }
+  ];
+
+  const defaultSort = {
+    column: "name",
+    direction: "asc"
+  };
   return (
-    <Table className="table table-hover" sortable={true} data={withImages}>
+    <Table
+      className="table table-hover"
+      data={withImages}
+      sortable={sort}
+      defaultSort={defaultSort}
+    >
       <Thead>{columns.map(header)}</Thead>
     </Table>
   );
