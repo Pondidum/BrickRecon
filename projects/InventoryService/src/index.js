@@ -8,5 +8,21 @@ export const getBoid = setId => {
 
   return fetch(uri)
     .then(res => res.json())
-    .then(json => (json.boids.length > 0 ? Number(json.boids[0]) : undefined));
+    .then(json => (json.boids.length > 0 ? json.boids[0] : undefined));
+};
+
+export const getInventory = boid => {
+  const uri = `${brickowl}/catalog/inventory?key=${key}&boid=${boid}`;
+
+  return fetch(uri)
+    .then(res => res.json())
+    .then(json => {
+      if (!json.inventory) {
+        return undefined;
+      }
+
+      return json.inventory.map(item => {
+        return { quantity: Number(item.quantity), boids: [item.boid] };
+      });
+    });
 };
