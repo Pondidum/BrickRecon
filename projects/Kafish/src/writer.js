@@ -1,23 +1,13 @@
-import uuid from "uuid";
-import { DynamoDB } from "aws-sdk";
+import enhance from "./enhance";
 
-const dynamo = new DynamoDB.DocumentClient();
-
-const enhance = event =>
-  Object.assign(
-    { eventId: uuid() },
-    typeof event === "string" ? JSON.parse(event) : event,
-    { timestamp: new Date().getTime() }
-  );
-
-const write = (tableName, event) =>
+const write = (dynamo, tableName, event) =>
   dynamo.put({ TableName: tableName, Item: event }).promise();
 
 const error = (message, err) =>
   console.log(message, JSON.stringify(err, null, 2));
 
 export default options =>
-  write(options.tableName, enhance(options.awsEvent.body))
+  write(options.dynamo, options.tableName, enhance(options.awsEvent.body))
     .then(() => options.respond("200", {}))
     .catch(err => {
       error("error writing to dynamo", err);
