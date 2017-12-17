@@ -24,4 +24,5 @@ variable "product" {
 
 locals {
   name = "${var.product != "" ? "${var.product}_" : ""}kafish_${var.environment}"
+  table_name = "${local.name}_events"
 }

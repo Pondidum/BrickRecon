@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "event_store" {
-  name = "${local.name}_events"
+  name = "${local.table_name}"
 
   write_capacity = 5 # guesses!
   read_capacity = 20 # also!
