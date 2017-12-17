@@ -2,7 +2,6 @@ import uuid from "uuid";
 import { DynamoDB } from "aws-sdk";
 
 const dynamo = new DynamoDB.DocumentClient();
-const tableName = process.env.TABLE_NAME;
 
 const enhance = event =>
   Object.assign(
@@ -11,27 +10,20 @@ const enhance = event =>
     { timestamp: new Date().getTime() }
   );
 
-const write = event =>
-  dynamo
-    .put({
-      TableName: tableName,
-      Item: event
-    })
-    .promise();
+const write = (tableName, event) =>
+  dynamo.put({ TableName: tableName, Item: event }).promise();
 
-export const handler = (awsEvent, context, callback) => {
-  const event = enhance(awsEvent.body);
+const error = (message, err) =>
+  console.log(message, JSON.stringify(err, null, 2));
 
-  return write(event)
-    .then(() => callback(null, { statusCode: "200", body: "{}" }))
+export default options =>
+  write(options.tableName, enhance(options.awsEvent.body))
+    .then(() => options.respond("200", {}))
     .catch(err => {
-      console.log("error writing to dynamo", JSON.stringify(err, null, 2));
-      callback(null, {
-        statusCode: "400",
-        body: JSON.stringify({
-          message: "Unable to store event",
-          exception: err
-        })
+      error("error writing to dynamo", err);
+
+      options.respond("400", {
+        message: "Unable to store event",
+        exception: err
       });
     });
-};
