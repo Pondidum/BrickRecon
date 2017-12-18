@@ -12,6 +12,17 @@
       ],
       "Effect": "Allow",
       "Resource": "arn:aws:dynamodb:eu-west-1:586732038447:table/${table_name}"
+    },
+    {
+      "Sid": "Stmt1493060108000",
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": ["arn:aws:logs:*:*:*"]
     }
   ]
 }
