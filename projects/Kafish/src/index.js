@@ -1,9 +1,9 @@
-import { DynamoDB } from "aws-sdk";
 import writer from "./writer";
 import reader from "./reader";
+import storage from "./storage";
 
-const dynamo = new DynamoDB.DocumentClient();
 const tableName = process.env.TABLE_NAME;
+const store = storage(tableName);
 
 const response = (status, body) => {
   return {
@@ -14,16 +14,14 @@ const response = (status, body) => {
 
 export const writeHandler = (awsEvent, context, callback) =>
   writer({
-    dynamo,
-    tableName: tableName,
+    store,
     awsEvent,
     respond: (status, body) => callback(null, response(status, body))
   });
 
 export const readHandler = (awsEvent, context, callback) =>
   reader({
-    dynamo,
-    tableName: tableName,
+    store,
     awsEvent,
     respond: (status, body) => callback(null, response(status, body))
   });
