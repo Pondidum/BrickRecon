@@ -26,3 +26,13 @@ it("should replace an existing eventId", () => {
 
   expect(event.timestamp).not.toEqual("1234");
 });
+
+it("should replace empty string properties with null", () => {
+  const event = enhance({
+    wat: "",
+    again: "nope"
+  });
+
+  expect(event.wat).toEqual(null);
+  expect(event.again).toEqual("nope");
+});
