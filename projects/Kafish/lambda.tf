@@ -11,7 +11,6 @@ resource "aws_lambda_function" "kafish_writer" {
   handler = "index.writeHandler"
   runtime = "nodejs6.10"
   source_code_hash = "${base64sha256(file("${data.archive_file.kafish_lambda_source.output_path}"))}"
-  publish = true
 
   environment {
     variables = {
@@ -27,11 +26,26 @@ resource "aws_lambda_function" "kafish_reader" {
   handler = "index.readHandler"
   runtime = "nodejs6.10"
   source_code_hash = "${base64sha256(file("${data.archive_file.kafish_lambda_source.output_path}"))}"
-  publish = true
 
   environment {
     variables = {
       TABLE_NAME = "${local.table_name}"
+    }
+  }
+}
+
+resource "aws_lambda_function" "kafish_stream_consumer" {
+  filename = "${data.archive_file.kafish_lambda_source.output_path}"
+  function_name = "${local.name}_consumer"
+  role = "${aws_iam_role.kafish_role.arn}"
+  handler = "index.consumerHandler"
+  runtime = "nodejs6.10"
+  source_code_hash = "${base64sha256(file("${data.archive_file.kafish_lambda_source.output_path}"))}"
+
+  environment {
+    variables = {
+      TABLE_NAME = "${local.table_name}"
+      SNS_TOPIC = "${aws_sns_topic.kafish_events}"
     }
   }
 }
