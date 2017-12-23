@@ -4,9 +4,6 @@ resource "aws_dynamodb_table" "event_store" {
   write_capacity = 5 # guesses!
   read_capacity = 20 # also!
 
-  stream_enabled = true
-  stream_view_type = "NEW_IMAGE"
-
   hash_key = "eventId"
   range_key = "timestamp"
 
