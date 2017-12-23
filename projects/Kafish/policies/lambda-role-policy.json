@@ -2,7 +2,6 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "Stmt1513517192392",
       "Action": [
         "dynamodb:Query",
         "dynamodb:GetRecords",
@@ -11,10 +10,14 @@
         "dynamodb:PutItem"
       ],
       "Effect": "Allow",
-      "Resource": "arn:aws:dynamodb:eu-west-1:586732038447:table/${table_name}"
+      "Resource": "${table_arn}"
     },
     {
-      "Sid": "Stmt1493060108000",
+      "Action": ["sns:Publish"],
+      "Effect": "Allow",
+      "Resource": "${sns_arn}"
+    },
+    {
       "Effect": "Allow",
       "Action": [
         "logs:CreateLogGroup",

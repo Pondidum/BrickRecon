@@ -1,7 +1,8 @@
 data "template_file" "kafish_role_policy" {
   template = "${file("policies/lambda-role-policy.json")}"
   vars {
-    table_name = "${local.table_name}"
+    table_arn = "${aws_dynamodb_table.event_store.arn}"
+    sns_arn = "${aws_sns_topic.kafish_events.arn}"
   }
 }
 

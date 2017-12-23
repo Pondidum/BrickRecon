@@ -15,6 +15,7 @@ resource "aws_lambda_function" "kafish_writer" {
   environment {
     variables = {
       TABLE_NAME = "${local.table_name}"
+      SNS_TOPIC = "${aws_sns_topic.kafish_events.arn}"
     }
   }
 }
