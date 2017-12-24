@@ -51,3 +51,32 @@ describe("getInventory", () => {
       );
   });
 });
+
+describe("getModelInfo", () => {
+  it("should return all set numbers", () =>
+    owl
+      .getModelInfo(529600)
+      .then(info => expect(info.setNumbers).toEqual(["75042-1"])));
+
+  it("should return the boid", () =>
+    owl.getModelInfo(529600).then(info => expect(info.boid).toEqual(529600)));
+
+  it("should return the set name", () =>
+    owl
+      .getModelInfo(529600)
+      .then(info => expect(info.name).toEqual("LEGO Droid Gunship Set 75042")));
+
+  it("should return the url", () =>
+    owl
+      .getModelInfo(529600)
+      .then(info =>
+        expect(info.url).toEqual(
+          "https://www.brickowl.com/catalog/lego-droid-gunship-set-75042"
+        )
+      ));
+
+  it("should handle bad set ids", () =>
+    owl
+      .getModelInfo(12313131323)
+      .then(result => expect(result).toBeUndefined()));
+});

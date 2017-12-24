@@ -41,6 +41,27 @@ class Owl {
       return Object.values(grouped).sort((x, y) => x.boids[0] > y.boids[0]);
     });
   }
+
+  getModelInfo(boid) {
+    const uri = `${brickowl}/catalog/lookup?key=${key}&boid=${boid}`;
+
+    return this.fetch(uri).then(json => {
+      if (json.error) {
+        return undefined;
+      }
+
+      const setNumbers = json.ids
+        .filter(id => id.type === "set_number")
+        .map(id => id.id);
+
+      return {
+        boid: boid,
+        name: json.name,
+        url: json.url,
+        setNumbers: [...new Set(setNumbers)]
+      };
+    });
+  }
 }
 
 export default Owl;
