@@ -1,0 +1,31 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "dynamodb:Query",
+        "dynamodb:GetRecords",
+        "dynamodb:GetItem",
+        "dynamodb:Scan",
+        "dynamodb:PutItem"
+      ],
+      "Effect": "Allow",
+      "Resource": "${table_arn}"
+    },
+    {
+      "Action": ["sns:Publish"],
+      "Effect": "Allow",
+      "Resource": "${sns_arn}"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents"
+      ],
+      "Resource": ["arn:aws:logs:*:*:*"]
+    }
+  ]
+}
