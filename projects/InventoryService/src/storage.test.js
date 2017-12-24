@@ -94,5 +94,8 @@ it("should read multiple items", () => {
         valueMap: { ":v": 5 }
       })
     )
-    .then(items => expect(items).toEqual([item1, item2]));
+    .then(items => {
+      items.sort((a, b) => a.value > b.value);
+      expect(items).toEqual([item1, item2]);
+    });
 });
