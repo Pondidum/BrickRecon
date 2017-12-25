@@ -99,3 +99,6 @@ it("should read multiple items", () => {
       expect(items).toEqual([item1, item2]);
     });
 });
+
+it("should handle a non-existing item", () =>
+  store.read("123132").then(model => expect(model).toBeUndefined()));
