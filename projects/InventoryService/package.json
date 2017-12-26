@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "test": "jest --watchAll"
+    "test": "jest --watch",
+    "test:all": "jest --watchAll"
   },
   "devDependencies": {
     "aws-sdk": "^2.58.0",
