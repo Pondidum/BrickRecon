@@ -14,7 +14,10 @@ class Owl {
     const uri = `${brickowl}/catalog/id_lookup?key=${key}&type=Set&id=${setId}`;
 
     return this.fetch(uri).then(
-      json => (json.boids.length > 0 ? json.boids[0] : undefined)
+      json =>
+        json && !json.error && json.boids && json.boids.length > 0
+          ? json.boids[0]
+          : undefined
     );
   }
 
@@ -46,7 +49,7 @@ class Owl {
     const uri = `${brickowl}/catalog/lookup?key=${key}&boid=${boid}`;
 
     return this.fetch(uri).then(json => {
-      if (json.error) {
+      if (!json || json.error) {
         return undefined;
       }
 
