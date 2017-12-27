@@ -16,6 +16,7 @@ resource "aws_lambda_function" "inventory_service" {
     variables = {
       TABLE_NAME = "${local.table_name}"
       SNS_TOPIC = "${data.aws_sns_topic.kafish.arn}"
+      BRICKOWL_TOKEN = "${var.brickowl_token}"
     }
   }
 }

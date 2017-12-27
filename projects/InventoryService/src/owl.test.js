@@ -1,6 +1,6 @@
 import Owl from "./owl";
 
-const owl = new Owl();
+const owl = new Owl(process.env.BRICKOWL_TOKEN);
 
 describe("getBoid", () => {
   it("should lookup an id", () =>

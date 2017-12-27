@@ -1,17 +1,16 @@
 import fetch from "node-fetch";
 
-const brickowl = `https://api.brickowl.com/v1`;
-const key = process.env.BRICKOWL_TOKEN;
-
+const brickowl = `https://api.brickowl.com/v1?catalog`;
 const defaultClient = uri => fetch(uri).then(res => res.json());
 
 class Owl {
-  constructor(client) {
+  constructor(token, client) {
+    this.token = token;
     this.fetch = client || defaultClient;
   }
 
   getBoid(setId) {
-    const uri = `${brickowl}/catalog/id_lookup?key=${key}&type=Set&id=${setId}`;
+    const uri = `${brickowl}/id_lookup?key=${this.token}&type=Set&id=${setId}`;
 
     return this.fetch(uri).then(
       json =>
@@ -22,7 +21,7 @@ class Owl {
   }
 
   getInventory(boid) {
-    const uri = `${brickowl}/catalog/inventory?key=${key}&boid=${boid}`;
+    const uri = `${brickowl}/inventory?key=${this.token}&boid=${boid}`;
 
     return this.fetch(uri).then(json => {
       if (!json.inventory) {
@@ -46,7 +45,7 @@ class Owl {
   }
 
   getModelInfo(boid) {
-    const uri = `${brickowl}/catalog/lookup?key=${key}&boid=${boid}`;
+    const uri = `${brickowl}/lookup?key=${this.token}&boid=${boid}`;
 
     return this.fetch(uri).then(json => {
       if (!json || json.error) {

@@ -17,6 +17,7 @@ provider "aws" {
 // this will fetch our account_id, no need to hard code it
 data "aws_caller_identity" "current" {}
 
+variable "brickowl_token" {}
 variable "environment" {}
 variable "product" {
   default = "brickrecon"
