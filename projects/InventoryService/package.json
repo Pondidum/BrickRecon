@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "build": "babel src --out-dir build/app --source-maps",
+    "build": "babel src --ignore *.test.js --out-dir build/app --source-maps",
     "test": "jest --watch",
     "test:all": "jest --watchAll"
   },
