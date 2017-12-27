@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
 const brickowl = `https://api.brickowl.com/v1`;
 const key = process.env.BRICKOWL_TOKEN;

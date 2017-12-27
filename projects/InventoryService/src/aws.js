@@ -18,7 +18,7 @@ exports.handler = (snsEvent, context, callback) => {
   const records = snsEvent.Records;
 
   const tasks = records
-    .map(record => JSON.parse(record.Message))
+    .map(record => JSON.parse(record.Sns.Message))
     .filter(message => message.eventType === "MODEL_INVENTORY_REQUEST")
     .map(message => handleSingle(message));
 
