@@ -36,7 +36,10 @@ class Inventory {
         return this.store
           .write(model)
           .then(() =>
-            this.notifier.publish({ eventType: "MODEL_INVENTORY", model })
+            this.notifier.publish({
+              eventType: "MODEL_INVENTORY_COMPLETE",
+              model
+            })
           );
       });
     });
