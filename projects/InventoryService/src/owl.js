@@ -4,10 +4,9 @@ import queryString from "query-string";
 const defaultClient = uri => fetch(uri).then(res => res.json());
 
 class Owl {
-  constructor(token, cache, client) {
+  constructor(token, client) {
     this.token = token;
     this.fetch = client || defaultClient;
-    this.cache = cache;
   }
 
   buildQuery(path, query) {
@@ -20,11 +19,10 @@ class Owl {
   getBoid(setId) {
     const uri = this.buildQuery("id_lookup", { type: "Set", id: setId });
     const validBoids = js => js && !js.error && js.boids && js.boids.length > 0;
-    const cache = this.cache.write;
 
     return this.fetch(uri)
       .then(json => (validBoids(json) ? json.boids : []))
-      .then(boids => cache(boids, setId, "set").then(() => boids[0]));
+      .then(boids => boids[0]);
   }
 
   getInventory(boid) {
@@ -47,27 +45,7 @@ class Owl {
           return acc;
         }, {});
 
-        const items = Object.keys(grouped).map(key => grouped[key]);
-
-        return Promise.all(
-          items.map(item =>
-            Promise.all(item.boids.map(boid => this.cache.get(boid))).then(
-              details => {
-                return {
-                  partNumber: details[0].partNumber,
-                  color: details[0].color,
-                  quantity: item.quantity,
-                  otherNumbers:
-                    details.length > 1
-                      ? details
-                          .map(d => d.partNumber)
-                          .filter(n => n !== details[0].partNumber)
-                      : []
-                };
-              }
-            )
-          )
-        );
+        return Object.keys(grouped).map(key => grouped[key]);
       });
   }
 
