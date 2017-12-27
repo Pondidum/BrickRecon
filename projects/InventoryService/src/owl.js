@@ -18,13 +18,11 @@ class Owl {
 
   getBoid(setId) {
     const uri = this.buildQuery("id_lookup", { type: "Set", id: setId });
+    const validBoids = js => js && !js.error && js.boids && js.boids.length > 0;
 
-    return this.fetch(uri).then(
-      json =>
-        json && !json.error && json.boids && json.boids.length > 0
-          ? json.boids[0]
-          : undefined
-    );
+    return this.fetch(uri)
+      .then(json => (validBoids(json) ? json.boids : []))
+      .then(boids => boids[0]);
   }
 
   getInventory(boid) {
