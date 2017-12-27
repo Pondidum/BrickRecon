@@ -1,6 +1,7 @@
 import Owl from "./owl";
 
-const owl = new Owl(process.env.BRICKOWL_TOKEN);
+const token = process.env.BRICKOWL_TOKEN;
+const owl = new Owl(token);
 
 describe("getBoid", () => {
   it("should lookup an id", () =>
@@ -39,7 +40,7 @@ describe("getInventory", () => {
         ]
       });
 
-    return new Owl(testFetch)
+    return new Owl(token, testFetch)
       .getInventory(123)
       .then(inventory =>
         expect(inventory).toEqual([
