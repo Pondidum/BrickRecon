@@ -16,23 +16,39 @@ beforeEach(() => {
     publish: jest.fn()
   };
 
+  store.write.mockReturnValue(Promise.resolve());
+  notifier.publish.mockReturnValue(Promise.resolve());
+
   inventory = new Inventory(store, owl, notifier);
 });
 
+const model = {
+  boid: "model_boid",
+  name: "some model",
+  url: "https://example.com",
+  setNumbers: [123, 456]
+};
+
+const inv = [{ quantity: 5, boids: ["part"] }];
+
+const storeDoesntContainTheModel = () =>
+  store.read.mockReturnValue(Promise.resolve());
+
+const storeContainsTheModel = () =>
+  store.read.mockReturnValue(Promise.resolve({ setNumber: 1234 }));
+
+const brickOwlDoesntHaveTheModel = () =>
+  owl.getBoid.mockReturnValue(Promise.resolve());
+
+const brickOwlHasTheModel = () => {
+  owl.getBoid.mockReturnValue(Promise.resolve("abcde"));
+  owl.getModelInfo.mockReturnValue(Promise.resolve(model));
+  owl.getInventory.mockReturnValue(Promise.resolve(inv));
+};
+
 describe("buildModel", () => {
-  const model = {
-    boid: "model_boid",
-    name: "some model",
-    url: "https://example.com",
-    setNumbers: [123, 456]
-  };
-
-  const inv = [{ quantity: 5, boids: ["part"] }];
-
   it("should contain the model info", () => {
-    owl.getBoid.mockReturnValue(Promise.resolve("abcde"));
-    owl.getModelInfo.mockReturnValue(Promise.resolve(model));
-    owl.getInventory.mockReturnValue(Promise.resolve(inv));
+    brickOwlHasTheModel();
 
     return inventory.buildModel(1234).then(result => {
       expect(result).toMatchObject(model);
@@ -41,7 +57,7 @@ describe("buildModel", () => {
   });
 
   it("should return undefined for non existing model", () => {
-    owl.getBoid.mockReturnValue(Promise.resolve());
+    brickOwlDoesntHaveTheModel();
 
     return inventory
       .buildModel(1234)
@@ -51,8 +67,8 @@ describe("buildModel", () => {
 
 describe("updateInventory", () => {
   it("should not store anything if the set is unfound", () => {
-    owl.getBoid.mockReturnValue(Promise.resolve());
-    store.read.mockReturnValue(Promise.resolve());
+    brickOwlDoesntHaveTheModel();
+    storeDoesntContainTheModel();
 
     return inventory
       .updateInventory(1234)
@@ -60,7 +76,7 @@ describe("updateInventory", () => {
   });
 
   it("should do nothing if the model is in the store", () => {
-    store.read.mockReturnValue(Promise.resolve({ setNumber: 1234 }));
+    storeContainsTheModel();
 
     return inventory
       .updateInventory(1234)
@@ -68,16 +84,20 @@ describe("updateInventory", () => {
   });
 
   it("should store the model", () => {
-    store.read.mockReturnValue(Promise.resolve());
-    store.write.mockReturnValue(Promise.resolve());
-
-    owl.getBoid.mockReturnValue(Promise.resolve("boid"));
-    owl.getModelInfo.mockReturnValue(Promise.resolve({ name: "some set" }));
-    owl.getInventory.mockReturnValue(Promise.resolve([]));
-
-    notifier.publish.mockReturnValue(Promise.resolve());
+    storeDoesntContainTheModel();
+    brickOwlHasTheModel();
 
     return inventory.updateInventory(1234).then(() => {
+      expect(store.write.mock.calls.length).toBe(1);
+      expect(notifier.publish.mock.calls.length).toBe(1);
+    });
+  });
+
+  it("should reread the model if force is specified", () => {
+    storeContainsTheModel();
+    brickOwlHasTheModel();
+
+    return inventory.updateInventory(1234, true).then(() => {
       expect(store.write.mock.calls.length).toBe(1);
       expect(notifier.publish.mock.calls.length).toBe(1);
     });

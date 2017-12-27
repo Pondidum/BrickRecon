@@ -24,9 +24,9 @@ class Inventory {
     });
   }
 
-  updateInventory(setNumber) {
+  updateInventory(setNumber, force) {
     return this.store.read(setNumber).then(storeModel => {
-      if (storeModel) {
+      if (storeModel && !force) {
         return Promise.resolve();
       }
 

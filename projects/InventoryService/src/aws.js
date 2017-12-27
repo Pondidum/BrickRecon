@@ -13,7 +13,9 @@ const notifier = new Notifier(snsTopic);
 const inventory = new Inventory(store, owl, notifier);
 
 const handleSingle = record =>
-  inventory.updateInventory(record.setNumber).catch(err => console.error(err));
+  inventory
+    .updateInventory(record.setNumber, record.force)
+    .catch(err => console.error(err));
 
 exports.handler = (snsEvent, context, callback) => {
   const records = snsEvent.Records;

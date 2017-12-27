@@ -102,3 +102,11 @@ it("should read multiple items", () => {
 
 it("should handle a non-existing item", () =>
   store.read("123132").then(model => expect(model).toBeUndefined()));
+
+it("should overwrite an existing item", () => {
+  const item = { setNumber: uuid(), value: 1 };
+
+  return Promise.resolve()
+    .then(() => store.write(item))
+    .then(() => store.write(item));
+});
