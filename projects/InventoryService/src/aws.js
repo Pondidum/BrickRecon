@@ -4,11 +4,11 @@ import Notifier from "./notifier";
 import Inventory from "./inventory";
 
 const brickowlToken = process.env.BRICKOWL_TOKEN;
-const tableName = process.env.TABLE_NAME;
+const setsTable = process.env.SETS_TABLE;
 const snsTopic = process.env.SNS_TOPIC;
 
 const owl = new Owl(brickowlToken);
-const store = new Storage({ tableName: tableName, hashKey: "setNumber" });
+const store = new Storage({ tableName: setsTable, hashKey: "setNumber" });
 const notifier = new Notifier(snsTopic);
 const inventory = new Inventory(store, owl, notifier);
 

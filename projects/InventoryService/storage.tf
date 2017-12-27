@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "inventory_sets" {
-  name = "${local.table_name}"
+  name = "${local.sets_table}"
 
   write_capacity = 5 # guesses!
   read_capacity = 20 # also!
