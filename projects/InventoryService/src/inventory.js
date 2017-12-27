@@ -17,7 +17,9 @@ class Inventory {
         .then(model =>
           owl
             .getInventory(setBoid)
-            .then(inv => Object.assign({}, model, { inventory: inv }))
+            .then(inv =>
+              Object.assign({ setNumber: setNumber }, model, { inventory: inv })
+            )
         );
     });
   }
@@ -33,14 +35,12 @@ class Inventory {
           return Promise.resolve();
         }
 
-        return this.store
-          .write(model)
-          .then(() =>
-            this.notifier.publish({
-              eventType: "MODEL_INVENTORY_COMPLETE",
-              model
-            })
-          );
+        return this.store.write(model).then(() =>
+          this.notifier.publish({
+            eventType: "MODEL_INVENTORY_COMPLETE",
+            model
+          })
+        );
       });
     });
   }

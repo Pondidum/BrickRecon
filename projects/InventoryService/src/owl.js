@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 
-const brickowl = `https://api.brickowl.com/v1?catalog`;
+const brickowl = `https://api.brickowl.com/v1/catalog`;
 const defaultClient = uri => fetch(uri).then(res => res.json());
 
 class Owl {
@@ -40,7 +40,9 @@ class Owl {
         return acc;
       }, {});
 
-      return Object.values(grouped).sort((x, y) => x.boids[0] > y.boids[0]);
+      return Object.keys(grouped)
+        .map(key => grouped[key])
+        .sort((x, y) => x.boids[0] > y.boids[0]);
     });
   }
 
