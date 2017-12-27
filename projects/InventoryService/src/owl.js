@@ -4,9 +4,10 @@ import queryString from "query-string";
 const defaultClient = uri => fetch(uri).then(res => res.json());
 
 class Owl {
-  constructor(token, client) {
+  constructor(token, cache, client) {
     this.token = token;
     this.fetch = client || defaultClient;
+    this.cache = cache;
   }
 
   buildQuery(path, query) {
@@ -19,36 +20,55 @@ class Owl {
   getBoid(setId) {
     const uri = this.buildQuery("id_lookup", { type: "Set", id: setId });
     const validBoids = js => js && !js.error && js.boids && js.boids.length > 0;
+    const cache = this.cache.write;
 
     return this.fetch(uri)
       .then(json => (validBoids(json) ? json.boids : []))
-      .then(boids => boids[0]);
+      .then(boids => cache(boids, setId, "set").then(() => boids[0]));
   }
 
   getInventory(boid) {
     const uri = this.buildQuery("inventory", { boid: boid });
 
-    return this.fetch(uri).then(json => {
-      if (!json.inventory) {
-        return undefined;
-      }
+    return this.fetch(uri)
+      .then(json => json.inventory)
+      .then(inventory => {
+        if (!inventory) {
+          return undefined;
+        }
 
-      const grouped = json.inventory.reduce((acc, item) => {
-        const id = item.alt_link === 0 ? item.boid : item.alt_link;
-        const group = (acc[id] = acc[id] || {
-          boids: []
-        });
+        const grouped = inventory.reduce((acc, item) => {
+          const id = item.alt_link === 0 ? item.boid : item.alt_link;
+          const group = (acc[id] = acc[id] || { boids: [] });
 
-        group.quantity = Number(item.quantity);
-        group.boids.push(item.boid);
+          group.quantity = Number(item.quantity);
+          group.boids.push(item.boid);
 
-        return acc;
-      }, {});
+          return acc;
+        }, {});
 
-      return Object.keys(grouped)
-        .map(key => grouped[key])
-        .sort((x, y) => x.boids[0] > y.boids[0]);
-    });
+        const items = Object.keys(grouped).map(key => grouped[key]);
+
+        return Promise.all(
+          items.map(item =>
+            Promise.all(item.boids.map(boid => this.cache.get(boid))).then(
+              details => {
+                return {
+                  partNumber: details[0].partNumber,
+                  color: details[0].color,
+                  quantity: item.quantity,
+                  otherNumbers:
+                    details.length > 1
+                      ? details
+                          .map(d => d.partNumber)
+                          .filter(n => n !== details[0].partNumber)
+                      : []
+                };
+              }
+            )
+          )
+        );
+      });
   }
 
   getModelInfo(boid) {

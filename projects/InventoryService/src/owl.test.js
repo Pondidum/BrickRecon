@@ -1,14 +1,23 @@
 import Owl from "./owl";
 
-let client, owl;
+let client, owl, cache;
 
 beforeEach(() => {
   client = jest.fn();
-  owl = new Owl("TOKEN_WAT", client);
+  cache = {
+    write: jest.fn(),
+    get: jest.fn()
+  };
+
+  cache.write.mockReturnValue(Promise.resolve());
+  owl = new Owl("TOKEN_WAT", cache, client);
 });
 
 const mockResponse = res => client.mockReturnValue(Promise.resolve(res));
 const expectUri = () => expect(client.mock.calls[0][0]);
+
+const mockCache = content =>
+  cache.get.mockImplementation(x => Promise.resolve(content[x]));
 
 describe("getBoid", () => {
   it("should lookup an id", () => {
@@ -38,16 +47,45 @@ describe("getInventory", () => {
   it("should fetch a set", () => {
     mockResponse({
       inventory: [
-        { boid: "198888", quantity: "1", extra_quantity: "0", alt_link: 0 },
-        { boid: "771344-81", quantity: "1", extra_quantity: "0", alt_link: 0 }
+        { boid: "324854-50", quantity: "4", extra_quantity: "0", alt_link: 0 },
+        { boid: "14440-38", quantity: "1", extra_quantity: "0", alt_link: 0 },
+        { boid: "954477-38", quantity: "4", extra_quantity: "0", alt_link: 0 },
+        { boid: "739988-97", quantity: "1", extra_quantity: "0", alt_link: 0 },
+        { boid: "267724-38", quantity: "2", extra_quantity: "0", alt_link: 0 },
+        { boid: "408757-38", quantity: "2", extra_quantity: "0", alt_link: 0 },
+        { boid: "369885-38", quantity: "8", extra_quantity: "0", alt_link: 0 },
+        { boid: "487300-38", quantity: "4", extra_quantity: "0", alt_link: 0 },
+        { boid: "44432-38", quantity: "2", extra_quantity: "0", alt_link: 0 },
+        { boid: "886867-38", quantity: "2", extra_quantity: "0", alt_link: 0 }
       ],
       unmatched_inventory: []
     });
 
+    mockCache({
+      "14440-38": { partNumber: "14440", color: 38 },
+      "267724-38": { partNumber: "267724", color: 38 },
+      "324854-50": { partNumber: "324854", color: 50 },
+      "369885-38": { partNumber: "369885", color: 38 },
+      "408757-38": { partNumber: "408757", color: 38 },
+      "44432-38": { partNumber: "44432", color: 38 },
+      "487300-38": { partNumber: "487300", color: 38 },
+      "739988-97": { partNumber: "739988", color: 97 },
+      "886867-38": { partNumber: "886867", color: 38 },
+      "954477-38": { partNumber: "954477", color: 38 }
+    });
+
     return owl.getInventory(98236).then(inventory => {
       expect(inventory).toEqual([
-        { quantity: 1, boids: ["198888"] },
-        { quantity: 1, boids: ["771344-81"] }
+        { partNumber: "324854", quantity: 4, color: 50, otherNumbers: [] },
+        { partNumber: "14440", quantity: 1, color: 38, otherNumbers: [] },
+        { partNumber: "954477", quantity: 4, color: 38, otherNumbers: [] },
+        { partNumber: "739988", quantity: 1, color: 97, otherNumbers: [] },
+        { partNumber: "267724", quantity: 2, color: 38, otherNumbers: [] },
+        { partNumber: "408757", quantity: 2, color: 38, otherNumbers: [] },
+        { partNumber: "369885", quantity: 8, color: 38, otherNumbers: [] },
+        { partNumber: "487300", quantity: 4, color: 38, otherNumbers: [] },
+        { partNumber: "44432", quantity: 2, color: 38, otherNumbers: [] },
+        { partNumber: "886867", quantity: 2, color: 38, otherNumbers: [] }
       ]);
 
       expectUri().toBe(
@@ -70,21 +108,30 @@ describe("getInventory", () => {
   it("should group alternalte parts", () => {
     mockResponse({
       inventory: [
-        { boid: "nogroup-1", quantity: "1", alt_link: 0 },
-        { boid: "group1-1", quantity: "1", alt_link: 1 },
-        { boid: "group2-1", quantity: "1", alt_link: 2 },
-        { boid: "group2-2", quantity: "1", alt_link: 2 },
-        { boid: "nogroup-2", quantity: "1", alt_link: 0 },
-        { boid: "group1-2", quantity: "1", alt_link: 1 }
+        { boid: "ng-1", quantity: "1", alt_link: 0 },
+        { boid: "g1-1", quantity: "1", alt_link: 1 },
+        { boid: "g2-1", quantity: "1", alt_link: 2 },
+        { boid: "g2-2", quantity: "1", alt_link: 2 },
+        { boid: "ng-2", quantity: "1", alt_link: 0 },
+        { boid: "g1-2", quantity: "1", alt_link: 1 }
       ]
+    });
+
+    mockCache({
+      "ng-1": { partNumber: "ng-1", color: 38 },
+      "g1-1": { partNumber: "g1-1", color: 38 },
+      "g2-1": { partNumber: "g2-1", color: 38 },
+      "g2-2": { partNumber: "g2-2", color: 38 },
+      "ng-2": { partNumber: "ng-2", color: 38 },
+      "g1-2": { partNumber: "g1-2", color: 38 }
     });
 
     return owl.getInventory(123).then(inventory => {
       expect(inventory).toEqual([
-        { quantity: 1, boids: ["group1-1", "group1-2"] },
-        { quantity: 1, boids: ["group2-1", "group2-2"] },
-        { quantity: 1, boids: ["nogroup-1"] },
-        { quantity: 1, boids: ["nogroup-2"] }
+        { quantity: 1, color: 38, partNumber: "g1-1", otherNumbers: ["g1-2"] },
+        { quantity: 1, color: 38, partNumber: "g2-1", otherNumbers: ["g2-2"] },
+        { quantity: 1, color: 38, partNumber: "ng-1", otherNumbers: [] },
+        { quantity: 1, color: 38, partNumber: "ng-2", otherNumbers: [] }
       ]);
       expectUri().toBe(
         "https://api.brickowl.com/v1/catalog/inventory?boid=123&key=TOKEN_WAT"
