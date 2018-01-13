@@ -10,11 +10,11 @@ beforeEach(() => {
 const mockResponse = res => client.mockReturnValue(Promise.resolve(res));
 const expectUri = () => expect(client.mock.calls[0][0]);
 
-describe("getBoid", () => {
+describe("getSetBoid", () => {
   it("should lookup an id", () => {
     mockResponse({ boids: ["529600"] });
 
-    return owl.getBoid(75042).then(id => {
+    return owl.getSetBoid(75042).then(id => {
       expectUri().toBe(
         "https://api.brickowl.com/v1/catalog/id_lookup?id=75042&key=TOKEN_WAT&type=Set"
       );
@@ -25,7 +25,7 @@ describe("getBoid", () => {
   it("should return undefined for unrecognised number", () => {
     mockResponse({ boids: [] });
 
-    return owl.getBoid(23131231).then(id => {
+    return owl.getSetBoid(23131231).then(id => {
       expectUri().toBe(
         "https://api.brickowl.com/v1/catalog/id_lookup?id=23131231&key=TOKEN_WAT&type=Set"
       );

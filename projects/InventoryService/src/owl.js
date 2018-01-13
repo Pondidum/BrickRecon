@@ -16,7 +16,7 @@ class Owl {
     return `https://api.brickowl.com/v1/catalog/${path}?${qs}`;
   }
 
-  getBoid(setId) {
+  getSetBoid(setId) {
     const uri = this.buildQuery("id_lookup", { type: "Set", id: setId });
     const validBoids = js => js && !js.error && js.boids && js.boids.length > 0;
 

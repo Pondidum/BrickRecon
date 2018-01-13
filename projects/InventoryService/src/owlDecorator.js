@@ -4,6 +4,15 @@ class OwlDecorator {
     this.owl = owl;
   }
 
+  getSetBoid(id) {
+    const writeToCache = boid =>
+      boid ? this.cache.write(id, boid, 0) : Promise.resolve();
+
+    return this.owl
+      .getSetBoid(id)
+      .then(boid => writeToCache(boid).then(() => boid));
+  }
+
   getInventory(boid) {
     const partsFromBoids = item =>
       Promise.all(item.boids.map(boid => this.cache.get(boid)));
