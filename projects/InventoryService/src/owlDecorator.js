@@ -32,6 +32,16 @@ class OwlDecorator {
       .then(inv => inv.map(item => replaceBoids(item)))
       .then(promises => Promise.all(promises));
   }
+
+  getModelInfo(boid) {
+    const fetchers = [this.owl.getModelInfo(boid), this.cache.get(boid)];
+
+    return Promise.all(fetchers).then(([model, part]) => {
+      const { boid, ...result } = model;
+      result.setNumber = part.partNumber;
+      return result;
+    });
+  }
 }
 
 export default OwlDecorator;
