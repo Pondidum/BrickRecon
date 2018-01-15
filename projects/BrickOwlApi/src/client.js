@@ -1,15 +1,6 @@
 import fetch from "node-fetch";
 import queryString from "query-string";
-
-const chunk = (arr, size = 100) => {
-  var results = [];
-
-  while (arr.length) {
-    results.push(arr.splice(0, size));
-  }
-
-  return results;
-};
+import { chunk } from "./util";
 
 const buildQuery = (path, token, query) => {
   const map = Object.assign({ key: token }, query);
