@@ -1,3 +1,14 @@
+import Client from "./client";
+import BoidCache from "./boidCache";
+
+const storage = {
+  getMany: boids => Promise.resolve({}),
+  writeMany: boids => Promise.resolve()
+};
+
+const client = new Client(process.env.BRICKOWL_TOKEN);
+const boidCache = new BoidCache(storage, client);
+
 const chunk = (arr, size) => {
   var results = [];
 
@@ -6,32 +17,6 @@ const chunk = (arr, size) => {
   }
 
   return results;
-};
-
-const client = {
-  boidFromSetNumber: setNumber => Promise.resolve(123123),
-  getInventory: boid => Promise.resolve([]),
-  getPartNumbers: boids => Promise.resolve({})
-};
-
-const storage = {
-  getMany: boids => Promise.resolve({}),
-  writeMany: boids => Promise.resolve()
-};
-
-const boidCache = {
-  getMany: boids =>
-    storage
-      .getMany(boids) //make this handle 100 items max internally
-      .then(map =>
-        client
-          .getPartNumbers(Object.keys(map).filter(boid => !map[boid])) //make this handle 100 items max internally
-          .then(partNumbers =>
-            storage
-              .writeMany(partNumbers)
-              .then(() => Object.assign({}, map, partNumbers))
-          )
-      )
 };
 
 const lookupInventory = setNumber => {
