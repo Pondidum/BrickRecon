@@ -1,21 +1,24 @@
 import { DynamoDB } from "aws-sdk";
+import { chunk } from "./util";
 
 const getMany = boids => Promise.resolve({});
 const writeMany = (client, tableName, batchSize, boids) => {
-  const request = {
-    RequestItems: {
-      [tableName]: Object.keys(boids).map(boid => ({
-        PutRequest: {
-          Item: {
-            boid: boid,
-            partNumber: boids[boid]
-          }
-        }
-      }))
+  const requests = Object.keys(boids).map(boid => ({
+    PutRequest: {
+      Item: {
+        boid: boid,
+        partNumber: boids[boid]
+      }
     }
-  };
+  }));
 
-  return client.batchWrite(request).promise();
+  const chunks = chunk(requests, batchSize);
+
+  return Promise.all(
+    chunks.map(group =>
+      client.batchWrite({ RequestItems: { [tableName]: group } }).promise()
+    )
+  );
 };
 
 class Storage {

@@ -28,3 +28,22 @@ it("should call the client with the right structure", () =>
       }
     })
   ));
+
+it("should call the client multiple times with batches", () => {
+  const seed = [...new Array(13).keys()];
+  const request = seed.reduce((a, c) => {
+    a["boid" + c] = "part" + c;
+    return a;
+  }, {});
+
+  return storage.writeMany(request).then(() => {
+    expect(client.batchWrite.mock.calls.length).toEqual(3);
+    expect(client.batchWrite.mock.calls[0][0]).toEqual({
+      RequestItems: {
+        wat: seed.slice(0, 5).map(i => ({
+          PutRequest: { Item: { boid: "boid" + i, partNumber: "part" + i } }
+        }))
+      }
+    });
+  });
+});
