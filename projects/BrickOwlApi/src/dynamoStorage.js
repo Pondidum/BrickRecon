@@ -1,7 +1,27 @@
 import { DynamoDB } from "aws-sdk";
 import { chunk } from "./util";
 
-const getMany = boids => Promise.resolve({});
+const getMany = (client, tableName, batchSize, boids) => {
+  const request = {
+    RequestItems: {
+      [tableName]: {
+        Keys: boids.map(boid => ({ boid: boid }))
+      }
+    }
+  };
+
+  return client
+    .batchGet(request)
+    .promise()
+    .then(data => data.Responses[tableName])
+    .then(results =>
+      results.reduce((all, current) => {
+        all[current.boid] = current.partNumber;
+        return all;
+      }, {})
+    );
+};
+
 const writeMany = (client, tableName, batchSize, boids) => {
   const requests = Object.keys(boids).map(boid => ({
     PutRequest: {
@@ -26,7 +46,7 @@ class Storage {
     const client = options.client || new DynamoDB.DocumentClient();
     const batchSize = options.batchSize || 100;
 
-    this.getMany = boids => getMany(client, tableName, boids);
+    this.getMany = boids => getMany(client, tableName, batchSize, boids);
     this.writeMany = boids => writeMany(client, tableName, batchSize, boids);
   }
 }
