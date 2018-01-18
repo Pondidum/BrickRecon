@@ -2,24 +2,26 @@ import { DynamoDB } from "aws-sdk";
 import { chunk } from "./util";
 
 const getMany = (client, tableName, batchSize, boids) => {
-  const request = {
+  const createRequest = group => ({
     RequestItems: {
-      [tableName]: {
-        Keys: boids.map(boid => ({ boid: boid }))
-      }
+      [tableName]: { Keys: group.map(boid => ({ boid: boid })) }
     }
-  };
+  });
 
-  return client
-    .batchGet(request)
-    .promise()
-    .then(data => data.Responses[tableName])
-    .then(results =>
-      results.reduce((all, current) => {
-        all[current.boid] = current.partNumber;
-        return all;
-      }, {})
-    );
+  const requests = chunk(boids, batchSize).map(group =>
+    client
+      .batchGet(createRequest(group))
+      .promise()
+      .then(data => data.Responses[tableName])
+      .then(results =>
+        results.reduce((all, current) => {
+          all[current.boid] = current.partNumber;
+          return all;
+        }, {})
+      )
+  );
+
+  return Promise.all(requests).then(results => Object.assign({}, ...results));
 };
 
 const writeMany = (client, tableName, batchSize, boids) => {

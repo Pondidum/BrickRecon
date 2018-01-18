@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 const dynamoReturns = result => {
-  client.batchGet.mockReturnValue({
+  client.batchGet.mockReturnValueOnce({
     promise: () => Promise.resolve(result)
   });
 };
@@ -83,5 +83,28 @@ describe("getMany", () => {
         boid1: "part1"
       })
     );
+  });
+
+  it("should batch the requests when over batchSize", () => {
+    const seed = [...new Array(13).keys()];
+    const range = (start, finish) =>
+      seed
+        .slice(start, finish)
+        .map(i => ({ boid: "boid" + i, partNumber: "part" + i }));
+
+    dynamoReturns({ Responses: { wat: range(0, 5) } });
+    dynamoReturns({ Responses: { wat: range(5, 10) } });
+    dynamoReturns({ Responses: { wat: range(10, 13) } });
+
+    const request = seed.map(i => "boid" + i);
+    const expected = seed.reduce((all, current) => {
+      all["boid" + current] = "part" + current;
+      return all;
+    }, {});
+
+    return storage.getMany(request).then(result => {
+      expect(client.batchGet.mock.calls.length).toEqual(3);
+      expect(result).toEqual(expected);
+    });
   });
 });
