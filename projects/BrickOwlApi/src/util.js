@@ -7,3 +7,12 @@ export const chunk = (arr, size) => {
 
   return results;
 };
+
+export const mapFrom = (arr, keyFunc, valueFunc = value => value) =>
+  arr.reduce((all, current) => {
+    const key = keyFunc(current);
+    const value = valueFunc(current);
+
+    all[key] = value;
+    return all;
+  }, {});

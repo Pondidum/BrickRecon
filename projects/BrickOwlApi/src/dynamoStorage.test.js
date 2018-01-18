@@ -1,5 +1,6 @@
-import DynamoStorage from "./dynamoStorage";
 import AWS, { DynamoDB } from "aws-sdk";
+import DynamoStorage from "./dynamoStorage";
+import { mapFrom } from "./util";
 
 let client, storage;
 
@@ -40,10 +41,7 @@ describe("writeMany", () => {
 
   it("should call the client multiple times with batches", () => {
     const seed = [...new Array(13).keys()];
-    const request = seed.reduce((a, c) => {
-      a["boid" + c] = "part" + c;
-      return a;
-    }, {});
+    const request = mapFrom(seed, i => "boid" + i, i => "part" + i);
 
     return storage.writeMany(request).then(() => {
       expect(client.batchWrite.mock.calls.length).toEqual(3);
@@ -97,10 +95,7 @@ describe("getMany", () => {
     dynamoReturns({ Responses: { wat: range(10, 13) } });
 
     const request = seed.map(i => "boid" + i);
-    const expected = seed.reduce((all, current) => {
-      all["boid" + current] = "part" + current;
-      return all;
-    }, {});
+    const expected = mapFrom(seed, i => "boid" + i, i => "part" + i);
 
     return storage.getMany(request).then(result => {
       expect(client.batchGet.mock.calls.length).toEqual(3);

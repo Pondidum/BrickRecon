@@ -1,6 +1,6 @@
 import fetch from "node-fetch";
 import queryString from "query-string";
-import { chunk } from "./util";
+import { chunk, mapFrom } from "./util";
 
 const buildQuery = (path, token, query) => {
   const map = Object.assign({ key: token }, query);
@@ -65,10 +65,7 @@ const getPartNumbers = (fetcher, batchSize, token, boids) => {
     return fetcher(uri)
       .then(response => response.items)
       .then(parts =>
-        Object.keys(parts).reduce((all, current) => {
-          all[current] = bestPartNumber(parts[current].ids);
-          return all;
-        }, {})
+        mapFrom(Object.keys(parts), x => x, x => bestPartNumber(parts[x].ids))
       );
   });
 

@@ -1,5 +1,5 @@
 import { DynamoDB } from "aws-sdk";
-import { chunk } from "./util";
+import { chunk, mapFrom } from "./util";
 
 const getMany = (client, tableName, batchSize, boids) => {
   const createRequest = group => ({
@@ -13,12 +13,7 @@ const getMany = (client, tableName, batchSize, boids) => {
       .batchGet(createRequest(group))
       .promise()
       .then(data => data.Responses[tableName])
-      .then(results =>
-        results.reduce((all, current) => {
-          all[current.boid] = current.partNumber;
-          return all;
-        }, {})
-      )
+      .then(results => mapFrom(results, x => x.boid, x => x.partNumber))
   );
 
   return Promise.all(requests).then(results => Object.assign({}, ...results));

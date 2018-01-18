@@ -1,4 +1,5 @@
 import Client from "./client";
+import { mapFrom } from "./util";
 
 let fetcher, client;
 
@@ -125,13 +126,11 @@ describe("getPartNumbers", () => {
   it("should send one request for less than the chunk size", () => {
     const boids = [...new Array(13).keys()].map(id => id.toString());
 
-    const items = boids.reduce((all, current) => {
-      all[current] = {
-        boid: current,
-        ids: [{ id: "part:" + current, type: "ldraw" }]
-      };
-      return all;
-    }, {});
+    const items = mapFrom(
+      boids,
+      id => id,
+      id => ({ boid: id, ids: [{ id: "part:" + id, type: "ldraw" }] })
+    );
 
     mockResponse({ items: items });
 
