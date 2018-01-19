@@ -1,6 +1,6 @@
 {
-  "name": "brickrecon-brickowlapi",
-  "version": "0.0.0",
+  "name": "brickowlapi",
+  "version": "1.0.0",
   "private": true,
   "main": "./build/index.js",
   "scripts": {
