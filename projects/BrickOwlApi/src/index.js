@@ -1,3 +1,3 @@
-export { default as BrickOwlApi } from "./api";
-export { default as MemoryStorage } from "./memoryStorage";
-export { default as DynamoStorage } from "./dynamoStorage";
+export BrickOwlApi from "./api";
+export MemoryStorage from "./memoryStorage";
+export DynamoStorage from "./dynamoStorage";

@@ -2,9 +2,9 @@
   "name": "brickrecon-brickowlapi",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.js",
+  "main": "./build/index.js",
   "scripts": {
-    "build": "babel src --ignore *.test.js --out-dir build/app --source-maps",
+    "build": "babel src --ignore *.test.js --out-dir build/ --source-maps",
     "test": "jest --watch",
     "test:all": "jest --watchAll"
   },
@@ -13,13 +13,14 @@
     "babel-cli": "^6.26.0",
     "babel-core": "^6.26.0",
     "babel-jest": "^21.2.0",
+    "babel-plugin-transform-export-extensions": "^6.22.0",
+    "babel-plugin-transform-object-rest-spread": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "jest": "^21.2.1",
     "regenerator-runtime": "^0.11.1"
   },
   "dependencies": {
     "node-fetch": "^1.7.3",
-    "query-string": "^5.0.1",
-    "uuid": "^3.1.0"
+    "query-string": "^5.0.1"
   }
 }
