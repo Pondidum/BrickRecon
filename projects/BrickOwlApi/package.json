@@ -2,6 +2,7 @@
   "name": "brickrecon-brickowlapi",
   "version": "0.0.0",
   "private": true,
+  "main": "./src/index.js",
   "scripts": {
     "build": "babel src --ignore *.test.js --out-dir build/app --source-maps",
     "test": "jest --watch",
