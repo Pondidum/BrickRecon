@@ -1,16 +1,23 @@
-import Owl from "./owl";
-import Storage from "./storage";
+import { BrickOwlApi, DynamoStorage } from "brickowlapi";
 import Notifier from "./notifier";
 import Inventory from "./inventory";
+import SetStorage from "./setStorage";
 
 const brickowlToken = process.env.BRICKOWL_TOKEN;
 const setsTable = process.env.SETS_TABLE;
+const boidsTable = process.env.BOIDS_TABLE;
 const snsTopic = process.env.SNS_TOPIC;
 
-const owl = new Owl(brickowlToken);
-const store = new Storage({ tableName: setsTable, hashKey: "setNumber" });
+const api = new BrickOwlApi({
+  brickowlToken: brickowlToken,
+  storage: new DynamoStorage(boidsTable)
+});
+const storage = new SetStorage({
+  tableName: setsTable
+});
 const notifier = new Notifier(snsTopic);
-const inventory = new Inventory(store, owl, notifier);
+
+const inventory = new Inventory(api, storage, notifier);
 
 const handleSingle = record =>
   inventory
