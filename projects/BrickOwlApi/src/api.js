@@ -18,14 +18,19 @@ const buildPart = (lookup, model) => {
 };
 
 const lookupInventory = (client, boidCache, setNumber) => {
-  return client
-    .boidFromSetNumber(setNumber)
-    .then(setBoid => client.getInventory(setBoid))
-    .then(inventory =>
-      boidCache
-        .getMany(inventory.map(part => part.boids[0]))
-        .then(lookup => inventory.map(model => buildPart(lookup, model)))
-    );
+  return client.boidFromSetNumber(setNumber).then(setBoid => {
+    if (!setBoid) {
+      return Promise.resolve([]);
+    }
+
+    return client
+      .getInventory(setBoid)
+      .then(inventory =>
+        boidCache
+          .getMany(inventory.map(part => part.boids[0]))
+          .then(lookup => inventory.map(model => buildPart(lookup, model)))
+      );
+  });
 };
 
 class BrickOwlApi {

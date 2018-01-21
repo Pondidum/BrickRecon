@@ -46,3 +46,11 @@ it("should retrieve from storage", () => {
     })
   );
 });
+
+it("should handle the set not existing", () => {
+  client.boidFromSetNumber = () => Promise.resolve();
+
+  return api
+    .getInventory("set123")
+    .then(inventory => expect(inventory).toEqual([]));
+});
