@@ -6,7 +6,8 @@
   "scripts": {
     "build": "babel src --ignore *.test.js --out-dir build/ --source-maps",
     "test": "jest --watch",
-    "test:all": "jest --watchAll"
+    "test:all": "jest --watchAll",
+    "prepare": "npm run build"
   },
   "devDependencies": {
     "aws-sdk": "^2.58.0",
