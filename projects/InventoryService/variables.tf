@@ -27,6 +27,7 @@ locals {
   prefix = "${var.product != "" ? "${var.product}_" : ""}"
   name = "${local.prefix}inventory_${var.environment}"
   sets_table = "${local.name}_sets"
+  boids_table = "${local.name}_boids"
   sns_topic = "${local.prefix}kafish_${var.environment}_events"
 }
 
