@@ -7,10 +7,12 @@
         "dynamodb:GetRecords",
         "dynamodb:GetItem",
         "dynamodb:Scan",
-        "dynamodb:PutItem"
+        "dynamodb:PutItem",
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchPutItem"
       ],
       "Effect": "Allow",
-      "Resource": "${table_arn}"
+      "Resource": ["${inventory_table}", "${boidcache_table}"]
     },
     {
       "Action": ["sns:Publish"],

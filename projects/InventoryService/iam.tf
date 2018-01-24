@@ -1,7 +1,8 @@
 data "template_file" "inventory_role_policy" {
   template = "${file("policies/lambda-role-policy.json")}"
   vars {
-    table_arn = "${aws_dynamodb_table.inventory_sets.arn}"
+    inventory_table = "${aws_dynamodb_table.inventory_sets.arn}"
+    boidcache_table = "${aws_dynamodb_table.boid_cache.arn}"
     sns_arn = "${data.aws_sns_topic.kafish.arn}"
   }
 }
