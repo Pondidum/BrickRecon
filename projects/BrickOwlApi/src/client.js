@@ -72,20 +72,14 @@ const getPartNumbers = (fetcher, batchSize, token, boids) => {
   return Promise.all(queries).then(maps => Object.assign({}, ...maps));
 };
 
-const defaultOptions = {
-  defaultFetcher: uri => fetch(uri).then(res => res.json()),
-  batchSize: 100
-};
+const defaultFetcher = uri => fetch(uri).then(res => res.json());
 
 class Client {
-  constructor(token, options) {
-    const allOptions = Object.assign({}, defaultOptions, options);
-
-    this.getSetBoid = setNumber =>
-      getSetBoid(options.fetcher, token, setNumber);
-    this.getInventory = boid => getInventory(options.fetcher, token, boid);
+  constructor(token, { fetcher = defaultFetcher, batchSize = 100 } = {}) {
+    this.getSetBoid = setNumber => getSetBoid(fetcher, token, setNumber);
+    this.getInventory = boid => getInventory(fetcher, token, boid);
     this.getPartNumbers = boids =>
-      getPartNumbers(options.fetcher, options.batchSize, token, boids);
+      getPartNumbers(fetcher, batchSize, token, boids);
   }
 }
 

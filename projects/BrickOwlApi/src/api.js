@@ -18,7 +18,7 @@ const buildPart = (lookup, model) => {
 };
 
 const lookupInventory = (client, boidCache, setNumber) => {
-  return client.boidFromSetNumber(setNumber).then(setBoid => {
+  return client.getSetBoid(setNumber).then(setBoid => {
     if (!setBoid) {
       return Promise.resolve([]);
     }
@@ -36,7 +36,7 @@ const lookupInventory = (client, boidCache, setNumber) => {
 class BrickOwlApi {
   constructor({ brickOwlToken, storage, client }) {
     const httpClient = client || new Client(brickOwlToken);
-    const boidCache = new BoidCache(storage, client);
+    const boidCache = new BoidCache(storage, httpClient);
 
     this.getInventory = setNumber =>
       lookupInventory(httpClient, boidCache, setNumber);

@@ -6,7 +6,7 @@ let storage, client, api;
 beforeEach(() => {
   storage = new MemoryStorage();
   client = {
-    boidFromSetNumber: () => Promise.resolve("set123"),
+    getSetBoid: () => Promise.resolve("set123"),
     getInventory: jest.fn(),
     getPartNumbers: jest.fn()
   };
@@ -48,7 +48,7 @@ it("should retrieve from storage", () => {
 });
 
 it("should handle the set not existing", () => {
-  client.boidFromSetNumber = () => Promise.resolve();
+  client.getSetBoid = () => Promise.resolve();
 
   return api
     .getInventory("set123")

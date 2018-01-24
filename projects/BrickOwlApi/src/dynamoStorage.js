@@ -39,7 +39,7 @@ const writeMany = (client, tableName, batchSize, boids) => {
 };
 
 class DynamoStorage {
-  constructor(tableName, options) {
+  constructor(tableName, options = {}) {
     const client = options.client || new DynamoDB.DocumentClient();
     const batchSize = options.batchSize || 100;
 
