@@ -3,13 +3,13 @@ import Notifier from "./notifier";
 import Inventory from "./inventory";
 import SetStorage from "./setStorage";
 
-const brickowlToken = process.env.BRICKOWL_TOKEN;
+const brickOwlToken = process.env.BRICKOWL_TOKEN;
 const setsTable = process.env.SETS_TABLE;
 const boidsTable = process.env.BOIDS_TABLE;
 const snsTopic = process.env.SNS_TOPIC;
 
 const api = new BrickOwlApi({
-  brickowlToken: brickowlToken,
+  brickOwlToken: brickOwlToken,
   storage: new DynamoStorage(boidsTable)
 });
 const storage = new SetStorage({
