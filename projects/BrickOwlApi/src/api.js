@@ -6,13 +6,23 @@ const withoutBoids = model => {
   return part;
 };
 
-const colorFromBoid = boid => Number(boid.replace(/.*-(.*)$/, "$1"));
+const expression = /^(.*)-(.*)$/;
+const colorFromBoid = boid => {
+  const match = boid.match(expression);
+
+  return match ? Number(match[2]) : undefined;
+};
+const boidWithoutColor = boid => {
+  const match = boid.match(expression);
+
+  return match ? match[1] : boid;
+};
 
 const buildPart = (lookup, model) => {
   const boid = model.boids[0];
 
   return Object.assign(withoutBoids(model), {
-    partNumber: lookup[boid],
+    partNumber: lookup[boidWithoutColor(boid)],
     color: colorFromBoid(boid)
   });
 };
@@ -27,7 +37,7 @@ const lookupInventory = (client, boidCache, setNumber) => {
       .getInventory(setBoid)
       .then(inventory =>
         boidCache
-          .getMany(inventory.map(part => part.boids[0]))
+          .getMany(inventory.map(part => part.boids[0].replace(/(-.*)/g, "")))
           .then(lookup => inventory.map(model => buildPart(lookup, model)))
       );
   });

@@ -23,7 +23,7 @@ const expectInventoryToBeCorrect = inventory =>
 it("should write to storage", () => {
   client.getPartNumbers.mockReturnValue(
     Promise.resolve({
-      "543696-53": "part1"
+      "543696": "part1"
     })
   );
 
@@ -31,15 +31,15 @@ it("should write to storage", () => {
     expectInventoryToBeCorrect(inventory);
 
     return storage
-      .getMany(["543696-53"])
-      .then(boids => expect(boids).toEqual({ "543696-53": "part1" }));
+      .getMany(["543696"])
+      .then(boids => expect(boids).toEqual({ "543696": "part1" }));
   });
 });
 
 it("should retrieve from storage", () => {
   client.getPartNumbers.mockReturnValue(Promise.resolve({}));
 
-  return storage.writeMany({ "543696-53": "part1" }).then(() =>
+  return storage.writeMany({ "543696": "part1" }).then(() =>
     api.getInventory("set123").then(inventory => {
       expectInventoryToBeCorrect(inventory);
       expect(client.getPartNumbers.mock.calls.length).toEqual(0);
@@ -54,3 +54,14 @@ it("should handle the set not existing", () => {
     .getInventory("set123")
     .then(inventory => expect(inventory).toEqual([]));
 });
+
+// it("should work for real", () => {
+//   const real = new Api({
+//     brickOwlToken: process.env.BRICKOWL_TOKEN,
+//     storage: new MemoryStorage()
+//   });
+
+//   return real.getInventory("75042").then(inv => {
+//     expect(inv).toEqual([]);
+//   });
+// });
