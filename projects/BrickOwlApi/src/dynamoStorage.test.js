@@ -15,8 +15,7 @@ beforeEach(() => {
   });
 
   storage = new DynamoStorage("wat", {
-    client: client,
-    batchSize: 5
+    client: client
   });
 });
 
@@ -40,14 +39,14 @@ describe("writeMany", () => {
     ));
 
   it("should call the client multiple times with batches", () => {
-    const seed = [...new Array(13).keys()];
+    const seed = [...new Array(55).keys()];
     const request = mapFrom(seed, i => "boid" + i, i => "part" + i);
 
     return storage.writeMany(request).then(() => {
       expect(client.batchWrite.mock.calls.length).toEqual(3);
       expect(client.batchWrite.mock.calls[0][0]).toEqual({
         RequestItems: {
-          wat: seed.slice(0, 5).map(i => ({
+          wat: seed.slice(0, 25).map(i => ({
             PutRequest: { Item: { boid: "boid" + i, partNumber: "part" + i } }
           }))
         }
@@ -84,21 +83,20 @@ describe("getMany", () => {
   });
 
   it("should batch the requests when over batchSize", () => {
-    const seed = [...new Array(13).keys()];
+    const seed = [...new Array(113).keys()];
     const range = (start, finish) =>
       seed
         .slice(start, finish)
         .map(i => ({ boid: "boid" + i, partNumber: "part" + i }));
 
-    dynamoReturns({ Responses: { wat: range(0, 5) } });
-    dynamoReturns({ Responses: { wat: range(5, 10) } });
-    dynamoReturns({ Responses: { wat: range(10, 13) } });
+    dynamoReturns({ Responses: { wat: range(0, 100) } });
+    dynamoReturns({ Responses: { wat: range(100, 113) } });
 
     const request = seed.map(i => "boid" + i);
     const expected = mapFrom(seed, i => "boid" + i, i => "part" + i);
 
     return storage.getMany(request).then(result => {
-      expect(client.batchGet.mock.calls.length).toEqual(3);
+      expect(client.batchGet.mock.calls.length).toEqual(2);
       expect(result).toEqual(expected);
     });
   });

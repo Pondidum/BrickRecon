@@ -1,14 +1,15 @@
 import { DynamoDB } from "aws-sdk";
 import { chunk, mapFrom } from "./util";
 
-const getMany = (client, tableName, batchSize, boids) => {
+const getMany = (client, tableName, boids) => {
   const createRequest = group => ({
     RequestItems: {
       [tableName]: { Keys: group.map(boid => ({ boid: boid })) }
     }
   });
 
-  const requests = chunk(boids, batchSize).map(group =>
+  const uniqueBoids = [...new Set(boids).keys()];
+  const requests = chunk(uniqueBoids, 100).map(group =>
     client
       .batchGet(createRequest(group))
       .promise()
@@ -19,7 +20,7 @@ const getMany = (client, tableName, batchSize, boids) => {
   return Promise.all(requests).then(results => Object.assign({}, ...results));
 };
 
-const writeMany = (client, tableName, batchSize, boids) => {
+const writeMany = (client, tableName, boids) => {
   const requests = Object.keys(boids).map(boid => ({
     PutRequest: {
       Item: {
@@ -29,7 +30,7 @@ const writeMany = (client, tableName, batchSize, boids) => {
     }
   }));
 
-  const chunks = chunk(requests, batchSize);
+  const chunks = chunk(requests, 25);
 
   return Promise.all(
     chunks.map(group =>
@@ -39,12 +40,9 @@ const writeMany = (client, tableName, batchSize, boids) => {
 };
 
 class DynamoStorage {
-  constructor(tableName, options = {}) {
-    const client = options.client || new DynamoDB.DocumentClient();
-    const batchSize = options.batchSize || 100;
-
-    this.getMany = boids => getMany(client, tableName, batchSize, boids);
-    this.writeMany = boids => writeMany(client, tableName, batchSize, boids);
+  constructor(tableName, { client = new DynamoDB.DocumentClient() } = {}) {
+    this.getMany = boids => getMany(client, tableName, boids);
+    this.writeMany = boids => writeMany(client, tableName, boids);
   }
 }
 
