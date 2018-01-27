@@ -9,7 +9,7 @@
         "dynamodb:Scan",
         "dynamodb:PutItem",
         "dynamodb:BatchGetItem",
-        "dynamodb:BatchPutItem"
+        "dynamodb:BatchWriteItem"
       ],
       "Effect": "Allow",
       "Resource": ["${inventory_table}", "${boidcache_table}"]
