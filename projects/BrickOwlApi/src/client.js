@@ -65,7 +65,11 @@ const getPartNumbers = (fetcher, batchSize, token, boids) => {
     return fetcher(uri)
       .then(response => response.items)
       .then(parts =>
-        mapFrom(Object.keys(parts), x => x, x => bestPartNumber(parts[x].ids))
+        mapFrom(
+          Object.keys(parts),
+          x => x,
+          x => bestPartNumber(parts[x].ids) || parts[x].name
+        )
       );
   });
 
