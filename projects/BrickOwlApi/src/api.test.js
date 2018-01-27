@@ -1,5 +1,7 @@
 import MemoryStorage from "./memoryStorage";
+import DynamoStorage from "./dynamoStorage";
 import Api from "./api";
+import AWS, { DynamoDB } from "aws-sdk";
 
 let storage, client, api;
 
@@ -55,13 +57,20 @@ it("should handle the set not existing", () => {
     .then(inventory => expect(inventory).toEqual([]));
 });
 
-// it("should work for real", () => {
-//   const real = new Api({
-//     brickOwlToken: process.env.BRICKOWL_TOKEN,
-//     storage: new MemoryStorage()
-//   });
+it("should work for real", () => {
+  AWS.config.update({ region: "eu-west-1" });
 
-//   return real.getInventory("75042").then(inv => {
-//     expect(inv).toEqual([]);
-//   });
-// });
+  const real = new Api({
+    brickOwlToken: process.env.BRICKOWL_TOKEN,
+    storage: new DynamoStorage("boidlookup_test", {
+      client: new DynamoDB.DocumentClient({
+        endpoint: "http://localhost:8000"
+      })
+    })
+  });
+
+  return real.getInventory("75042").then(inv => {
+    var badParts = inv.filter(part => part.partNumber === undefined);
+    expect(badParts.length).toEqual(0);
+  });
+});
