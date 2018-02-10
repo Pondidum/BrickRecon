@@ -3,7 +3,7 @@ data "template_file" "inventory_role_policy" {
   vars {
     inventory_table = "${aws_dynamodb_table.inventory_sets.arn}"
     boidcache_table = "${aws_dynamodb_table.boid_cache.arn}"
-    sns_arn = "${data.aws_sns_topic.kafish.arn}"
+    kafish_lambda = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:${local.kafish}"
   }
 }
 

@@ -15,9 +15,9 @@
       "Resource": ["${inventory_table}", "${boidcache_table}"]
     },
     {
-      "Action": ["sns:Publish"],
+      "Action": ["lambda:InvokeFunction"],
       "Effect": "Allow",
-      "Resource": "${sns_arn}"
+      "Resource": "${kafish_lambda}"
     },
     {
       "Effect": "Allow",
