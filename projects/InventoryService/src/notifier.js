@@ -1,15 +1,16 @@
-import { SNS } from "aws-sdk";
+import { Lambda } from "aws-sdk";
+
+const publishMessage = (client, lambdaName, message) =>
+  client
+    .invoke({
+      FunctionName: lambdaName,
+      Payload: JSON.stringify(message)
+    })
+    .promise();
 
 class Notifier {
-  constructor(topic, client) {
-    this.topic = topic;
-    this.client = client || new SNS();
-  }
-
-  publish(message) {
-    return this.client
-      .publish({ TopicArn: this.topic, Message: JSON.stringify(message) })
-      .promise();
+  constructor({ lambdaName, client = new Lambda() }) {
+    this.publish = message => publishMessage(client, lambdaName, message);
   }
 }
 

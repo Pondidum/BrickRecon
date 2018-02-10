@@ -29,6 +29,7 @@ locals {
   sets_table = "${local.name}_sets"
   boids_table = "${local.name}_boids"
   sns_topic = "${local.prefix}kafish_${var.environment}_events"
+  kafish = "${local.prefix}kafish_${var.environment}_writer"
 }
 
 data "aws_sns_topic" "kafish" {

@@ -6,7 +6,7 @@ import SetStorage from "./setStorage";
 const brickOwlToken = process.env.BRICKOWL_TOKEN;
 const setsTable = process.env.SETS_TABLE;
 const boidsTable = process.env.BOIDS_TABLE;
-const snsTopic = process.env.SNS_TOPIC;
+const kafishLambda = process.env.KAFISH_LAMBDA;
 
 const api = new BrickOwlApi({
   brickOwlToken: brickOwlToken,
@@ -15,7 +15,9 @@ const api = new BrickOwlApi({
 const storage = new SetStorage({
   tableName: setsTable
 });
-const notifier = new Notifier(snsTopic);
+const notifier = new Notifier({
+  lambdaName: kafishLambda
+});
 
 const inventory = new Inventory(api, storage, notifier);
 
