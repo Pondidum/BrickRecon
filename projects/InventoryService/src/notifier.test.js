@@ -17,7 +17,7 @@ it("should publish a well formed message", () => {
   return notifier.publish({ setNumber: 123 }).then(() =>
     expect(message).toEqual({
       FunctionName: "wat",
-      Payload: '{"setNumber":123}'
+      Payload: '{"body":{"setNumber":123}}'
     })
   );
 });

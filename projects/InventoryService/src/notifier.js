@@ -4,7 +4,9 @@ const publishMessage = (client, lambdaName, message) =>
   client
     .invoke({
       FunctionName: lambdaName,
-      Payload: JSON.stringify(message)
+      Payload: JSON.stringify({
+        body: message
+      })
     })
     .promise();
 
