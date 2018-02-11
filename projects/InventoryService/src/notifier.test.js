@@ -1,23 +1,37 @@
 import Notifier from "./notifier";
 
-it("should publish a well formed message", () => {
-  let message;
+const lambdaName = "wat_lambda";
+let notification, notifier;
+
+beforeEach(() => {
   const client = {
     invoke: m => {
-      message = m;
+      notification = m;
       return { promise: () => Promise.resolve() };
     }
   };
 
-  const notifier = new Notifier({
-    lambdaName: "wat",
+  notifier = new Notifier({
+    lambdaName: lambdaName,
     client: client
   });
+});
 
-  return notifier.publish({ setNumber: 123 }).then(() =>
-    expect(message).toEqual({
-      FunctionName: "wat",
-      Payload: '{"body":{"setNumber":123}}'
+it("should publish a well formed message", () => {
+  const message = { eventType: "TEST_MESSAGE", setNumber: 123 };
+
+  return notifier.publish(message).then(() =>
+    expect(notification).toEqual({
+      FunctionName: lambdaName,
+      Payload: '{"body":{"eventType":"TEST_MESSAGE","setNumber":123}}'
     })
+  );
+});
+
+it("should reject messages without an eventType", () => {
+  const message = { setNumber: 456 };
+
+  expect(() => notifier.publish(message)).toThrow(
+    "Missing required 'eventType' property"
   );
 });

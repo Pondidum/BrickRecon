@@ -1,14 +1,19 @@
 import { Lambda } from "aws-sdk";
 
-const publishMessage = (client, lambdaName, message) =>
-  client
-    .invoke({
-      FunctionName: lambdaName,
-      Payload: JSON.stringify({
-        body: message
-      })
+const publishMessage = (client, lambdaName, message) => {
+  if (!message.eventType || message.eventType === "") {
+    throw new Error("Missing required 'eventType' property");
+  }
+
+  const request = {
+    FunctionName: lambdaName,
+    Payload: JSON.stringify({
+      body: message
     })
-    .promise();
+  };
+
+  return client.invoke(request).promise();
+};
 
 class Notifier {
   constructor({ lambdaName, client = new Lambda() }) {
