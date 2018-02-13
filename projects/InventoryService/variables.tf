@@ -24,12 +24,12 @@ variable "product" {
 }
 
 locals {
-  prefix = "${var.product != "" ? "${var.product}_" : ""}"
-  name = "${local.prefix}inventory_${var.environment}"
+  prefix = "${var.product != "" ? "${var.product}_" : ""}${var.environment}_"
+  name = "${local.prefix}inventory"
   sets_table = "${local.name}_sets"
   boids_table = "${local.name}_boids"
-  sns_topic = "${local.prefix}kafish_${var.environment}_events"
-  kafish = "${local.prefix}kafish_${var.environment}_writer"
+  sns_topic = "${local.prefix}kafish_events"
+  kafish = "${local.prefix}kafish_writer"
 }
 
 data "aws_sns_topic" "kafish" {
