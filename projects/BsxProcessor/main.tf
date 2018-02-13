@@ -6,17 +6,15 @@ data "template_file" "bsxprocessor_policy" {
 }
 
 resource "aws_iam_role" "bsxprocessor_role" {
-  name = "brickrecon_bsxprocessor_role"
+  name = "${local.name}_role"
   assume_role_policy = "${file("policies/bsxprocessor-role.json")}"
 }
 
 resource "aws_iam_role_policy" "bsxprocessor_role_policy" {
-  name = "brickrecon_bsxprocessor_role_policy"
+  name = "${local.name}_role_policy"
   role = "${aws_iam_role.bsxprocessor_role.id}"
   policy = "${data.template_file.bsxprocessor_policy.rendered}"
 }
-
-
 
 data "archive_file" "bsxprocessor_source" {
   type = "zip"
@@ -25,7 +23,7 @@ data "archive_file" "bsxprocessor_source" {
 }
 
 resource "aws_lambda_function" "bsxprocessor" {
-  function_name = "brickrecon_bsxprocessor"
+  function_name = "${local.name}"
   role = "${aws_iam_role.bsxprocessor_role.arn}"
   filename = "${data.archive_file.bsxprocessor_source.output_path}"
   handler = "BsxProcessor::BsxProcessor.Handler::Handle"
