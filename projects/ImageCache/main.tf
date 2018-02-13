@@ -6,12 +6,12 @@ data "template_file" "imagecache_policy" {
 }
 
 resource "aws_iam_role" "imagecache_role" {
-  name = "brickrecon_imagecache_role"
+  name = "${local.name}role"
   assume_role_policy = "${file("policies/imagecache-role.json")}"
 }
 
 resource "aws_iam_role_policy" "imagecache_role_policy" {
-  name = "brickrecon_imagecache_role_policy"
+  name = "${local.name}role_policy"
   role = "${aws_iam_role.imagecache_role.id}"
   policy = "${data.template_file.imagecache_policy.rendered}"
 }
@@ -20,12 +20,12 @@ resource "aws_iam_role_policy" "imagecache_role_policy" {
 
 data "archive_file" "imagecache_source" {
   type = "zip"
-  source_dir = "src"
+  source_dir = "./build/app"
   output_path = "./build/imagecache.zip"
 }
 
 resource "aws_lambda_function" "imagecache" {
-  function_name = "brickrecon_imagecache"
+  function_name = "${local.name}"
   role = "${aws_iam_role.imagecache_role.arn}"
   filename = "${data.archive_file.imagecache_source.output_path}"
   handler = "index.handler"

@@ -18,5 +18,13 @@ provider "aws" {
 data "aws_caller_identity" "current" {
 }
 
-variable "environment" {}
 variable "bucket" {}
+variable "environment" {}
+variable "product" {
+  default = "brickrecon"
+}
+
+locals {
+  prefix = "${var.product != "" ? "${var.product}_" : ""}${var.environment}_"
+  name = "${local.prefix}imagecache"
+}
