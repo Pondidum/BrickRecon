@@ -13,11 +13,13 @@ namespace BsxProcessor
 	{
 		public const int BatchSize = 10;
 
+		private readonly Config _config;
 		private readonly Func<InvokeRequest, Task<InvokeResponse>> _dispatch;
 		private readonly HashSet<KeyValuePair<string, Colors>> _parts;
 
-		public ImageCacheDispatcher(Func<InvokeRequest, Task<InvokeResponse>> dispatch)
+		public ImageCacheDispatcher(Config config, Func<InvokeRequest, Task<InvokeResponse>> dispatch)
 		{
+			_config = config;
 			_dispatch = dispatch;
 			_parts = new HashSet<KeyValuePair<string, Colors>>();
 		}
@@ -40,7 +42,7 @@ namespace BsxProcessor
 				await _dispatch(new InvokeRequest
 				{
 					InvocationType = InvocationType.Event,
-					FunctionName = "brickrecon_imagecache",
+					FunctionName = _config.ImageCacheLambda,
 					Payload = JsonConvert.SerializeObject(new { parts = batch.AsEnumerable() })
 				});
 			}

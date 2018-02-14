@@ -16,11 +16,13 @@ namespace BsxProcessor.Tests
 
 		private readonly List<RequestEvent> _requests;
 		private readonly ImageCacheDispatcher _cache;
+		private readonly Config _config;
 
 		public ImageCacheDispatcherTests()
 		{
 			_requests = new List<RequestEvent>();
-			_cache = new ImageCacheDispatcher(request =>
+			_config = new Config();
+			_cache = new ImageCacheDispatcher(_config, request =>
 			{
 				_requests.Add(JsonConvert.DeserializeObject<RequestEvent>(request.Payload));
 				return Task.FromResult(new InvokeResponse());
@@ -50,7 +52,7 @@ namespace BsxProcessor.Tests
 		public async Task When_there_is_one_item_to_dispatch()
 		{
 			var part = CreatePart();
-			_cache.Add(new []{ part });
+			_cache.Add(new[] { part });
 
 			await _cache.Dispatch();
 
@@ -62,7 +64,7 @@ namespace BsxProcessor.Tests
 		public async Task When_the_same_item_is_added_multiple_times()
 		{
 			var part = CreatePart();
-			_cache.Add(new []{ part, part, part });
+			_cache.Add(new[] { part, part, part });
 
 			await _cache.Dispatch();
 
@@ -73,7 +75,7 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public async Task When_there_are_multiple_items_to_dispatch()
 		{
-			_cache.Add(new []{ CreatePart(), CreatePart(), CreatePart() });
+			_cache.Add(new[] { CreatePart(), CreatePart(), CreatePart() });
 
 			await _cache.Dispatch();
 
