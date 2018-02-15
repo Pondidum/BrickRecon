@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
 using BsxProcessor.Domain;
+using BsxProcessor.Infrastructure;
 using Shouldly;
 using Xunit;
 
@@ -11,8 +12,12 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public void When_mapping_a_file()
 		{
-			var document = XDocument.Parse(Xml);
-			var model = new BsxModelBuilder().Build("som/path/to/a/model.bsx", document);
+			var model = new BsxModelBuilder().Build(new FileData<XDocument>
+			{
+				Drive = "s3",
+				FullPath = "some/path/to/a/model.bsx",
+				Content = XDocument.Parse(Xml)
+			});
 
 			var part = model.Parts.First();
 			model.ShouldSatisfyAllConditions(
@@ -27,7 +32,7 @@ namespace BsxProcessor.Tests
 		}
 
 		private const string Xml =
-@"<?xml version=""1.0"" encoding=""UTF-8\""?>
+			@"<?xml version=""1.0"" encoding=""UTF-8\""?>
 <!DOCTYPE BrickStockXML>
 <BrickStockXML>
 	<Inventory>
