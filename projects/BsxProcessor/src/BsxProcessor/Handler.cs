@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Amazon.Lambda;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
@@ -19,7 +21,7 @@ namespace BsxProcessor
 			var fileSystem = new S3FileSystem(new AmazonS3Client());
 			var imageCacheDispatch = new ImageCacheDispatcher(config, req => lambdaClient.InvokeAsync(req));
 			var modelBuilder = new BsxModelBuilder();
-			
+
 			_recordHandler = new RecordHandler(fileSystem, imageCacheDispatch, modelBuilder);
 		}
 
