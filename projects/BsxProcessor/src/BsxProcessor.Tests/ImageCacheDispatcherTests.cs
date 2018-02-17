@@ -14,16 +14,17 @@ namespace BsxProcessor.Tests
 	{
 		private static readonly Random random = new Random();
 
+		private readonly List<string> _payloads;
 		private readonly List<RequestEvent> _requests;
 		private readonly ImageCacheDispatcher _cache;
-		private readonly Config _config;
 
 		public ImageCacheDispatcherTests()
 		{
+			_payloads = new List<string>();
 			_requests = new List<RequestEvent>();
-			_config = new Config();
-			_cache = new ImageCacheDispatcher(_config, request =>
+			_cache = new ImageCacheDispatcher(new Config(), request =>
 			{
+				_payloads.Add(request.Payload);
 				_requests.Add(JsonConvert.DeserializeObject<RequestEvent>(request.Payload));
 				return Task.FromResult(new InvokeResponse());
 			});
@@ -92,6 +93,18 @@ namespace BsxProcessor.Tests
 			_requests.Count.ShouldBe(2);
 		}
 
+		[Fact]
+		public async Task When_serializing_the_correct_format_is_used()
+		{
+			var parts = new[] { CreatePart(), CreatePart() };
+
+			_cache.Add(parts);
+			await _cache.Dispatch();
+
+			var expected = string.Join(",", parts.Select(p => $"{{\"partno\":\"{p.PartNumber}\",\"color\":{(int)p.Color}}}"));
+
+			_payloads.Single().ShouldBe($"{{\"parts\":[{expected}]}}");
+		}
 
 		private class RequestEvent
 		{

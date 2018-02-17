@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Amazon.Lambda;
 using Amazon.Lambda.Model;
@@ -35,7 +36,7 @@ namespace BsxProcessor
 			var batches = _parts
 				.Select((x, i) => new { Index = i, partno = x.Key, color = x.Value })
 				.GroupBy(x => x.Index / BatchSize)
-				.ToArray();
+				.Select(group => group.Select(part => new { part.partno, part.color }));
 
 			foreach (var batch in batches)
 			{
@@ -43,7 +44,7 @@ namespace BsxProcessor
 				{
 					InvocationType = InvocationType.Event,
 					FunctionName = _config.ImageCacheLambda,
-					Payload = JsonConvert.SerializeObject(new { parts = batch.AsEnumerable() })
+					Payload = JsonConvert.SerializeObject(new { parts = batch })
 				});
 			}
 		}
