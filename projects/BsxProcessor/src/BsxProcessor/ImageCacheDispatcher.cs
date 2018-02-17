@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace BsxProcessor
 {
-	public class ImageCacheDispatcher
+	public class ImageCacheDispatcher : IImageCacheDispatcher
 	{
 		public const int BatchSize = 10;
 

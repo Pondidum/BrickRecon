@@ -16,7 +16,7 @@ namespace BsxProcessor.Tests
 			{
 				Drive = "s3",
 				FullPath = "some/path/to/a/model.bsx",
-				Content = XDocument.Parse(Xml)
+				Content = XDocument.Parse(TestData.BsxWithTwoParts)
 			});
 
 			var part = model.Parts.First();
@@ -30,42 +30,5 @@ namespace BsxProcessor.Tests
 				() => part.Quantity.ShouldBe(5)
 			);
 		}
-
-		private const string Xml =
-			@"<?xml version=""1.0"" encoding=""UTF-8\""?>
-<!DOCTYPE BrickStockXML>
-<BrickStockXML>
-	<Inventory>
-		<Item>
-			<ItemID>3039</ItemID>
-			<ItemTypeID>P</ItemTypeID>
-			<ColorID>11</ColorID>
-			<ItemName>Slope 45 2 x 2</ItemName>
-			<ItemTypeName>Part</ItemTypeName>
-			<ColorName>Black</ColorName>
-			<CategoryID>31</CategoryID>
-			<CategoryName>Slope</CategoryName>
-			<Status>I</Status>
-			<Qty>5</Qty>
-			<Price>0.000</Price>
-			<Condition>N</Condition>
-		</Item>
-		<Item>
-			<ItemID>32039</ItemID>
-			<ItemTypeID>P</ItemTypeID>
-			<ColorID>11</ColorID>
-			<ItemName>Technic, Axle Connector with Axle Hole</ItemName>
-			<ItemTypeName>Part</ItemTypeName>
-			<ColorName>Black</ColorName>
-			<CategoryID>133</CategoryID>
-			<CategoryName>Technic, Connector</CategoryName>
-			<Status>I</Status>
-			<Qty>0</Qty>
-			<Price>0.000</Price>
-			<Condition>N</Condition>
-		</Item>
-	</Inventory>
-</BrickStockXML>
-";
 	}
 }
