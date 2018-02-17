@@ -11,10 +11,10 @@ namespace BsxProcessor
 	public class RecordHandler
 	{
 		private readonly IFileSystem _fileSystem;
-		private readonly ImageCacheDispatcher _imageCacheDispatch;
+		private readonly IImageCacheDispatcher _imageCacheDispatch;
 		private readonly BsxModelBuilder _modelBuilder;
 
-		public RecordHandler(IFileSystem fileSystem, ImageCacheDispatcher imageCacheDispatch, BsxModelBuilder modelBuilder)
+		public RecordHandler(IFileSystem fileSystem, IImageCacheDispatcher imageCacheDispatch, BsxModelBuilder modelBuilder)
 		{
 			_fileSystem = fileSystem;
 			_imageCacheDispatch = imageCacheDispatch;
@@ -35,15 +35,11 @@ namespace BsxProcessor
 			await _imageCacheDispatch.Dispatch();
 		}
 
-		private async Task WriteJsonFile(FileData<BsxModel> file)
-		{
-			await _fileSystem.WriteJson(file);
-		}
+		private async Task WriteJsonFile(FileData<BsxModel> file) => await _fileSystem.WriteJson(file);
 
 		private FileData<BsxModel> QueueParts(FileData<BsxModel> file)
 		{
 			_imageCacheDispatch.Add(file.Content.Parts);
-
 			return file;
 		}
 
