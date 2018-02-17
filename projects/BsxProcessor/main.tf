@@ -31,6 +31,12 @@ resource "aws_lambda_function" "bsxprocessor" {
   source_code_hash = "${base64sha256(file("${data.archive_file.bsxprocessor_source.output_path}"))}"
   timeout = 60
 
+  environment {
+    variables = {
+      IMAGECACHE_LAMBDA = "${local.imagecache_lambda}"
+    }
+  }
+
   tags = {
     environment = "${var.environment}"
   }
