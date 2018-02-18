@@ -23,29 +23,24 @@ namespace BsxProcessor
 
 		public async Task Execute(IEnumerable<S3EventNotification.S3EventNotificationRecord> records)
 		{
-			var tasks = records
-				.Select(ReadBsxFile)
-				.Select(ConvertToModel)
-				.Select(QueueParts)
-				.Select(WriteJsonFile)
-				.ToArray();
+			var tasks = records.Select(record => record
+				.Start(ReadBsxFile)
+				.Then(ConvertToModel)
+				.Then(QueueParts)
+				.Then(WriteJsonFile));
 
 			await Task.WhenAll(tasks);
 
 			await _imageCacheDispatch.Dispatch();
 		}
 
-		private async Task WriteJsonFile(FileData<BsxModel> file) => await _fileSystem.WriteJson(file);
-
-		private FileData<BsxModel> QueueParts(FileData<BsxModel> file)
+		private async Task<FileData<XDocument>> ReadBsxFile(S3EventNotification.S3EventNotificationRecord record)
 		{
-			_imageCacheDispatch.Add(file.Content.Parts);
-			return file;
+			return await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key);
 		}
 
-		private FileData<BsxModel> ConvertToModel(Task<FileData<XDocument>> documentTask)
+		private async Task<FileData<BsxModel>> ConvertToModel(FileData<XDocument> document)
 		{
-			var document = documentTask.Result;
 			var model = _modelBuilder.Build(document);
 
 			return new FileData<BsxModel>
@@ -56,9 +51,15 @@ namespace BsxProcessor
 			};
 		}
 
-		private async Task<FileData<XDocument>> ReadBsxFile(S3EventNotification.S3EventNotificationRecord record)
+		private async Task<FileData<BsxModel>> QueueParts(FileData<BsxModel> file)
 		{
-			return await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key);
+			_imageCacheDispatch.Add(file.Content.Parts);
+			return file;
+		}
+
+		private async Task WriteJsonFile(FileData<BsxModel> file)
+		{
+			await _fileSystem.WriteJson(file);
 		}
 	}
 }
