@@ -1,7 +1,10 @@
+using System;
+using System.Linq;
 using Amazon.Lambda;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
 using Amazon.Lambda.Serialization.Json;
+using Amazon.Lambda.SNSEvents;
 using Amazon.S3;
 using BsxProcessor.Infrastructure;
 
@@ -27,6 +30,12 @@ namespace BsxProcessor
 		public void FromS3(S3Event s3Event)
 		{
 			_recordHandler.Execute(s3Event.Records).Wait();
+		}
+
+		[LambdaSerializer(typeof(JsonSerializer))]
+		public void FromSns(SNSEvent snsEvent)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
