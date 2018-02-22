@@ -27,30 +27,18 @@ namespace BsxProcessor.Tests
 			_handler = new RecordHandler(_fileSystem, _imageCacheDispatcher, modelBuilder);
 		}
 
-		private static IEnumerable<S3EventNotification.S3EventNotificationRecord> CreateRecords(params string[] keys) => keys.Select(key => new S3EventNotification.S3EventNotificationRecord
+		private static FileData<XDocument> CreateFile(string path, string data) => new FileData<XDocument>
 		{
-			S3 = new S3EventNotification.S3Entity
-			{
-				Bucket = new S3EventNotification.S3BucketEntity { Name = BucketName },
-				Object = new S3EventNotification.S3ObjectEntity { Key = key }
-			}
-		});
-
-		private void CreateFile(string key, string data)
-		{
-			_fileSystem.ReadXml(BucketName, key).Returns(new FileData<XDocument>
-			{
-				Drive = BucketName,
-				FullPath = key,
-				Exists = true,
-				Content = XDocument.Parse(data)
-			});
-		}
+			Drive = BucketName,
+			FullPath = path,
+			Exists = true,
+			Content = XDocument.Parse(data)
+		};
 
 		[Fact]
 		public async Task When_there_are_no_records_to_process()
 		{
-			var records = CreateRecords();
+			var records = Enumerable.Empty<FileData<XDocument>>();
 
 			await _handler.Execute(records);
 
@@ -60,8 +48,10 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public async Task When_handling_one_record()
 		{
-			var records = CreateRecords("one.bsx");
-			CreateFile("one.bsx", TestData.BsxWithTwoParts);
+			var records = new[]
+			{
+				CreateFile("one.bsx", TestData.BsxWithTwoParts)
+			};
 
 			await _handler.Execute(records);
 
@@ -74,9 +64,11 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public async Task When_handling_multiple_records()
 		{
-			var records = CreateRecords("one.bsx", "two.bsx");
-			CreateFile("one.bsx", TestData.BsxWithTwoParts);
-			CreateFile("two.bsx", TestData.BsxWithFourParts);
+			var records = new[]
+			{
+				CreateFile("one.bsx", TestData.BsxWithTwoParts),
+				CreateFile("two.bsx", TestData.BsxWithFourParts)
+			};
 
 			await _handler.Execute(records);
 

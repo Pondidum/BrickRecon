@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 using Amazon.Lambda;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
@@ -13,23 +16,29 @@ namespace BsxProcessor
 	public class Handler
 	{
 		private readonly RecordHandler _recordHandler;
+		private readonly S3FileSystem _fileSystem;
 
 		public Handler()
 		{
 			var config = Config.FromEnvironment();
 			var lambdaClient = new AmazonLambdaClient();
 
-			var fileSystem = new S3FileSystem(new AmazonS3Client());
 			var imageCacheDispatch = new ImageCacheDispatcher(config, req => lambdaClient.InvokeAsync(req));
 			var modelBuilder = new BsxModelBuilder();
 
-			_recordHandler = new RecordHandler(fileSystem, imageCacheDispatch, modelBuilder);
+			_fileSystem = new S3FileSystem(new AmazonS3Client());
+			_recordHandler = new RecordHandler(_fileSystem, imageCacheDispatch, modelBuilder);
 		}
 
 		[LambdaSerializer(typeof(JsonSerializer))]
-		public void FromS3(S3Event s3Event)
+		public async Task FromS3(S3Event s3Event)
 		{
-			_recordHandler.Execute(s3Event.Records).Wait();
+			var files = new List<FileData<XDocument>>(s3Event.Records.Count);
+
+			foreach (var record in s3Event.Records)
+				files.Add(await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key));
+
+			await _recordHandler.Execute(files);
 		}
 
 		[LambdaSerializer(typeof(JsonSerializer))]

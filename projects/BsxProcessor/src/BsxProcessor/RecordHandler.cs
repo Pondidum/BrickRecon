@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Amazon.S3.Util;
 using BsxProcessor.Domain;
 using BsxProcessor.Infrastructure;
 
@@ -21,22 +20,16 @@ namespace BsxProcessor
 			_modelBuilder = modelBuilder;
 		}
 
-		public async Task Execute(IEnumerable<S3EventNotification.S3EventNotificationRecord> records)
+		public async Task Execute(IEnumerable<FileData<XDocument>> records)
 		{
 			var tasks = records.Select(record => record
-				.Start(ReadBsxFile)
-				.Then(ConvertToModel)
+				.Start(ConvertToModel)
 				.Then(QueueParts)
 				.Then(WriteJsonFile));
 
 			await Task.WhenAll(tasks);
 
 			await _imageCacheDispatch.Dispatch();
-		}
-
-		private async Task<FileData<XDocument>> ReadBsxFile(S3EventNotification.S3EventNotificationRecord record)
-		{
-			return await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key);
 		}
 
 		private async Task<FileData<BsxModel>> ConvertToModel(FileData<XDocument> document)
