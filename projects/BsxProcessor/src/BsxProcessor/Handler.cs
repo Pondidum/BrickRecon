@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Amazon.Lambda;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.S3Events;
@@ -26,7 +24,7 @@ namespace BsxProcessor
 		}
 
 		[LambdaSerializer(typeof(JsonSerializer))]
-		public void Handle(S3Event s3Event)
+		public void FromS3(S3Event s3Event)
 		{
 			_recordHandler.Execute(s3Event.Records).Wait();
 		}

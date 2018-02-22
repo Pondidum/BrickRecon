@@ -8,7 +8,7 @@ resource "aws_lambda_function" "bsxprocessor" {
   function_name = "${local.name}"
   role = "${aws_iam_role.bsxprocessor_role.arn}"
   filename = "${data.archive_file.bsxprocessor_source.output_path}"
-  handler = "BsxProcessor::BsxProcessor.Handler::Handle"
+  handler = "BsxProcessor::BsxProcessor.Handler::FromS3"
   runtime = "dotnetcore1.0"
   source_code_hash = "${base64sha256(file("${data.archive_file.bsxprocessor_source.output_path}"))}"
   timeout = 60
