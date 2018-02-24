@@ -21,6 +21,10 @@ const notifier = new Notifier({
 
 const inventory = new Inventory(api, storage, notifier);
 
+const isInventoryRequest = record =>
+  record.MessageAttributes.EventType &&
+  record.MessageAttributes.EventType.Value === "MODEL_INVENTORY_REQUEST";
+
 const handleSingle = record =>
   inventory
     .updateInventory(record.setNumber, record.force)
@@ -30,8 +34,9 @@ exports.handler = (snsEvent, context, callback) => {
   const records = snsEvent.Records;
 
   const tasks = records
-    .map(record => JSON.parse(record.Sns.Message))
-    .filter(message => message.eventType === "MODEL_INVENTORY_REQUEST")
+    .map(record => record.Sns)
+    .filter(isInventoryRequest)
+    .map(record => JSON.parse(record.Message))
     .map(message => handleSingle(message));
 
   return Promise.all(records).then(() => callback());
