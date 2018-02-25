@@ -31,7 +31,3 @@ locals {
   sns_topic = "${local.prefix}kafish_events"
   kafish = "${local.prefix}kafish_writer"
 }
-
-data "aws_sns_topic" "kafish" {
-  name = "${local.sns_topic}"
-}
