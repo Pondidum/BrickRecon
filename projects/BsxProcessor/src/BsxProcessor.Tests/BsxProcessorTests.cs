@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Amazon.S3.Util;
 using BsxProcessor.Domain;
 using BsxProcessor.Infrastructure;
 using NSubstitute;
@@ -10,21 +9,21 @@ using Xunit;
 
 namespace BsxProcessor.Tests
 {
-	public class RecordHandlerTests
+	public class BsxProcessorTests
 	{
 		private const string BucketName = "TestBucket";
 
-		private readonly RecordHandler _handler;
+		private readonly BsxProcessor _handler;
 		private readonly IImageCacheDispatcher _imageCacheDispatcher;
 		private readonly IFileSystem _fileSystem;
 
-		public RecordHandlerTests()
+		public BsxProcessorTests()
 		{
 			_fileSystem = Substitute.For<IFileSystem>();
 			_imageCacheDispatcher = Substitute.For<IImageCacheDispatcher>();
 			var modelBuilder = new BsxModelBuilder();
 
-			_handler = new RecordHandler(_fileSystem, _imageCacheDispatcher, modelBuilder);
+			_handler = new BsxProcessor(_fileSystem, _imageCacheDispatcher, modelBuilder);
 		}
 
 		private static FileData<XDocument> CreateFile(string path, string data) => new FileData<XDocument>

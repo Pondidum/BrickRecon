@@ -7,13 +7,13 @@ using BsxProcessor.Infrastructure;
 
 namespace BsxProcessor
 {
-	public class RecordHandler
+	public class BsxProcessor
 	{
 		private readonly IFileSystem _fileSystem;
 		private readonly IImageCacheDispatcher _imageCacheDispatch;
 		private readonly BsxModelBuilder _modelBuilder;
 
-		public RecordHandler(IFileSystem fileSystem, IImageCacheDispatcher imageCacheDispatch, BsxModelBuilder modelBuilder)
+		public BsxProcessor(IFileSystem fileSystem, IImageCacheDispatcher imageCacheDispatch, BsxModelBuilder modelBuilder)
 		{
 			_fileSystem = fileSystem;
 			_imageCacheDispatch = imageCacheDispatch;
