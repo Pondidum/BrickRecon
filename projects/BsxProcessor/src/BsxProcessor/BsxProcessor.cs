@@ -32,22 +32,22 @@ namespace BsxProcessor
 			await _imageCacheDispatch.Dispatch();
 		}
 
-		private async Task<FileData<BsxModel>> ConvertToModel(FileData<XDocument> document)
+		private Task<FileData<BsxModel>> ConvertToModel(FileData<XDocument> document)
 		{
 			var model = _modelBuilder.Build(document);
 
-			return new FileData<BsxModel>
+			return Task.FromResult(new FileData<BsxModel>
 			{
 				Drive = document.Drive,
 				FullPath = $"models/{model.Name}.json",
 				Content = model
-			};
+			});
 		}
 
-		private async Task<FileData<BsxModel>> QueueParts(FileData<BsxModel> file)
+		private Task<FileData<BsxModel>> QueueParts(FileData<BsxModel> file)
 		{
 			_imageCacheDispatch.Add(file.Content.Parts);
-			return file;
+			return Task.FromResult(file);
 		}
 
 		private async Task WriteJsonFile(FileData<BsxModel> file)
