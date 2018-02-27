@@ -9,9 +9,9 @@ namespace BsxProcessor
 {
 	public class SnsHandler
 	{
-		private readonly BsxProcessor _bsxProcessor;
+		private readonly IBsxProcessor _bsxProcessor;
 
-		public SnsHandler(BsxProcessor bsxProcessor)
+		public SnsHandler(IBsxProcessor bsxProcessor)
 		{
 			_bsxProcessor = bsxProcessor;
 		}

@@ -7,7 +7,7 @@ using BsxProcessor.Infrastructure;
 
 namespace BsxProcessor
 {
-	public class BsxProcessor
+	public class BsxProcessor : IBsxProcessor
 	{
 		private readonly IFileSystem _fileSystem;
 		private readonly IImageCacheDispatcher _imageCacheDispatch;

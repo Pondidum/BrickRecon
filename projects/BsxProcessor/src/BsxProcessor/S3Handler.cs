@@ -9,9 +9,9 @@ namespace BsxProcessor
 	public class S3Handler
 	{
 		private readonly IFileSystem _fileSystem;
-		private readonly BsxProcessor _bsxProcessor;
+		private readonly IBsxProcessor _bsxProcessor;
 
-		public S3Handler(IFileSystem fileSystem, BsxProcessor bsxProcessor)
+		public S3Handler(IFileSystem fileSystem, IBsxProcessor bsxProcessor)
 		{
 			_fileSystem = fileSystem;
 			_bsxProcessor = bsxProcessor;
