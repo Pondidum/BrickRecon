@@ -21,13 +21,29 @@ namespace BsxProcessor.Tests
 			_handler = new SnsHandler(_processor);
 		}
 
+		private static SNSEvent CreateNotification(params SNSEvent.SNSRecord[] records) => new SNSEvent
+		{
+			Records = records.ToList()
+		};
+
+		private static SNSEvent.SNSRecord CreateMessage(string type, object content) => new SNSEvent.SNSRecord
+		{
+			Sns = new SNSEvent.SNSMessage
+			{
+				MessageAttributes = new Dictionary<string, SNSEvent.MessageAttribute>
+				{
+					{ "EventType", new SNSEvent.MessageAttribute { Value = type } }
+				},
+				Message = JsonConvert.SerializeObject(content)
+			}
+		};
+
 		[Fact]
 		public async Task When_there_are_no_records()
 		{
-			await _handler.Handle(new SNSEvent
-			{
-				Records = new List<SNSEvent.SNSRecord>()
-			});
+			var notification = CreateNotification();
+
+			await _handler.Handle(notification);
 
 			await _processor
 				.Received()
@@ -37,19 +53,11 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public async Task When_there_are_only_non_bsx_records_to_process()
 		{
-			await _handler.Handle(new SNSEvent
-			{
-				Records = new[]
-				{
-					new SNSEvent.SNSRecord { Sns = new SNSEvent.SNSMessage
-					{
-						MessageAttributes = new Dictionary<string, SNSEvent.MessageAttribute>
-						{
-							{ "EventType", new SNSEvent.MessageAttribute { Value = "WAT" } }
-						}
-					} }
-				}.ToList()
-			});
+			var notification = CreateNotification(
+				CreateMessage("WAT", null)
+			);
+
+			await _handler.Handle(notification);
 
 			await _processor
 				.Received()
@@ -59,26 +67,17 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public async Task When_there_is_a_bsx_request_to_process()
 		{
-			await _handler.Handle(new SNSEvent
-			{
-				Records = new[]
+			var notification = CreateNotification(
+				CreateMessage("PROCESS_BSX_REQUEST", new FileData<XDocument>
 				{
-					new SNSEvent.SNSRecord { Sns = new SNSEvent.SNSMessage
-					{
-						MessageAttributes = new Dictionary<string, SNSEvent.MessageAttribute>
-						{
-							{ "EventType", new SNSEvent.MessageAttribute { Value = "PROCESS_BSX_REQUEST" } }
-						},
-						Message = JsonConvert.SerializeObject(new FileData<XDocument>
-						{
-							Drive = "wat",
-							FullPath = "somefile.bsx",
-							Content = XDocument.Parse("<nope />"),
-							Exists = true
-						})
-					} }
-				}.ToList()
-			});
+					Drive = "wat",
+					FullPath = "somefile.bsx",
+					Content = XDocument.Parse("<nope />"),
+					Exists = true
+				})
+			);
+
+			await _handler.Handle(notification);
 
 			await _processor
 				.Received()
