@@ -7,7 +7,7 @@ using BsxProcessor.Infrastructure;
 
 namespace BsxProcessor
 {
-	public class BsxModelBuilder
+	public class BsxModelBuilder : IBsxModelBuilder
 	{
 		public BsxModel Build(FileData<XDocument> file)
 		{

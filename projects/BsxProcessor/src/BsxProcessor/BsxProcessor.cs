@@ -11,9 +11,9 @@ namespace BsxProcessor
 	{
 		private readonly IFileSystem _fileSystem;
 		private readonly IImageCacheDispatcher _imageCacheDispatch;
-		private readonly BsxModelBuilder _modelBuilder;
+		private readonly IBsxModelBuilder _modelBuilder;
 
-		public BsxProcessor(IFileSystem fileSystem, IImageCacheDispatcher imageCacheDispatch, BsxModelBuilder modelBuilder)
+		public BsxProcessor(IFileSystem fileSystem, IImageCacheDispatcher imageCacheDispatch, IBsxModelBuilder modelBuilder)
 		{
 			_fileSystem = fileSystem;
 			_imageCacheDispatch = imageCacheDispatch;
@@ -22,10 +22,12 @@ namespace BsxProcessor
 
 		public async Task Execute(IEnumerable<FileData<XDocument>> records)
 		{
-			var tasks = records.Select(record => record
-				.Start(ConvertToModel)
-				.Then(QueueParts)
-				.Then(WriteJsonFile));
+			var tasks = records
+				.Where(record => record.Exists)
+				.Select(record => record
+					.Start(ConvertToModel)
+					.Then(QueueParts)
+					.Then(WriteJsonFile));
 
 			await Task.WhenAll(tasks);
 

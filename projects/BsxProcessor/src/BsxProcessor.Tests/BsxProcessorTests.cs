@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -16,14 +17,19 @@ namespace BsxProcessor.Tests
 		private readonly BsxProcessor _handler;
 		private readonly IImageCacheDispatcher _imageCacheDispatcher;
 		private readonly IFileSystem _fileSystem;
+		private readonly IBsxModelBuilder _modelBuilder;
 
 		public BsxProcessorTests()
 		{
 			_fileSystem = Substitute.For<IFileSystem>();
 			_imageCacheDispatcher = Substitute.For<IImageCacheDispatcher>();
-			var modelBuilder = new BsxModelBuilder();
+			_modelBuilder = Substitute.For<IBsxModelBuilder>();
 
-			_handler = new BsxProcessor(_fileSystem, _imageCacheDispatcher, modelBuilder);
+			_modelBuilder
+				.Build(Arg.Any<FileData<XDocument>>())
+				.Returns(ci => new BsxModelBuilder().Build(ci.Arg<FileData<XDocument>>()));
+
+			_handler = new BsxProcessor(_fileSystem, _imageCacheDispatcher, _modelBuilder);
 		}
 
 		private static FileData<XDocument> CreateFile(string path, string data) => new FileData<XDocument>
@@ -42,6 +48,19 @@ namespace BsxProcessor.Tests
 			await _handler.Execute(records);
 
 			await _imageCacheDispatcher.Received(1).Dispatch();
+		}
+
+		[Fact]
+		public async Task When_there_is_one_non_existing_record()
+		{
+			var records = new[]
+			{
+				new FileData<XDocument> { Drive = BucketName, FullPath = "one.bsx" },
+			};
+
+			await _handler.Execute(records);
+
+			_modelBuilder.DidNotReceive().Build(Arg.Any<FileData<XDocument>>());
 		}
 
 		[Fact]
