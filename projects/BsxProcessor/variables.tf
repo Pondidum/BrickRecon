@@ -28,4 +28,5 @@ locals {
   prefix = "${var.product != "" ? "${var.product}_" : ""}${var.environment}_"
   name = "${local.prefix}bsxprocessor"
   imagecache_lambda = "${local.prefix}imagecache"
+  sns_topic = "${local.prefix}kafish_events"
 }
