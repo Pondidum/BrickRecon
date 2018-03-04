@@ -13,4 +13,10 @@
   <ItemGroup>
     <ProjectReference Include="..\BsxProcessor\BsxProcessor.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Remove="Resources\*.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.json" />
+  </ItemGroup>
 </Project>

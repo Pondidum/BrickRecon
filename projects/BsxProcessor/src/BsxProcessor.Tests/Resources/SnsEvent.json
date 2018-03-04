@@ -1,0 +1,27 @@
+﻿{
+  "Records": [
+    {
+      "EventVersion": "1.0",
+      "EventSubscriptionArn": "arn:aws:sns:EXAMPLE",
+      "EventSource": "aws:sns",
+      "Sns": {
+        "SignatureVersion": "1",
+        "Timestamp": "1970-01-01T00:00:00.000Z",
+        "Signature": "EXAMPLE",
+        "SigningCertUrl": "EXAMPLE",
+        "MessageId": "95df01b4-ee98-5cb9-9903-4c221d41eb5e",
+        "Message": "{\"FullPath\":null,\"Drive\":null,\"Content\":{\"?xml\":{\"@version\":\"1.0\",\"@encoding\":\"UTF-8\"},\"!DOCTYPE\":{\"@name\":\"BrickStockXML\"},\"BrickStockXML\":{\"Inventory\":{\"Item\":[{\"ItemID\":\"6558\",\"ItemTypeID\":\"P\",\"ColorID\":\"11\",\"ItemName\":\"Technic, Pin 3L with Friction Ridges Lengthwise\",\"ItemTypeName\":\"Part\",\"ColorName\":\"Black\",\"CategoryID\":\"139\",\"CategoryName\":\"Technic, Pin\",\"Status\":\"I\",\"Qty\":\"0\",\"Price\":\"0.000\",\"Condition\":\"N\"},{\"ItemID\":\"3039\",\"ItemTypeID\":\"P\",\"ColorID\":\"11\",\"ItemName\":\"Slope 45 2 x 2\",\"ItemTypeName\":\"Part\",\"ColorName\":\"Black\",\"CategoryID\":\"31\",\"CategoryName\":\"Slope\",\"Status\":\"I\",\"Qty\":\"5\",\"Price\":\"0.000\",\"Condition\":\"N\"},{\"ItemID\":\"11477\",\"ItemTypeID\":\"P\",\"ColorID\":\"85\",\"ItemName\":\"Slope, Curved 2 x 1 No Studs\",\"ItemTypeName\":\"Part\",\"ColorName\":\"Dark Bluish Gray\",\"CategoryID\":\"438\",\"CategoryName\":\"Slope, Curved\",\"Status\":\"I\",\"Qty\":\"0\",\"Price\":\"0.000\",\"Condition\":\"N\"},{\"ItemID\":\"2412b\",\"ItemTypeID\":\"P\",\"ColorID\":\"85\",\"ItemName\":\"Tile, Modified 1 x 2 Grille with Bottom Groove / Lip\",\"ItemTypeName\":\"Part\",\"ColorName\":\"Dark Bluish Gray\",\"CategoryID\":\"38\",\"CategoryName\":\"Tile, Modified\",\"Status\":\"I\",\"Qty\":\"0\",\"Price\":\"0.000\",\"Condition\":\"N\"}]}}},\"Exists\":true}",
+        "MessageAttributes": {
+          "EventType": {
+            "Type": "String",
+            "Value": "PROCESS_BSX_REQUEST"
+          }
+        },
+        "Type": "Notification",
+        "UnsubscribeUrl": "EXAMPLE",
+        "TopicArn": "arn:aws:sns:EXAMPLE",
+        "Subject": "TestInvoke"
+      }
+    }
+  ]
+}
