@@ -37,7 +37,7 @@ namespace BsxProcessor.Tests.Acceptance
 			var modelBuilder = new BsxModelBuilder();
 
 			_fileSystem = new InMemoryFileSystem();
-			var bsxProcessor = new BsxProcessor(_fileSystem, imageCacheDispatch, modelBuilder);
+			var bsxProcessor = new BsxProcessor(_fileSystem, config, imageCacheDispatch, modelBuilder);
 
 			_snsHandler = new SnsHandler(bsxProcessor);
 		}

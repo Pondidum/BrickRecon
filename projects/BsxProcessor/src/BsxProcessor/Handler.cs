@@ -24,7 +24,7 @@ namespace BsxProcessor
 			var modelBuilder = new BsxModelBuilder();
 
 			var fileSystem = new S3FileSystem(new AmazonS3Client());
-			var bsxProcessor = new BsxProcessor(fileSystem, imageCacheDispatch, modelBuilder);
+			var bsxProcessor = new BsxProcessor(fileSystem, config, imageCacheDispatch, modelBuilder);
 
 			_s3Handler = new S3Handler(fileSystem, bsxProcessor);
 			_snsHandler = new SnsHandler(bsxProcessor);

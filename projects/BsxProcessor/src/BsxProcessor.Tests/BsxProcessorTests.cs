@@ -6,6 +6,7 @@ using System.Xml.Linq;
 using BsxProcessor.Domain;
 using BsxProcessor.Infrastructure;
 using NSubstitute;
+using Shouldly;
 using Xunit;
 
 namespace BsxProcessor.Tests
@@ -16,20 +17,25 @@ namespace BsxProcessor.Tests
 
 		private readonly BsxProcessor _handler;
 		private readonly IImageCacheDispatcher _imageCacheDispatcher;
-		private readonly IFileSystem _fileSystem;
+		private readonly InMemoryFileSystem _fileSystem;
 		private readonly IBsxModelBuilder _modelBuilder;
+		private readonly Config _config;
 
 		public BsxProcessorTests()
 		{
-			_fileSystem = Substitute.For<IFileSystem>();
+			_fileSystem = new InMemoryFileSystem();
 			_imageCacheDispatcher = Substitute.For<IImageCacheDispatcher>();
 			_modelBuilder = Substitute.For<IBsxModelBuilder>();
+			_config = new Config
+			{
+				OutputBucketPath = BucketName + "://models/"
+			};
 
 			_modelBuilder
 				.Build(Arg.Any<FileData<XDocument>>())
 				.Returns(ci => new BsxModelBuilder().Build(ci.Arg<FileData<XDocument>>()));
 
-			_handler = new BsxProcessor(_fileSystem, _imageCacheDispatcher, _modelBuilder);
+			_handler = new BsxProcessor(_fileSystem, _config, _imageCacheDispatcher, _modelBuilder);
 		}
 
 		private static FileData<XDocument> CreateFile(string path, string data) => new FileData<XDocument>
@@ -75,8 +81,14 @@ namespace BsxProcessor.Tests
 
 			_imageCacheDispatcher.Received(1).Add(Arg.Any<IEnumerable<Part>>());
 
-			await _fileSystem.Received().WriteJson(Arg.Is<FileData<BsxModel>>(arg => arg.Drive == BucketName && arg.FullPath == "models/one.json"));
 			await _imageCacheDispatcher.Received(1).Dispatch();
+
+			var written = _fileSystem.Writes.OfType<FileData<BsxModel>>().Single();
+
+			written.ShouldSatisfyAllConditions(
+				() => written.Drive.ShouldBe(BucketName, StringCompareShould.IgnoreCase),
+				() => written.FullPath.ShouldBe("models/one.json")
+			);
 		}
 
 		[Fact]
@@ -92,9 +104,15 @@ namespace BsxProcessor.Tests
 
 			_imageCacheDispatcher.Received(2).Add(Arg.Any<IEnumerable<Part>>());
 
-			await _fileSystem.Received().WriteJson(Arg.Is<FileData<BsxModel>>(arg => arg.Drive == BucketName && arg.FullPath == "models/one.json"));
-			await _fileSystem.Received().WriteJson(Arg.Is<FileData<BsxModel>>(arg => arg.Drive == BucketName && arg.FullPath == "models/two.json"));
 			await _imageCacheDispatcher.Received(1).Dispatch();
+
+			var written = _fileSystem.Writes.OfType<FileData<BsxModel>>().Select(f => f.FullPath).ToArray();
+
+			written.ShouldBe(new[]
+			{
+				"models/one.json",
+				"models/two.json"
+			});
 		}
 	}
 }
