@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -28,7 +29,7 @@ namespace BsxProcessor.Tests
 			_modelBuilder = Substitute.For<IBsxModelBuilder>();
 			_config = new Config
 			{
-				OutputBucketPath = BucketName + "://models/"
+				OutputBucketPath = new Uri($"s3://{BucketName}/models/")
 			};
 
 			_modelBuilder

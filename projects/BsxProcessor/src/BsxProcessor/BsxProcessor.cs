@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -51,13 +50,13 @@ namespace BsxProcessor
 
 		private async Task WriteJsonFile(BsxModel model)
 		{
-			var root = new Uri(_config.OutputBucketPath).Scheme;
+			var path = new Uri( _config.OutputBucketPath, model.Name + ".json");
 
 			await _fileSystem.WriteJson(new FileData<BsxModel>
 			{
 				Content = model,
-				Drive = root,
-				FullPath = Path.Combine(_config.OutputBucketPath.Substring(root.Length + 3), model.Name + ".json")
+				Drive = path.Host,
+				FullPath = path.LocalPath.TrimStart('/')
 			});
 		}
 	}
