@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -17,13 +18,17 @@ namespace BsxProcessor.Tests.Acceptance
 {
 	public class AcceptanceTests
 	{
-		private SnsHandler _snsHandler;
-		private InMemoryFileSystem _fileSystem;
+		private const string Bucket = "test-bucket";
+		private const string OutputPath = "results";
+
+		private readonly SnsHandler _snsHandler;
+		private readonly InMemoryFileSystem _fileSystem;
 
 		public AcceptanceTests()
 		{
 			var config = new Config
 			{
+				OutputBucketPath = new Uri($"s3://{Bucket}/{OutputPath}/"),
 				ImageCacheLambda = "wat"
 			};
 
@@ -52,8 +57,8 @@ namespace BsxProcessor.Tests.Acceptance
 			var written = _fileSystem.Writes.OfType<FileData<BsxModel>>().Single();
 
 			written.ShouldSatisfyAllConditions(
-				() => written.Drive.ShouldBe("brickrecon-dev"),
-				() => written.FullPath.ShouldBe("models/testmodel.json")
+				() => written.Drive.ShouldBe(Bucket),
+				() => written.FullPath.ShouldBe(OutputPath + "/TestModel.json")
 			);
 		}
 
