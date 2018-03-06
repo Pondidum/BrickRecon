@@ -2,8 +2,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Amazon.Lambda.SNSEvents;
-using BsxProcessor.Infrastructure;
-using Newtonsoft.Json;
 
 namespace BsxProcessor
 {
@@ -22,7 +20,11 @@ namespace BsxProcessor
 				.Records
 				.Select(record => record.Sns)
 				.Where(IsProcessBsxRequest)
-				.Select(record => JsonConvert.DeserializeObject<FileData<XDocument>>(record.Message));
+				.Select(record => new BsxRequest
+				{
+					ModelName = ReadModelName(record),
+					Content  = XDocument.Parse(record.Message)
+				});
 
 			await _bsxProcessor.Execute(files);
 		}
@@ -30,5 +32,10 @@ namespace BsxProcessor
 		private static bool IsProcessBsxRequest(SNSEvent.SNSMessage record) =>
 			record.MessageAttributes.TryGetValue("EventType", out var attribute) &&
 			attribute.Value == "PROCESS_BSX_REQUEST";
+
+		private static string ReadModelName(SNSEvent.SNSMessage record) =>
+			record.MessageAttributes.TryGetValue("ModelName", out var attribute)
+				? attribute.Value
+				: string.Empty;
 	}
 }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Amazon.Lambda.S3Events;
@@ -19,10 +20,14 @@ namespace BsxProcessor
 
 		public async Task Handle(S3Event s3Event)
 		{
-			var files = new List<FileData<XDocument>>(s3Event.Records.Count);
+			var files = new List<BsxRequest>(s3Event.Records.Count);
 
 			foreach (var record in s3Event.Records)
-				files.Add(await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key));
+				files.Add(new BsxRequest
+				{
+					ModelName = Path.GetFileNameWithoutExtension(record.S3.Object.Key),
+					Content = (await _fileSystem.ReadXml(record.S3.Bucket.Name, record.S3.Object.Key)).Content
+				});
 
 			await _bsxProcessor.Execute(files);
 		}

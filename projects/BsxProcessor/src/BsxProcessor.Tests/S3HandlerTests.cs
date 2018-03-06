@@ -56,7 +56,7 @@ namespace BsxProcessor.Tests
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Any() == false));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Any() == false));
 		}
 
 		[Fact]
@@ -69,9 +69,9 @@ namespace BsxProcessor.Tests
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Single().FullPath == "first"));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Single().ModelName == "first"));
 		}
-		
+
 		[Fact]
 		public async Task When_there_are_multiple_records()
 		{
@@ -82,7 +82,7 @@ namespace BsxProcessor.Tests
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Count() == 3));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Count() == 3));
 		}
 	}
 }

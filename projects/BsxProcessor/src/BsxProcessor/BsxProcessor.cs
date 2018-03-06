@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -23,10 +24,9 @@ namespace BsxProcessor
 			_modelBuilder = modelBuilder;
 		}
 
-		public async Task Execute(IEnumerable<FileData<XDocument>> records)
+		public async Task Execute(IEnumerable<BsxRequest> records)
 		{
 			var tasks = records
-				.Where(record => record.Exists)
 				.Select(record => record
 					.Start(ConvertToModel)
 					.Then(QueueParts)
@@ -37,9 +37,9 @@ namespace BsxProcessor
 			await _imageCacheDispatch.Dispatch();
 		}
 
-		private Task<BsxModel> ConvertToModel(FileData<XDocument> document)
+		private Task<BsxModel> ConvertToModel(BsxRequest request)
 		{
-			return Task.FromResult(_modelBuilder.Build(document));
+			return Task.FromResult(_modelBuilder.Build(request.ModelName, request.Content));
 		}
 
 		private Task<BsxModel> QueueParts(BsxModel model)

@@ -1,7 +1,6 @@
 ﻿using System.Linq;
 using System.Xml.Linq;
 using BsxProcessor.Domain;
-using BsxProcessor.Infrastructure;
 using Shouldly;
 using Xunit;
 
@@ -12,12 +11,10 @@ namespace BsxProcessor.Tests
 		[Fact]
 		public void When_mapping_a_file()
 		{
-			var model = new BsxModelBuilder().Build(new FileData<XDocument>
-			{
-				Drive = "s3",
-				FullPath = "some/path/to/a/model.bsx",
-				Content = XDocument.Parse(TestData.BsxWithTwoParts)
-			});
+			var model = new BsxModelBuilder().Build(
+				"model.bsx",
+				XDocument.Parse(TestData.BsxWithTwoParts)
+			);
 
 			var part = model.Parts.First();
 			model.ShouldSatisfyAllConditions(

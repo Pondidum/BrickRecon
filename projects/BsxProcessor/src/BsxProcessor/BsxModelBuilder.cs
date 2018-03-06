@@ -3,18 +3,17 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using BsxProcessor.Domain;
-using BsxProcessor.Infrastructure;
 
 namespace BsxProcessor
 {
 	public class BsxModelBuilder : IBsxModelBuilder
 	{
-		public BsxModel Build(FileData<XDocument> file)
+		public BsxModel Build(string modelName, XDocument content)
 		{
 			return new BsxModel
 			{
-				Name = Path.GetFileNameWithoutExtension(file.FullPath),
-				Parts = file.Content.Descendants("Item").Select(PartFromItem)
+				Name = Path.GetFileNameWithoutExtension(modelName),
+				Parts = content.Descendants("Item").Select(PartFromItem)
 			};
 		}
 

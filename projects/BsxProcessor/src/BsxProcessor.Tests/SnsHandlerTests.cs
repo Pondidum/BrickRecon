@@ -26,15 +26,16 @@ namespace BsxProcessor.Tests
 			Records = records.ToList()
 		};
 
-		private static SNSEvent.SNSRecord CreateMessage(string type, object content) => new SNSEvent.SNSRecord
+		private static SNSEvent.SNSRecord CreateMessage(string type, string name, string content) => new SNSEvent.SNSRecord
 		{
 			Sns = new SNSEvent.SNSMessage
 			{
 				MessageAttributes = new Dictionary<string, SNSEvent.MessageAttribute>
 				{
-					{ "EventType", new SNSEvent.MessageAttribute { Value = type } }
+					{ "EventType", new SNSEvent.MessageAttribute { Value = type } },
+					{ "ModelName", new SNSEvent.MessageAttribute { Value = name } }
 				},
-				Message = JsonConvert.SerializeObject(content)
+				Message = content
 			}
 		};
 
@@ -47,41 +48,35 @@ namespace BsxProcessor.Tests
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Any() == false));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Any() == false));
 		}
 
 		[Fact]
 		public async Task When_there_are_only_non_bsx_records_to_process()
 		{
 			var notification = CreateNotification(
-				CreateMessage("WAT", null)
+				CreateMessage("WAT", "who cares", null)
 			);
 
 			await _handler.Handle(notification);
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Any() == false));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Any() == false));
 		}
 
 		[Fact]
 		public async Task When_there_is_a_bsx_request_to_process()
 		{
 			var notification = CreateNotification(
-				CreateMessage("PROCESS_BSX_REQUEST", new FileData<XDocument>
-				{
-					Drive = "wat",
-					FullPath = "somefile.bsx",
-					Content = XDocument.Parse("<nope />"),
-					Exists = true
-				})
+				CreateMessage("PROCESS_BSX_REQUEST", "somefile", "<nope />")
 			);
 
 			await _handler.Handle(notification);
 
 			await _processor
 				.Received()
-				.Execute(Arg.Is<IEnumerable<FileData<XDocument>>>(e => e.Single().FullPath == "somefile.bsx"));
+				.Execute(Arg.Is<IEnumerable<BsxRequest>>(e => e.Single().ModelName == "somefile"));
 		}
 	}
 }

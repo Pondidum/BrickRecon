@@ -33,41 +33,26 @@ namespace BsxProcessor.Tests
 			};
 
 			_modelBuilder
-				.Build(Arg.Any<FileData<XDocument>>())
-				.Returns(ci => new BsxModelBuilder().Build(ci.Arg<FileData<XDocument>>()));
+				.Build(Arg.Any<string>(), Arg.Any<XDocument>())
+				.Returns(ci => new BsxModelBuilder().Build(ci.Arg<string>(), ci.Arg<XDocument>()));
 
 			_handler = new BsxProcessor(_fileSystem, _config, _imageCacheDispatcher, _modelBuilder);
 		}
 
-		private static FileData<XDocument> CreateFile(string path, string data) => new FileData<XDocument>
+		private static BsxRequest CreateFile(string path, string data) => new BsxRequest
 		{
-			Drive = BucketName,
-			FullPath = path,
-			Exists = true,
+			ModelName = Path.GetFileNameWithoutExtension(path),
 			Content = XDocument.Parse(data)
 		};
 
 		[Fact]
 		public async Task When_there_are_no_records_to_process()
 		{
-			var records = Enumerable.Empty<FileData<XDocument>>();
+			var records = Enumerable.Empty<BsxRequest>();
 
 			await _handler.Execute(records);
 
 			await _imageCacheDispatcher.Received(1).Dispatch();
-		}
-
-		[Fact]
-		public async Task When_there_is_one_non_existing_record()
-		{
-			var records = new[]
-			{
-				new FileData<XDocument> { Drive = BucketName, FullPath = "one.bsx" },
-			};
-
-			await _handler.Execute(records);
-
-			_modelBuilder.DidNotReceive().Build(Arg.Any<FileData<XDocument>>());
 		}
 
 		[Fact]
