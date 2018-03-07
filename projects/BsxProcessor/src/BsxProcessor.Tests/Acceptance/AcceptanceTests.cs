@@ -10,7 +10,6 @@ using Amazon.Lambda.SNSEvents;
 using BsxProcessor.Domain;
 using BsxProcessor.Infrastructure;
 using Newtonsoft.Json;
-using NSubstitute;
 using Shouldly;
 using Xunit;
 
