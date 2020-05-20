@@ -28,7 +28,7 @@ func (c *ServeCommand) Name() string {
 func (c *ServeCommand) Run(_ []string) int {
 
 	// pack the templates somehow
-	content, _ := ioutil.ReadFile("./app/ui/layout.html")
+	content, _ := ioutil.ReadFile("./app/index.html")
 
 	layout, err := template.New("layout").Parse(string(content))
 
@@ -43,7 +43,13 @@ func (c *ServeCommand) Run(_ []string) int {
 	addArea(templates, "dashboard")
 	addArea(templates, "create")
 
+	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
+
+	r.Handle("/favicon.ico", http.NotFoundHandler())
 	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
+
+		c.UI.Info(req.URL.String())
+
 		clone, _ := layout.Clone()
 		vars := mux.Vars(req)
 
