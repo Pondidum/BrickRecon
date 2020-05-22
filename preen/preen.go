@@ -2,7 +2,6 @@ package preen
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -69,7 +68,6 @@ func (p *Preen) loadShared() error {
 	for _, file := range files {
 
 		name := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
-		fmt.Printf("Loading %s", name)
 
 		content, err := ioutil.ReadFile(path.Join(shared, file.Name()))
 
@@ -142,11 +140,14 @@ func (p *Preen) HandleStaticAssets(r *mux.Router) {
 
 func (p *Preen) View(w http.ResponseWriter, req *http.Request, model interface{}) {
 
-	vars := mux.Vars(req)
-	area := vars["area"]
-
 	clone, _ := p.layout.Clone()
-	clone.AddParseTree("content", p.templates[area].Tree)
+
+	vars := mux.Vars(req)
+	if area, found := vars["area"]; found {
+		clone.AddParseTree("content", p.templates[area].Tree)
+	} else {
+		clone.New("content").Parse("")
+	}
 
 	var buffer bytes.Buffer
 	err := clone.Execute(&buffer, model)

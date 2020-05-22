@@ -38,12 +38,16 @@ func (c *ServeCommand) Run(_ []string) int {
 	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
+
+	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+	})
+
 	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
 
 		c.UI.Info(req.URL.String())
 
 		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
-
 	})
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
