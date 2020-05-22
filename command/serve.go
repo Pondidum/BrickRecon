@@ -2,9 +2,12 @@ package command
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"path"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -40,6 +43,13 @@ func (c *ServeCommand) Run(_ []string) int {
 	r := mux.NewRouter()
 
 	templates := map[string]*template.Template{}
+	err = addShared(layout, "./app/_shared")
+
+	if err != nil {
+		c.UI.Error(err.Error())
+		return 1
+	}
+
 	addArea(templates, "dashboard")
 	addArea(templates, "create")
 
@@ -58,7 +68,12 @@ func (c *ServeCommand) Run(_ []string) int {
 		clone.AddParseTree("content", templates[area].Tree)
 
 		var buffer bytes.Buffer
-		clone.Execute(&buffer, nil)
+		err := clone.Execute(&buffer, nil)
+
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(err.Error()))
+		}
 
 		w.Write(buffer.Bytes())
 	})
@@ -72,6 +87,38 @@ func (c *ServeCommand) Run(_ []string) int {
 	}
 
 	return 0
+}
+
+func addShared(templates *template.Template, pathPrefix string) error {
+
+	files, err := ioutil.ReadDir(pathPrefix)
+
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+
+		name := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		fmt.Printf("Loading %s", name)
+
+		content, err := ioutil.ReadFile(path.Join(pathPrefix, file.Name()))
+
+		if err != nil {
+			return err
+		}
+
+		_, err = templates.New(name).Parse(string(content))
+
+		if err != nil {
+			return err
+		}
+
+		// templates.New()
+		// templates[name] = tpl
+	}
+
+	return nil
 }
 
 func addArea(templates map[string]*template.Template, name string) error {
