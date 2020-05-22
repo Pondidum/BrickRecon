@@ -116,7 +116,7 @@ func (p *Preen) loadAreas() error {
 				if templateName == "index" {
 					templateName = dir.Name()
 				} else {
-					templateName = dir.Name() + "/" + "templateName"
+					templateName = dir.Name() + "/" + templateName
 				}
 
 				content, _ := ioutil.ReadFile(path.Join(p.viewRoot, dir.Name(), file.Name()))
@@ -134,6 +134,10 @@ func (p *Preen) loadAreas() error {
 
 	return nil
 
+}
+
+func (p *Preen) HandleStaticAssets(r *mux.Router) {
+	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
 }
 
 func (p *Preen) View(w http.ResponseWriter, req *http.Request, model interface{}) {

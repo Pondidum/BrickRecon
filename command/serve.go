@@ -35,7 +35,7 @@ func (c *ServeCommand) Run(_ []string) int {
 
 	r := mux.NewRouter()
 
-	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
+	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
 	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
