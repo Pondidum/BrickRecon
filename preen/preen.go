@@ -28,11 +28,7 @@ func NewPreen(viewRoot string) (Preen, error) {
 		return p, err
 	}
 
-	if err := p.loadShared(); err != nil {
-		return p, err
-	}
-
-	if err := p.loadAreas(); err != nil {
+	if err := p.loadTemplates(viewRoot); err != nil {
 		return p, err
 	}
 
@@ -57,81 +53,39 @@ func (p *Preen) loadLayoutRoot() error {
 	return nil
 }
 
-func (p *Preen) loadShared() error {
-	shared := path.Join(p.viewRoot, "_shared")
-	files, err := ioutil.ReadDir(shared)
+func (p *Preen) loadTemplates(dir string) error {
+
+	entries, err := ioutil.ReadDir(dir)
 
 	if err != nil {
 		return err
 	}
 
-	for _, file := range files {
+	for _, entry := range entries {
+		currentPath := path.Join(dir, entry.Name())
 
-		name := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
+		if entry.IsDir() == false {
 
-		content, err := ioutil.ReadFile(path.Join(shared, file.Name()))
+			content, err := ioutil.ReadFile(currentPath)
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		_, err = p.layout.New(name).Parse(string(content))
+			name := templateName(strings.TrimPrefix(currentPath, p.viewRoot+"/"))
+			tpl, err := p.layout.New(name).Parse(string(content))
 
-		if err != nil {
-			return err
-		}
-	}
+			p.templates[name] = tpl
+		} else {
+			err := p.loadTemplates(currentPath)
 
-	return nil
-}
-
-func (p *Preen) loadAreas() error {
-
-	dirs, err := ioutil.ReadDir(p.viewRoot)
-
-	if err != nil {
-		return err
-	}
-
-	for _, dir := range dirs {
-
-		if !dir.IsDir() {
-			continue
-		}
-
-		files, err := ioutil.ReadDir(path.Join(p.viewRoot, dir.Name()))
-
-		if err != nil {
-			return err
-		}
-
-		for _, file := range files {
-
-			if path.Ext(file.Name()) == ".html" {
-
-				templateName := strings.TrimSuffix(file.Name(), path.Ext(file.Name()))
-
-				if templateName == "index" {
-					templateName = dir.Name()
-				} else {
-					templateName = dir.Name() + "/" + templateName
-				}
-
-				content, _ := ioutil.ReadFile(path.Join(p.viewRoot, dir.Name(), file.Name()))
-
-				tpl, err := p.layout.New(templateName).Parse(string(content))
-
-				if err != nil {
-					return err
-				}
-
-				p.templates[templateName] = tpl
+			if err != nil {
+				return err
 			}
 		}
 	}
 
 	return nil
-
 }
 
 func (p *Preen) HandleStaticAssets(r *mux.Router) {
@@ -158,4 +112,20 @@ func (p *Preen) View(w http.ResponseWriter, req *http.Request, model interface{}
 	}
 
 	w.Write(buffer.Bytes())
+}
+
+func templateName(filepath string) string {
+	ext := path.Ext(filepath)
+	base := path.Base(filepath)
+
+	if base == "index.html" {
+		filepath = strings.TrimSuffix(filepath, base)
+	}
+
+	filepath = strings.TrimSuffix(filepath, ext)
+	filepath = strings.TrimSuffix(filepath, "/")
+
+	filepath = strings.TrimPrefix(filepath, "_shared/")
+
+	return filepath
 }

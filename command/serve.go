@@ -26,7 +26,7 @@ func (c *ServeCommand) Name() string {
 
 func (c *ServeCommand) Run(_ []string) int {
 
-	p, err := preen.NewPreen("./app")
+	p, err := preen.NewPreen("app")
 
 	if err != nil {
 		c.UI.Error(err.Error())
