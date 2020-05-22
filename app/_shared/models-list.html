@@ -1,0 +1,10 @@
+<ul class="nav flex-column">
+  {{ range .Models }}
+  <li class="nav-item">
+    <a class="nav-link {{ if eq . "two" }}active{{end}}" href="#">
+      <span data-feather="file"></span>
+      {{ . }}
+    </a>
+  </li>
+  {{ end}}
+</ul>
