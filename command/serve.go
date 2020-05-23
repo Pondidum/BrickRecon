@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/cli"
 )
 
 type ServeCommand struct {
@@ -34,6 +35,7 @@ func (c *ServeCommand) Run(_ []string) int {
 	}
 
 	r := mux.NewRouter()
+	r.Use(logger(c.UI))
 
 	p.HandleStaticAssets(r)
 
@@ -44,9 +46,6 @@ func (c *ServeCommand) Run(_ []string) int {
 	})
 
 	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
-
-		c.UI.Info(req.URL.String())
-
 		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
 	})
 
@@ -54,6 +53,15 @@ func (c *ServeCommand) Run(_ []string) int {
 	http.ListenAndServe("127.0.0.1:3000", r)
 
 	return 0
+}
+
+func logger(ui cli.Ui) mux.MiddlewareFunc {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ui.Info(r.URL.String())
+			h.ServeHTTP(w, r)
+		})
+	}
 }
 
 type DashboardModel struct {
