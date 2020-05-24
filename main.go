@@ -6,6 +6,7 @@ import (
 
 	"mvc/command"
 
+	"github.com/honeycombio/beeline-go"
 	"github.com/mattn/go-colorable"
 	"github.com/mitchellh/cli"
 )
@@ -15,6 +16,13 @@ func main() {
 }
 
 func Run(args []string) int {
+
+	beeline.Init(beeline.Config{
+		WriteKey: os.Getenv("HONEYCOMB_API_KEY"),
+		Dataset:  "BrickRecon",
+	})
+
+	defer beeline.Close()
 
 	ui := &cli.BasicUi{
 		Reader:      os.Stdin,

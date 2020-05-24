@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 	"github.com/mitchellh/cli"
 )
 
@@ -50,7 +51,7 @@ func (c *ServeCommand) Run(_ []string) int {
 	})
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
-	http.ListenAndServe("127.0.0.1:3000", r)
+	http.ListenAndServe("127.0.0.1:3000", hnynethttp.WrapHandler(r))
 
 	return 0
 }

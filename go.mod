@@ -4,6 +4,8 @@ go 1.14
 
 require (
 	github.com/gorilla/mux v1.7.4
+	github.com/honeycombio/beeline-go v0.5.1
+	github.com/honeycombio/libhoney-go v1.12.4
 	github.com/mattn/go-colorable v0.1.6
 	github.com/mitchellh/cli v1.1.1
 	github.com/posener/complete v1.2.3
