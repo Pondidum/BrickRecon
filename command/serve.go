@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"mvc/preen"
 
 	"net/http"
@@ -48,7 +49,17 @@ func (c *ServeCommand) Run(_ []string) int {
 
 	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
 		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
-	})
+	}).Methods("GET")
+
+	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
+
+		_, handler, _ := req.FormFile("modelFile")
+		fileName := req.FormValue("modelName")
+
+		c.UI.Info(fmt.Sprintf("Create Model: %s, %s (%v)", fileName, handler.Filename, handler.Size))
+
+		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+	}).Methods("POST")
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
 	http.ListenAndServe("127.0.0.1:3000", hnynethttp.WrapHandler(r))
