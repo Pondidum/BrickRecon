@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"mvc/app"
 	"mvc/app/create"
+	"mvc/app/models"
+	"mvc/app/models/model"
 	"mvc/preen"
+	"mvc/store"
 
 	"net/http"
 
@@ -31,11 +34,15 @@ func (c *ServeCommand) Name() string {
 
 func (c *ServeCommand) Run(_ []string) int {
 
+	db := store.NewStorage()
+
 	p, err := preen.NewPreen(preen.PreenConfig{
 		ApplicationRoot: "app",
 		Controllers: []preen.Controller{
-			&app.AppController{},
-			&create.CreateController{},
+			&app.AppController{DB: &db},
+			&create.CreateController{DB: &db},
+			&models.ModelsController{DB: &db},
+			&model.ModelController{DB: &db},
 		},
 	})
 
