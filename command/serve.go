@@ -45,13 +45,8 @@ func (c *ServeCommand) Run(_ []string) int {
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
 
-	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		p.View(w, "root", app.SiteModel{Models: []string{"one", "two", "three"}})
-	})
-
-	ctl := &create.CreateController{}
-
-	p.RegisterController(r, ctl)
+	p.RegisterController(r, &app.AppController{})
+	p.RegisterController(r, &create.CreateController{})
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
 	http.ListenAndServe("127.0.0.1:3000", hnynethttp.WrapHandler(r))

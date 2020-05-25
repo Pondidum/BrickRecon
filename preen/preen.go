@@ -124,7 +124,7 @@ func (p *Preen) View(w http.ResponseWriter, viewName string, model interface{}) 
 
 	clone, _ := p.layout.Clone()
 
-	if tpl, found := p.templates[viewName]; found {
+	if tpl, found := p.templates[viewName]; viewName != "" && found {
 		clone.AddParseTree("content", tpl.Tree)
 	} else {
 		clone.New("content").Parse("")
