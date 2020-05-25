@@ -92,13 +92,12 @@ func (p *Preen) HandleStaticAssets(r *mux.Router) {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
 }
 
-func (p *Preen) View(w http.ResponseWriter, req *http.Request, model interface{}) {
+func (p *Preen) View(w http.ResponseWriter, viewName string, model interface{}) {
 
 	clone, _ := p.layout.Clone()
 
-	vars := mux.Vars(req)
-	if area, found := vars["area"]; found {
-		clone.AddParseTree("content", p.templates[area].Tree)
+	if tpl, found := p.templates[viewName]; found {
+		clone.AddParseTree("content", tpl.Tree)
 	} else {
 		clone.New("content").Parse("")
 	}

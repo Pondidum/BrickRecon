@@ -1,7 +1,8 @@
 package command
 
 import (
-	"fmt"
+	"mvc/app"
+	"mvc/app/create"
 	"mvc/preen"
 
 	"net/http"
@@ -44,21 +45,17 @@ func (c *ServeCommand) Run(_ []string) int {
 	r.Handle("/favicon.ico", http.NotFoundHandler())
 
 	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+		p.View(w, "root", app.SiteModel{Models: []string{"one", "two", "three"}})
 	})
 
-	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
-		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+	ctl := create.CreateController{}
+
+	r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+		p.View(w, ctl.Path(), ctl.Get(req))
 	}).Methods("GET")
 
-	r.HandleFunc("/{area}", func(w http.ResponseWriter, req *http.Request) {
-
-		_, handler, _ := req.FormFile("modelFile")
-		fileName := req.FormValue("modelName")
-
-		c.UI.Info(fmt.Sprintf("Create Model: %s, %s (%v)", fileName, handler.Filename, handler.Size))
-
-		p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+	r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+		p.View(w, ctl.Path(), ctl.Post(req))
 	}).Methods("POST")
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
@@ -74,8 +71,4 @@ func logger(ui cli.Ui) mux.MiddlewareFunc {
 			h.ServeHTTP(w, r)
 		})
 	}
-}
-
-type DashboardModel struct {
-	Models []string
 }
