@@ -21,13 +21,13 @@ func (c CreateController) Get(req *http.Request) interface{} {
 
 func (c CreateController) Post(req *http.Request) interface{} {
 	// _, handler, _ := req.FormFile("modelFile")
-	// fileName := req.FormValue("modelName")
+	modelName := req.FormValue("modelName")
 
 	// c.UI.Info(fmt.Sprintf("Create Model: %s, %s (%v)", fileName, handler.Filename, handler.Size))
 
 	// model := app.SiteModel{Models: []string{"one", "two", "three", fileName}}
 
-	c.DB.AddModel(req.FormValue("modelName"))
+	c.DB.AddModel(modelName)
 
-	return preen.Redirect{URL: "/"}
+	return preen.Redirect{URL: "/models/" + modelName}
 }
