@@ -14,6 +14,10 @@ type Postable interface {
 	Post(req *http.Request) interface{}
 }
 
+type CustomViewName interface {
+	View() string
+}
+
 type Redirect struct {
 	URL string
 }

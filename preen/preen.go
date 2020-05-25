@@ -119,7 +119,7 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			p.View(w, ctl.Path(), get.Get(req))
+			p.View(w, getViewName(ctl), get.Get(req))
 		}).Methods("GET")
 
 	}
@@ -132,7 +132,7 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 			if redirect, ok := model.(Redirect); ok {
 				http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
 			} else {
-				p.View(w, ctl.Path(), model)
+				p.View(w, getViewName(ctl), model)
 			}
 
 		}).Methods("POST")
@@ -140,6 +140,15 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 	}
 
 	return nil
+}
+
+func getViewName(ctl Controller) string {
+
+	if custom, ok := ctl.(CustomViewName); ok {
+		return custom.View()
+	}
+
+	return ctl.Path()
 }
 
 func (p *Preen) HandleStaticAssets(r *mux.Router) {
