@@ -41,7 +41,7 @@ func TestAreaLoading(t *testing.T) {
 
 	ioutil.WriteFile(path.Join(temp, "index.html"), []byte("root"), 0644)
 
-	p, err := NewPreen(temp)
+	p, err := NewPreen(PreenConfig{ApplicationRoot: temp})
 
 	assert.NoError(t, err)
 

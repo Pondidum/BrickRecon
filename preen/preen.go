@@ -13,27 +13,46 @@ import (
 )
 
 type Preen struct {
-	viewRoot string
+	viewRoot    string
+	controllers []Controller
 
 	layout    *template.Template
 	templates map[string]*template.Template
 }
 
-func NewPreen(viewRoot string) (Preen, error) {
+type PreenConfig struct {
+	ApplicationRoot string
+
+	Controllers []Controller
+}
+
+func NewPreen(pc PreenConfig) (Preen, error) {
 	p := Preen{
-		viewRoot:  viewRoot,
-		templates: map[string]*template.Template{},
+		viewRoot:    pc.ApplicationRoot,
+		controllers: pc.Controllers,
+		templates:   map[string]*template.Template{},
 	}
 
 	if err := p.loadLayoutRoot(); err != nil {
 		return p, err
 	}
 
-	if err := p.loadTemplates(viewRoot); err != nil {
+	if err := p.loadTemplates(pc.ApplicationRoot); err != nil {
 		return p, err
 	}
 
 	return p, nil
+}
+
+func (p *Preen) Apply(r *mux.Router) {
+
+	p.HandleStaticAssets(r)
+
+	r.Handle("/favicon.ico", http.NotFoundHandler())
+
+	for _, ctl := range p.controllers {
+		p.RegisterController(r, ctl)
+	}
 }
 
 func (p *Preen) loadLayoutRoot() error {

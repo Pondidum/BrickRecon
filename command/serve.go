@@ -31,7 +31,13 @@ func (c *ServeCommand) Name() string {
 
 func (c *ServeCommand) Run(_ []string) int {
 
-	p, err := preen.NewPreen("app")
+	p, err := preen.NewPreen(preen.PreenConfig{
+		ApplicationRoot: "app",
+		Controllers: []preen.Controller{
+			&app.AppController{},
+			&create.CreateController{},
+		},
+	})
 
 	if err != nil {
 		c.UI.Error(err.Error())
@@ -40,13 +46,7 @@ func (c *ServeCommand) Run(_ []string) int {
 
 	r := mux.NewRouter()
 	r.Use(logger(c.UI))
-
-	p.HandleStaticAssets(r)
-
-	r.Handle("/favicon.ico", http.NotFoundHandler())
-
-	p.RegisterController(r, &app.AppController{})
-	p.RegisterController(r, &create.CreateController{})
+	p.Apply(r)
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
 	http.ListenAndServe("127.0.0.1:3000", hnynethttp.WrapHandler(r))
@@ -55,9 +55,9 @@ func (c *ServeCommand) Run(_ []string) int {
 }
 
 func logger(ui cli.Ui) mux.MiddlewareFunc {
-	return func(h http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, r)
+			next.ServeHTTP(w, r)
 			ui.Info(fmt.Sprintf("%s %s", r.Method, r.URL.String()))
 		})
 	}
