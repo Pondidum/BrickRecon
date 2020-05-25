@@ -7,15 +7,15 @@ import (
 
 type CreateController struct{}
 
-func (c *CreateController) Path() string {
+func (c CreateController) Path() string {
 	return "create"
 }
 
-func (c *CreateController) Get(req *http.Request) interface{} {
+func (c CreateController) Get(req *http.Request) interface{} {
 	return app.SiteModel{Models: []string{"one", "two", "three"}}
 }
 
-func (c *CreateController) Post(req *http.Request) interface{} {
+func (c CreateController) Post(req *http.Request) interface{} {
 	// _, handler, _ := req.FormFile("modelFile")
 	fileName := req.FormValue("modelName")
 

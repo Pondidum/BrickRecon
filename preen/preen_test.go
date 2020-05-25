@@ -44,7 +44,6 @@ func TestAreaLoading(t *testing.T) {
 	p, err := NewPreen(temp)
 
 	assert.NoError(t, err)
-	// assert.Contains(t, p.templates, "link")
 
 	for _, v := range testCases {
 		assert.Contains(t, p.templates, v)

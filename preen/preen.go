@@ -2,6 +2,7 @@ package preen
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -83,6 +84,33 @@ func (p *Preen) loadTemplates(dir string) error {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
+
+	ctl, isController := c.(Controller)
+
+	if !isController {
+		return fmt.Errorf("%T is not a valid Controller", c)
+	}
+
+	if get, ok := c.(Getable); ok {
+
+		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+			p.View(w, ctl.Path(), get.Get(req))
+		}).Methods("GET")
+
+	}
+
+	if post, ok := c.(Postable); ok {
+
+		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+			p.View(w, ctl.Path(), post.Post(req))
+		}).Methods("POST")
+
 	}
 
 	return nil
