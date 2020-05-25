@@ -13,3 +13,7 @@ type Getable interface {
 type Postable interface {
 	Post(req *http.Request) interface{}
 }
+
+type Redirect struct {
+	URL string
+}

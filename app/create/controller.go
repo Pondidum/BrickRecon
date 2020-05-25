@@ -2,6 +2,7 @@ package create
 
 import (
 	"mvc/app"
+	"mvc/preen"
 	"net/http"
 )
 
@@ -17,10 +18,11 @@ func (c CreateController) Get(req *http.Request) interface{} {
 
 func (c CreateController) Post(req *http.Request) interface{} {
 	// _, handler, _ := req.FormFile("modelFile")
-	fileName := req.FormValue("modelName")
+	// fileName := req.FormValue("modelName")
 
 	// c.UI.Info(fmt.Sprintf("Create Model: %s, %s (%v)", fileName, handler.Filename, handler.Size))
 
-	return app.SiteModel{Models: []string{"one", "two", "three", fileName}}
-	// p.View(w, req, DashboardModel{Models: []string{"one", "two", "three"}})
+	// model := app.SiteModel{Models: []string{"one", "two", "three", fileName}}
+
+	return preen.Redirect{URL: "/"}
 }

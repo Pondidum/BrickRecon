@@ -127,7 +127,14 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 	if post, ok := c.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			p.View(w, ctl.Path(), post.Post(req))
+			model := post.Post(req)
+
+			if redirect, ok := model.(Redirect); ok {
+				http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
+			} else {
+				p.View(w, ctl.Path(), model)
+			}
+
 		}).Methods("POST")
 
 	}
