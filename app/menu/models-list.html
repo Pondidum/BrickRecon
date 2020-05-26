@@ -1,6 +1,6 @@
 
 <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-  <span><a href="/models">Models</a></span>
+  <span>Models</span>
   <a class="d-flex align-items-center text-muted" href="/create" aria-label="Add new model">
     {{ template "icons/plus-circle" }}
   </a>
@@ -11,7 +11,7 @@
   <li class="nav-item">
     {{ $link := (print "/models/" .) }}
     <a class="nav-link {{ if eq $.PagePath $link }}active{{end}}" href="{{ $link }}">
-      {{ template "icons/file" }}
+      {{ template "icons/hexagon" }}
       {{ . }}
     </a>
   </li>
