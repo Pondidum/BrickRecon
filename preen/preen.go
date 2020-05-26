@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/mitchellh/mapstructure"
 )
 
 type Preen struct {
@@ -119,7 +120,7 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			p.View(w, getViewName(ctl), get.Get(req))
+			p.view(w, req, getViewName(ctl), get.Get(req))
 		}).Methods("GET")
 
 	}
@@ -132,7 +133,7 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 			if redirect, ok := model.(Redirect); ok {
 				http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
 			} else {
-				p.View(w, getViewName(ctl), model)
+				p.view(w, req, getViewName(ctl), model)
 			}
 
 		}).Methods("POST")
@@ -155,7 +156,15 @@ func (p *Preen) HandleStaticAssets(r *mux.Router) {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
 }
 
-func (p *Preen) View(w http.ResponseWriter, viewName string, model interface{}) {
+func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, model interface{}) {
+
+	context, err := composeModel(req, model)
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
 	clone, _ := p.layout.Clone()
 
@@ -166,14 +175,28 @@ func (p *Preen) View(w http.ResponseWriter, viewName string, model interface{}) 
 	}
 
 	var buffer bytes.Buffer
-	err := clone.Execute(&buffer, model)
+	err = clone.Execute(&buffer, context)
 
 	if err != nil {
 		w.WriteHeader(500)
 		w.Write([]byte(err.Error()))
+		return
 	}
 
 	w.Write(buffer.Bytes())
+}
+
+func composeModel(req *http.Request, model interface{}) (map[string]interface{}, error) {
+
+	context := map[string]interface{}{
+		"PagePath": req.URL.Path,
+	}
+
+	if err := mapstructure.Decode(model, &context); err != nil {
+		return nil, err
+	}
+
+	return context, nil
 }
 
 func templateName(filepath string) string {

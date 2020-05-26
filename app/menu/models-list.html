@@ -9,7 +9,8 @@
 <ul class="nav flex-column">
   {{ range .Models }}
   <li class="nav-item">
-    <a class="nav-link {{ if eq . "two" }}active{{end}}" href="/models/{{.}}">
+    {{ $link := (print "/models/" .) }}
+    <a class="nav-link {{ if eq $.PagePath $link }}active{{end}}" href="{{ $link }}">
       {{ template "icons/file" }}
       {{ . }}
     </a>

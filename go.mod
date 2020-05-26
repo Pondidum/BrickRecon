@@ -8,6 +8,7 @@ require (
 	github.com/honeycombio/libhoney-go v1.12.4
 	github.com/mattn/go-colorable v0.1.6
 	github.com/mitchellh/cli v1.1.1
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/posener/complete v1.2.3
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
