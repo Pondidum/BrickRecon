@@ -53,7 +53,15 @@ func (c *ServeCommand) Run(_ []string) int {
 
 	r := mux.NewRouter()
 	r.Use(logger(c.UI))
+	r.Use(preen.BasicAuth(preen.AuthOptions{
+		Realm:    "BrickRecon",
+		User:     "test",
+		Password: "testing",
+		Path:     "/login",
+	}))
+
 	p.Apply(r)
+	r.Handle("/login", http.RedirectHandler("/", http.StatusSeeOther))
 
 	c.UI.Info("Listening on 127.0.0.1:3000")
 	http.ListenAndServe("127.0.0.1:3000", hnynethttp.WrapHandler(r))

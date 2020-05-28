@@ -9,6 +9,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 )
@@ -192,15 +193,22 @@ func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, 
 
 func composeModel(req *http.Request, model interface{}) (map[string]interface{}, error) {
 
-	context := map[string]interface{}{
-		"_PagePath": req.URL.Path,
+	user := context.Get(req, "UserInfo")
+
+	if user == nil {
+		user = UserInfo{}
 	}
 
-	if err := mapstructure.Decode(model, &context); err != nil {
+	ctx := map[string]interface{}{
+		"_PagePath": req.URL.Path,
+		"_User":     user,
+	}
+
+	if err := mapstructure.Decode(model, &ctx); err != nil {
 		return nil, err
 	}
 
-	return context, nil
+	return ctx, nil
 }
 
 func templateName(filepath string) string {
@@ -217,4 +225,13 @@ func templateName(filepath string) string {
 	filepath = strings.TrimPrefix(filepath, "_shared/")
 
 	return filepath
+}
+
+type UserInfo struct {
+	Name          string
+	Authenticated bool
+}
+
+type SiteInfo struct {
+	URL string
 }
