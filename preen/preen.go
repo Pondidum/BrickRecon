@@ -51,6 +51,15 @@ func (p *Preen) Apply(r *mux.Router) {
 	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
+	r.Use(UserInfoMiddleware())
+	r.Use(BasicAuth(AuthOptions{
+		Realm:    "BrickRecon",
+		User:     "test",
+		Password: "testing",
+		Path:     "/login",
+	}))
+
+	r.Handle("/login", http.RedirectHandler("/", http.StatusSeeOther))
 
 	for _, ctl := range p.controllers {
 		p.RegisterController(r, ctl)
@@ -199,9 +208,14 @@ func composeModel(req *http.Request, model interface{}) (map[string]interface{},
 		user = UserInfo{}
 	}
 
+	site := SiteInfo{
+		URL: req.Host,
+	}
+
 	ctx := map[string]interface{}{
 		"_PagePath": req.URL.Path,
 		"_User":     user,
+		"_Site":     site,
 	}
 
 	if err := mapstructure.Decode(model, &ctx); err != nil {

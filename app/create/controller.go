@@ -15,6 +15,10 @@ func (c CreateController) Path() string {
 	return "create"
 }
 
+func (c CreateController) AuthRequired() bool {
+	return true
+}
+
 func (c CreateController) Get(req *http.Request) interface{} {
 	return app.SiteModel{Models: c.DB.GetModels()}
 }

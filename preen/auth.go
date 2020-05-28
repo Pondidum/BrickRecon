@@ -27,6 +27,27 @@ type AuthOptions struct {
 	Path                string
 }
 
+func UserInfoMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return userInfo{next}
+	}
+}
+
+type userInfo struct {
+	next http.Handler
+}
+
+func (b userInfo) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	givenUser, _, _ := r.BasicAuth()
+
+	context.Set(r, "UserInfo", UserInfo{
+		Name: givenUser,
+	})
+
+	b.next.ServeHTTP(w, r)
+}
+
 // Satisfies the http.Handler interface for basicAuth.
 func (b basicAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Check if we have a user-provided error handler, else set a default
@@ -44,10 +65,11 @@ func (b basicAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if isAuthenticated {
-		context.Set(r, "UserInfo", UserInfo{
-			Name:          givenUser,
-			Authenticated: isAuthenticated,
-		})
+
+		user := context.Get(r, "UserInfo").(UserInfo)
+		user.Authenticated = isAuthenticated
+
+		context.Set(r, "UserInfo", user)
 	}
 
 	// Call the next handler on success.
