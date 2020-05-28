@@ -193,7 +193,7 @@ func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, 
 func composeModel(req *http.Request, model interface{}) (map[string]interface{}, error) {
 
 	context := map[string]interface{}{
-		"PagePath": req.URL.Path,
+		"_PagePath": req.URL.Path,
 	}
 
 	if err := mapstructure.Decode(model, &context); err != nil {
