@@ -96,6 +96,10 @@ func (p *Preen) loadTemplates(dir string) error {
 			name := templateName(strings.TrimPrefix(currentPath, p.viewRoot+"/"))
 			tpl, err := p.layout.New(name).Parse(string(content))
 
+			if err != nil {
+				return err
+			}
+
 			p.templates[name] = tpl
 		} else {
 			err := p.loadTemplates(currentPath)
