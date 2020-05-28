@@ -18,6 +18,6 @@ type CustomViewName interface {
 	View() string
 }
 
-type Redirect struct {
-	URL string
+type Auth interface {
+	AuthRequired() bool
 }

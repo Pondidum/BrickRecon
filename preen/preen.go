@@ -14,9 +14,12 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
+
 type Preen struct {
 	viewRoot    string
 	controllers []Controller
+	auth        basicAuth
 
 	layout    *template.Template
 	templates map[string]*template.Template
@@ -33,6 +36,7 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		viewRoot:    pc.ApplicationRoot,
 		controllers: pc.Controllers,
 		templates:   map[string]*template.Template{},
+		auth:        BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
 	}
 
 	if err := p.loadLayoutRoot(); err != nil {
@@ -51,15 +55,7 @@ func (p *Preen) Apply(r *mux.Router) {
 	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
-	r.Use(UserInfoMiddleware())
-	r.Use(BasicAuth(AuthOptions{
-		Realm:    "BrickRecon",
-		User:     "test",
-		Password: "testing",
-		Path:     "/login",
-	}))
-
-	r.Handle("/login", http.RedirectHandler("/", http.StatusSeeOther))
+	r.Use(p.auth.UserContext)
 
 	for _, ctl := range p.controllers {
 		p.RegisterController(r, ctl)
@@ -131,10 +127,24 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 		return fmt.Errorf("%T is not a valid Controller", c)
 	}
 
+	render := func(w http.ResponseWriter, req *http.Request, model interface{}) {
+		if redirect, ok := model.(Redirect); ok {
+			http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
+		} else {
+			p.view(w, req, getViewName(ctl), model)
+		}
+	}
+
+	if auth, ok := c.(Auth); ok {
+		if auth.AuthRequired() {
+			render = p.auth.Wrap(render)
+		}
+	}
+
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			p.view(w, req, getViewName(ctl), get.Get(req))
+			render(w, req, get.Get(req))
 		}).Methods("GET")
 
 	}
@@ -142,14 +152,7 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 	if post, ok := c.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			model := post.Post(req)
-
-			if redirect, ok := model.(Redirect); ok {
-				http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
-			} else {
-				p.view(w, req, getViewName(ctl), model)
-			}
-
+			render(w, req, post.Post(req))
 		}).Methods("POST")
 
 	}
