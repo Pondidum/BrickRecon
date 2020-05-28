@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mvc/app"
 	"mvc/app/create"
+	"mvc/app/login"
 	"mvc/app/models"
 	"mvc/app/models/model"
 	"mvc/preen"
@@ -43,6 +44,7 @@ func (c *ServeCommand) Run(_ []string) int {
 			&create.CreateController{DB: &db},
 			&models.ModelsController{DB: &db},
 			&model.ModelController{DB: &db},
+			&login.LoginController{},
 		},
 	})
 
