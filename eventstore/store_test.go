@@ -1,11 +1,9 @@
 package eventstore
 
 import (
-	"bytes"
-	"io"
+	"bufio"
 	"io/ioutil"
 	"os"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,39 +22,42 @@ func TestWritingEvents(t *testing.T) {
 	}()
 
 	es := CreateEventStore(temp)
+	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	eventOne := TestEvent{Name: "One", SetNumber: 1234}
-	eventTwo := TestEvent{Name: "Two", SetNumber: 5678}
 
-	err := es.Write(eventOne, eventTwo)
+	err := es.Write(eventOne)
 	assert.NoError(t, err)
 
-	count, err := countLines(path.Join(es.root, "events"))
+	events, err := es.ReadEvents(0)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, count)
+	assert.Len(t, events, 1)
+
+	for _, e := range events {
+
+		switch event := e.(type) {
+		case *TestEvent:
+			assert.Equal(t, "One", event.Name)
+		default:
+			assert.Fail(t, "")
+		}
+
+	}
 }
 
-func countLines(path string) (int, error) {
-	r, err := os.Open(path)
+func readLines(path string) ([][]byte, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
-	defer r.Close()
+	defer file.Close()
 
-	buf := make([]byte, 32*1024)
-	count := 0
-	lineSep := []byte{'\n'}
+	scanner := bufio.NewScanner(file)
+	lines := [][]byte{}
 
-	for {
-		c, err := r.Read(buf)
-		count += bytes.Count(buf[:c], lineSep)
-
-		switch {
-		case err == io.EOF:
-			return count, nil
-
-		case err != nil:
-			return count, err
-		}
+	for scanner.Scan() {
+		lines = append(lines, scanner.Bytes())
 	}
+
+	return lines, nil
 }

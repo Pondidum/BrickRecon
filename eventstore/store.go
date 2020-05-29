@@ -1,9 +1,12 @@
 package eventstore
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -13,16 +16,42 @@ var newline = []byte("\n")
 
 type EventStore struct {
 	root string
+
+	registry map[string]func() interface{}
 }
 
 type Event struct {
 	Timestamp time.Time
 	ID        string
+	Type      string
 	Content   interface{}
 }
 
+type readEvent struct {
+	Timestamp time.Time
+	ID        string
+	Type      string
+	Content   json.RawMessage
+}
+
 func CreateEventStore(root string) *EventStore {
-	return &EventStore{root: root}
+	return &EventStore{
+		root:     root,
+		registry: map[string]func() interface{}{},
+	}
+}
+
+func (es *EventStore) RegisterEvent(creator func() interface{}) {
+	es.registry[eventName(creator())] = creator
+}
+
+func eventName(event interface{}) string {
+	t := reflect.TypeOf(event)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return t.Name()
 }
 
 func (es *EventStore) Write(events ...interface{}) error {
@@ -41,6 +70,7 @@ func (es *EventStore) Write(events ...interface{}) error {
 		dto := Event{
 			Timestamp: time.Now(),
 			ID:        uuid.NewV4().String(),
+			Type:      eventName(e),
 			Content:   e,
 		}
 
@@ -56,4 +86,43 @@ func (es *EventStore) Write(events ...interface{}) error {
 	}
 
 	return nil
+}
+
+func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
+
+	filename := path.Join(es.root, "events")
+	file, err := os.Open(filename)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	events := []interface{}{}
+
+	for scanner.Scan() {
+
+		var read readEvent
+		if err := json.Unmarshal(scanner.Bytes(), &read); err != nil {
+			return nil, err
+		}
+
+		creator, found := es.registry[read.Type]
+
+		if !found {
+			return nil, fmt.Errorf("Unable to find an event of type %s", read.Type)
+		}
+
+		e := creator()
+
+		if err := json.Unmarshal(read.Content, &e); err != nil {
+			return nil, err
+		}
+
+		events = append(events, e)
+	}
+
+	return events, nil
 }
