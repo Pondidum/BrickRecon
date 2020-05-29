@@ -7,6 +7,10 @@ import (
 	"net/http"
 )
 
+type CreateModel struct {
+	ErrorMessage string
+}
+
 type CreateController struct {
 	DB *store.Storage
 }
@@ -24,12 +28,20 @@ func (c CreateController) Get(req *http.Request) interface{} {
 }
 
 func (c CreateController) Post(req *http.Request) interface{} {
-	// _, handler, _ := req.FormFile("modelFile")
+	// file, handler, err := req.FormFile("modelFile")
 	modelName := req.FormValue("modelName")
 
-	// c.UI.Info(fmt.Sprintf("Create Model: %s, %s (%v)", fileName, handler.Filename, handler.Size))
+	// if err != nil {
+	// 	return preen.ComposeModels(app.SiteModel{Models: c.DB.GetModels()}, CreateModel{
+	// 		ErrorMessage: err.Error(),
+	// 	})
+	// }
 
-	// model := app.SiteModel{Models: []string{"one", "two", "three", fileName}}
+	// defer file.Close()
+
+	// buf := new(bytes.Buffer)
+	// buf.ReadFrom(file)
+	// content := buf.String()
 
 	c.DB.AddModel(modelName)
 

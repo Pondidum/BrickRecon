@@ -203,6 +203,17 @@ func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, 
 	w.Write(buffer.Bytes())
 }
 
+func ComposeModels(models ...interface{}) interface{} {
+
+	result := map[string]interface{}{}
+
+	for _, m := range models {
+		mapstructure.Decode(m, &result)
+	}
+
+	return result
+}
+
 func composeModel(req *http.Request, model interface{}) (map[string]interface{}, error) {
 
 	user := context.Get(req, "UserInfo")
