@@ -7,7 +7,7 @@
 </h6>
 
 <ul class="nav flex-column">
-  {{ range .Models }}
+  {{ range .AllModels }}
   <li class="nav-item">
     {{ $link := (print "/models/" .) }}
     <a class="nav-link {{ if eq $._PagePath $link }}active{{end}}" href="{{ $link }}">

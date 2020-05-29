@@ -1,22 +1,28 @@
 package store
 
+import "mvc/lego"
+
 type Storage struct {
-	models []string
+	models map[string]lego.Model
+	names  []string
 }
 
 func NewStorage() Storage {
 	return Storage{
-		models: []string{"one", "two"},
+		models: map[string]lego.Model{},
+		names:  []string{},
 	}
 }
 
-func (s *Storage) AddModel(name string) []string {
-
-	s.models = append(s.models, name)
-
-	return s.models
+func (s *Storage) AddModel(model lego.Model) {
+	s.models[model.Name] = model
+	s.names = append(s.names, model.Name)
 }
 
-func (s *Storage) GetModels() []string {
-	return s.models
+func (s *Storage) GetModelNames() []string {
+	return s.names
+}
+
+func (s *Storage) GetModel(name string) lego.Model {
+	return s.models[name]
 }

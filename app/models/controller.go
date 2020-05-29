@@ -15,5 +15,5 @@ func (c ModelsController) Path() string {
 }
 
 func (c ModelsController) Get(req *http.Request) interface{} {
-	return app.SiteModel{Models: c.DB.GetModels()}
+	return app.SiteModel{AllModels: c.DB.GetModelNames()}
 }

@@ -23,6 +23,7 @@ func (c ModelController) View() string {
 func (c ModelController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
+	names := c.DB.GetModelNames()
 
-	return app.SiteModel{Models: c.DB.GetModels(), SelectedModel: vars["name"]}
+	return app.SiteModel{AllModels: names, SelectedModel: c.DB.GetModel(vars["name"])}
 }

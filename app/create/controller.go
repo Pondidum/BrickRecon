@@ -2,6 +2,7 @@ package create
 
 import (
 	"mvc/app"
+	"mvc/lego"
 	"mvc/preen"
 	"mvc/store"
 	"net/http"
@@ -24,26 +25,31 @@ func (c CreateController) AuthRequired() bool {
 }
 
 func (c CreateController) Get(req *http.Request) interface{} {
-	return app.SiteModel{Models: c.DB.GetModels()}
+	return app.SiteModel{AllModels: c.DB.GetModelNames()}
 }
 
 func (c CreateController) Post(req *http.Request) interface{} {
-	// file, handler, err := req.FormFile("modelFile")
+	file, _, err := req.FormFile("modelFile")
 	modelName := req.FormValue("modelName")
 
-	// if err != nil {
-	// 	return preen.ComposeModels(app.SiteModel{Models: c.DB.GetModels()}, CreateModel{
-	// 		ErrorMessage: err.Error(),
-	// 	})
-	// }
+	if err != nil {
+		return preen.ComposeModels(app.SiteModel{AllModels: c.DB.GetModelNames()}, CreateModel{
+			ErrorMessage: err.Error(),
+		})
+	}
 
-	// defer file.Close()
+	defer file.Close()
 
-	// buf := new(bytes.Buffer)
-	// buf.ReadFrom(file)
-	// content := buf.String()
+	parts, err := lego.ReadPartsList(file)
 
-	c.DB.AddModel(modelName)
+	if err != nil {
+		return preen.ComposeModels(app.SiteModel{AllModels: c.DB.GetModelNames()}, CreateModel{
+			ErrorMessage: err.Error(),
+		})
+	}
+
+	legoModel := lego.NewModel(modelName, parts)
+	c.DB.AddModel(legoModel)
 
 	return preen.Redirect{URL: "/models/" + modelName}
 }

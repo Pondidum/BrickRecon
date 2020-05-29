@@ -1,7 +1,9 @@
 package app
 
-type SiteModel struct {
-	Models []string
+import "mvc/lego"
 
-	SelectedModel string
+type SiteModel struct {
+	AllModels []string
+
+	SelectedModel lego.Model
 }
