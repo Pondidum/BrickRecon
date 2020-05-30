@@ -55,7 +55,10 @@ func TestProjections(t *testing.T) {
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	projection := &testProjection{names: map[string]bool{}}
-	es.RegisterProjection("names", projection.Project)
+	es.RegisterProjection(
+		"names",
+		func() interface{} { return &map[string]bool{} },
+		projection.Project)
 
 	err := es.Write(TestEvent{Name: "One"})
 	assert.NoError(t, err)

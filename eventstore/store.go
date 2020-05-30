@@ -18,8 +18,10 @@ var newline = []byte("\n")
 type EventStore struct {
 	root string
 
-	registry    map[string]func() interface{}
-	projections map[string]Projector
+	registry map[string]Initialiser
+
+	projectionInitialiser map[string]Initialiser
+	projections           map[string]Projector
 }
 
 type Event struct {
@@ -29,6 +31,7 @@ type Event struct {
 	Content   interface{}
 }
 
+type Initialiser func() interface{}
 type Projector func(e interface{}) interface{}
 
 type readEvent struct {
@@ -40,14 +43,20 @@ type readEvent struct {
 
 func CreateEventStore(root string) *EventStore {
 	return &EventStore{
-		root:        root,
-		registry:    map[string]func() interface{}{},
-		projections: map[string]Projector{},
+		root:                  root,
+		registry:              map[string]Initialiser{},
+		projectionInitialiser: map[string]Initialiser{},
+		projections:           map[string]Projector{},
 	}
 }
 
-func (es *EventStore) RegisterEvent(creator func() interface{}) {
+func (es *EventStore) RegisterEvent(creator Initialiser) {
 	es.registry[eventName(creator())] = creator
+}
+
+func (es *EventStore) RegisterProjection(name string, initialisState Initialiser, project Projector) {
+	es.projectionInitialiser[name] = initialisState
+	es.projections[name] = project
 }
 
 func eventName(event interface{}) string {
@@ -159,8 +168,4 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 	}
 
 	return events, nil
-}
-
-func (es *EventStore) RegisterProjection(name string, projection Projector) {
-	es.projections[name] = projection
 }
