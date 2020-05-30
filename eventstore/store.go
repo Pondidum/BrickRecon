@@ -37,7 +37,7 @@ type readEvent struct {
 	Content   json.RawMessage
 }
 
-func CreateEventStore(root string) *EventStore {
+func NewEventStore(root string) *EventStore {
 	return &EventStore{
 		root:        root,
 		registry:    map[string]Initialiser{},

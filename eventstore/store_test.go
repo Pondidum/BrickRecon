@@ -20,7 +20,7 @@ func TestWritingEvents(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	es := CreateEventStore(temp)
+	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	eventOne := TestEvent{Name: "One", SetNumber: 1234}
@@ -51,7 +51,7 @@ func TestProjections(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	es := CreateEventStore(temp)
+	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	es.RegisterProjection(
@@ -85,7 +85,7 @@ func TestReadOffset(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	es := CreateEventStore(temp)
+	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	events := make([]interface{}, 10)
