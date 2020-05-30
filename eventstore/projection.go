@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
 )
 
 type Projector func(state interface{}, event interface{}) interface{}
@@ -18,6 +19,29 @@ type Projection struct {
 
 func NewProjection(root string, name string, initialisState Initialiser, project Projector) Projection {
 	return Projection{root, name, initialisState, project}
+}
+
+func (p *Projection) CheckIndex() (int, error) {
+
+	filename := path.Join(p.root, p.name+".idx")
+	contents, err := ioutil.ReadFile(filename)
+
+	if os.IsNotExist(err) {
+		return 0, nil
+	}
+
+	if err != nil {
+		return 0, err
+	}
+
+	return strconv.Atoi(string(contents))
+}
+
+func (p *Projection) WriteCheckIndex(index int) error {
+	filename := path.Join(p.root, p.name+".idx")
+	contents := strconv.Itoa(index)
+
+	return ioutil.WriteFile(filename, []byte(contents), 0666)
 }
 
 func (p *Projection) ReadView(view interface{}) error {

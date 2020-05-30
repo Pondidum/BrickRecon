@@ -56,12 +56,12 @@ func TestProjections(t *testing.T) {
 
 	es.RegisterProjection(
 		"names",
-		func() interface{} { return &map[string]bool{} },
+		func() interface{} { return &TestProjectionState{map[string]bool{}} },
 		func(state, event interface{}) interface{} {
-			m := *(state.(*map[string]bool))
-			e := event.(TestEvent)
+			m := state.(*TestProjectionState)
+			e := event.(*TestEvent)
 
-			m[e.Name] = true
+			m.Names[e.Name] = true
 
 			return m
 		})
@@ -72,11 +72,16 @@ func TestProjections(t *testing.T) {
 	err = es.Write(TestEvent{Name: "Two"})
 	assert.NoError(t, err)
 
-	var view map[string]bool
+	var view TestProjectionState
 	err = es.ReadView("names", &view)
 	assert.NoError(t, err)
-	assert.Contains(t, view, "One")
-	assert.Contains(t, view, "Two")
+
+	assert.Contains(t, view.Names, "One")
+	assert.Contains(t, view.Names, "Two")
+}
+
+type TestProjectionState struct {
+	Names map[string]bool
 }
 
 func TestReadOffset(t *testing.T) {
