@@ -32,7 +32,7 @@ type Event struct {
 }
 
 type Initialiser func() interface{}
-type Projector func(e interface{}) interface{}
+type Projector func(state interface{}, event interface{}) interface{}
 
 type readEvent struct {
 	Timestamp time.Time
@@ -101,28 +101,51 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 		if _, err := file.Write(append(bytes, newline...)); err != nil {
 			return err
 		}
+	}
 
-		for name, p := range es.projections {
-			view := p(e)
-			viewBytes, err := json.Marshal(view)
+	for name, project := range es.projections {
 
-			if err != nil {
-				return err
-			}
+		state := es.projectionInitialiser[name]()
+		err := es.ReadView(name, state)
 
-			err = os.MkdirAll(path.Join(es.root, "views"), os.ModePerm)
-			if err != nil {
-				return err
-			}
+		if err != nil && !os.IsNotExist(err) {
+			return err
+		}
 
-			err = ioutil.WriteFile(path.Join(es.root, "views", name+".json"), viewBytes, 0666)
-			if err != nil {
-				return err
-			}
+		for _, e := range events {
+			state = project(state, e)
+		}
+
+		viewBytes, err := json.Marshal(state)
+
+		if err != nil {
+			return err
+		}
+
+		err = os.MkdirAll(path.Join(es.root, "views"), os.ModePerm)
+		if err != nil {
+			return err
+		}
+
+		err = ioutil.WriteFile(path.Join(es.root, "views", name+".json"), viewBytes, 0666)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
+}
+
+func (es *EventStore) ReadView(name string, view interface{}) error {
+
+	filename := path.Join(es.root, "views", name+".json")
+	content, err := ioutil.ReadFile(filename)
+
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(content, view)
 }
 
 func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
