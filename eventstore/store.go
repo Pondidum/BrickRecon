@@ -17,7 +17,8 @@ var newline = []byte("\n")
 type EventStore struct {
 	root string
 
-	registry map[string]func() interface{}
+	registry    map[string]func() interface{}
+	projections []Projection
 }
 
 type Event struct {
@@ -25,6 +26,10 @@ type Event struct {
 	ID        string
 	Type      string
 	Content   interface{}
+}
+
+type Projection interface {
+	Apply(e interface{})
 }
 
 type readEvent struct {
@@ -67,7 +72,7 @@ func (es *EventStore) Write(events ...interface{}) error {
 
 	for _, e := range events {
 
-		dto := Event{
+		dto := &Event{
 			Timestamp: time.Now(),
 			ID:        uuid.NewV4().String(),
 			Type:      eventName(e),
@@ -82,6 +87,10 @@ func (es *EventStore) Write(events ...interface{}) error {
 
 		if _, err := file.Write(append(bytes, newline...)); err != nil {
 			return err
+		}
+
+		for _, p := range es.projections {
+			p.Apply(e)
 		}
 	}
 
@@ -125,4 +134,8 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 	}
 
 	return events, nil
+}
+
+func (es *EventStore) RegisterProjection(projection Projection) {
+	es.projections = append(es.projections, projection)
 }

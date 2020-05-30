@@ -61,3 +61,33 @@ func readLines(path string) ([][]byte, error) {
 
 	return lines, nil
 }
+
+func TestProjections(t *testing.T) {
+
+	temp, _ := ioutil.TempDir(".", "es")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	es := CreateEventStore(temp)
+	es.RegisterEvent(func() interface{} { return &TestEvent{} })
+
+	projection := &testProjection{names: map[string]bool{}}
+	es.RegisterProjection(projection)
+
+	es.Write(TestEvent{Name: "One"})
+
+	assert.Contains(t, projection.names, "One")
+}
+
+type testProjection struct {
+	names map[string]bool
+}
+
+func (p *testProjection) Apply(e interface{}) {
+
+	switch event := e.(type) {
+	case TestEvent:
+		p.names[event.Name] = true
+	}
+}
