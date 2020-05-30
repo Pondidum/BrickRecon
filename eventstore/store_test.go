@@ -1,7 +1,6 @@
 package eventstore
 
 import (
-	"bufio"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -45,28 +44,11 @@ func TestWritingEvents(t *testing.T) {
 	}
 }
 
-func readLines(path string) ([][]byte, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	lines := [][]byte{}
-
-	for scanner.Scan() {
-		lines = append(lines, scanner.Bytes())
-	}
-
-	return lines, nil
-}
-
 func TestProjections(t *testing.T) {
 
 	temp, _ := ioutil.TempDir(".", "es")
 	defer func() {
-		// os.RemoveAll(temp)
+		os.RemoveAll(temp)
 	}()
 
 	es := CreateEventStore(temp)
@@ -80,6 +62,29 @@ func TestProjections(t *testing.T) {
 
 	assert.Contains(t, projection.names, "One")
 
+}
+
+func TestReadOffset(t *testing.T) {
+	temp, _ := ioutil.TempDir(".", "es")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	es := CreateEventStore(temp)
+	es.RegisterEvent(func() interface{} { return &TestEvent{} })
+
+	events := make([]interface{}, 10)
+	for i := range events {
+		events[i] = TestEvent{SetNumber: i}
+	}
+
+	assert.NoError(t, es.WriteEvents(events))
+
+	readEvents, err := es.ReadEvents(7)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 7, readEvents[0].(*TestEvent).SetNumber)
+	assert.Len(t, readEvents, 3)
 }
 
 type testProjection struct {

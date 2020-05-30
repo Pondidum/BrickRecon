@@ -59,7 +59,11 @@ func eventName(event interface{}) string {
 	return t.Name()
 }
 
-func (es *EventStore) Write(events ...interface{}) error {
+func (es *EventStore) Write(event interface{}) error {
+	return es.WriteEvents([]interface{}{event})
+}
+
+func (es *EventStore) WriteEvents(events []interface{}) error {
 
 	filename := path.Join(es.root, "events")
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -123,10 +127,16 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
 	events := []interface{}{}
+	scanner := bufio.NewScanner(file)
+	lines := 0
 
 	for scanner.Scan() {
+
+		if lines < offset {
+			lines++
+			continue
+		}
 
 		var read readEvent
 		if err := json.Unmarshal(scanner.Bytes(), &read); err != nil {
