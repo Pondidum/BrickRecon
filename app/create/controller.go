@@ -48,7 +48,7 @@ func (c CreateController) Post(req *http.Request) interface{} {
 		})
 	}
 
-	legoModel := lego.NewModel(modelName, parts)
+	legoModel := lego.NewProject(modelName, parts)
 	c.DB.AddModel(legoModel)
 
 	return preen.Redirect{URL: "/models/" + modelName}

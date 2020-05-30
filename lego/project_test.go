@@ -8,7 +8,7 @@ import (
 
 func TestModelPartAdding(t *testing.T) {
 
-	model := NewModel("test", []Part{})
+	model := NewProject("test", []Part{})
 	assert.Len(t, model.parts, 0)
 
 	// add a part

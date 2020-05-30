@@ -1,13 +1,13 @@
 package lego
 
-type Model struct {
+type Project struct {
 	Name string
 
 	parts []*Part
 }
 
-func NewModel(name string, parts []Part) Model {
-	m := Model{
+func NewProject(name string, parts []Part) Project {
+	m := Project{
 		Name:  name,
 		parts: make([]*Part, len(parts)),
 	}
@@ -19,7 +19,7 @@ func NewModel(name string, parts []Part) Model {
 	return m
 }
 
-func (m *Model) AddPart(part Part) {
+func (m *Project) AddPart(part Part) {
 
 	id := part.BrickLinkID
 	colour := part.Colour.BrickLinkID
@@ -34,7 +34,7 @@ func (m *Model) AddPart(part Part) {
 	m.parts = append(m.parts, &part)
 }
 
-func (m *Model) partByTypeAndColour(brickLinkID string, colourID int) (*Part, bool) {
+func (m *Project) partByTypeAndColour(brickLinkID string, colourID int) (*Part, bool) {
 
 	for _, p := range m.parts {
 
