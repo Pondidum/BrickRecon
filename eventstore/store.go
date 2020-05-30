@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -18,10 +17,8 @@ var newline = []byte("\n")
 type EventStore struct {
 	root string
 
-	registry map[string]Initialiser
-
-	projectionInitialiser map[string]Initialiser
-	projections           map[string]Projector
+	registry    map[string]Initialiser
+	projections map[string]Projection
 }
 
 type Event struct {
@@ -32,7 +29,6 @@ type Event struct {
 }
 
 type Initialiser func() interface{}
-type Projector func(state interface{}, event interface{}) interface{}
 
 type readEvent struct {
 	Timestamp time.Time
@@ -43,10 +39,9 @@ type readEvent struct {
 
 func CreateEventStore(root string) *EventStore {
 	return &EventStore{
-		root:                  root,
-		registry:              map[string]Initialiser{},
-		projectionInitialiser: map[string]Initialiser{},
-		projections:           map[string]Projector{},
+		root:        root,
+		registry:    map[string]Initialiser{},
+		projections: map[string]Projection{},
 	}
 }
 
@@ -55,8 +50,7 @@ func (es *EventStore) RegisterEvent(creator Initialiser) {
 }
 
 func (es *EventStore) RegisterProjection(name string, initialisState Initialiser, project Projector) {
-	es.projectionInitialiser[name] = initialisState
-	es.projections[name] = project
+	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialisState, project)
 }
 
 func eventName(event interface{}) string {
@@ -103,49 +97,16 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 		}
 	}
 
-	for name, project := range es.projections {
-
-		state := es.projectionInitialiser[name]()
-		err := es.ReadView(name, state)
-
-		if err != nil && !os.IsNotExist(err) {
-			return err
-		}
-
-		for _, e := range events {
-			state = project(state, e)
-		}
-
-		viewBytes, err := json.Marshal(state)
-
-		if err != nil {
-			return err
-		}
-
-		err = os.MkdirAll(path.Join(es.root, "views"), os.ModePerm)
-		if err != nil {
-			return err
-		}
-
-		err = ioutil.WriteFile(path.Join(es.root, "views", name+".json"), viewBytes, 0666)
-		if err != nil {
-			return err
-		}
+	for _, projection := range es.projections {
+		projection.Project(events)
 	}
 
 	return nil
 }
 
 func (es *EventStore) ReadView(name string, view interface{}) error {
-
-	filename := path.Join(es.root, "views", name+".json")
-	content, err := ioutil.ReadFile(filename)
-
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(content, view)
+	p := es.projections[name]
+	return p.ReadView(view)
 }
 
 func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
