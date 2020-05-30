@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
@@ -18,7 +19,7 @@ type EventStore struct {
 	root string
 
 	registry    map[string]func() interface{}
-	projections []Projection
+	projections map[string]Projector
 }
 
 type Event struct {
@@ -28,9 +29,7 @@ type Event struct {
 	Content   interface{}
 }
 
-type Projection interface {
-	Apply(e interface{})
-}
+type Projector func(e interface{}) interface{}
 
 type readEvent struct {
 	Timestamp time.Time
@@ -41,8 +40,9 @@ type readEvent struct {
 
 func CreateEventStore(root string) *EventStore {
 	return &EventStore{
-		root:     root,
-		registry: map[string]func() interface{}{},
+		root:        root,
+		registry:    map[string]func() interface{}{},
+		projections: map[string]Projector{},
 	}
 }
 
@@ -89,8 +89,23 @@ func (es *EventStore) Write(events ...interface{}) error {
 			return err
 		}
 
-		for _, p := range es.projections {
-			p.Apply(e)
+		for name, p := range es.projections {
+			view := p(e)
+			viewBytes, err := json.Marshal(view)
+
+			if err != nil {
+				return err
+			}
+
+			err = os.MkdirAll(path.Join(es.root, "views"), os.ModePerm)
+			if err != nil {
+				return err
+			}
+
+			err = ioutil.WriteFile(path.Join(es.root, "views", name+".json"), viewBytes, 0666)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -136,6 +151,6 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 	return events, nil
 }
 
-func (es *EventStore) RegisterProjection(projection Projection) {
-	es.projections = append(es.projections, projection)
+func (es *EventStore) RegisterProjection(name string, projection Projector) {
+	es.projections[name] = projection
 }
