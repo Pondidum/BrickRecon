@@ -55,15 +55,6 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
-func eventName(event interface{}) string {
-	t := reflect.TypeOf(event)
-	if t.Kind() == reflect.Ptr {
-		t = t.Elem()
-	}
-
-	return t.Name()
-}
-
 func (es *EventStore) Write(event interface{}) error {
 	return es.WriteEvents([]interface{}{event})
 }
@@ -78,8 +69,6 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 	}
 
 	defer file.Close()
-
-	checkindex, err := es.checkIndex.Read(filename)
 
 	for _, e := range events {
 
@@ -99,12 +88,6 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 		if _, err := file.Write(append(bytes, newline...)); err != nil {
 			return err
 		}
-
-		checkindex++
-	}
-
-	if err = es.checkIndex.Write(filename, checkindex); err != nil {
-		return err
 	}
 
 	return es.runProjections()
@@ -150,13 +133,6 @@ func (es *EventStore) runProjections() error {
 	}
 
 	return nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 func (es *EventStore) ReadView(name string, view interface{}) error {
@@ -207,4 +183,20 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 	}
 
 	return events, nil
+}
+
+func eventName(event interface{}) string {
+	t := reflect.TypeOf(event)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return t.Name()
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

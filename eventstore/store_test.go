@@ -106,3 +106,46 @@ func TestReadOffset(t *testing.T) {
 	assert.Equal(t, 7, readEvents[0].(*TestEvent).SetNumber)
 	assert.Len(t, readEvents, 3)
 }
+
+func TestProjectionCatchup(t *testing.T) {
+	temp, _ := ioutil.TempDir(".", "es")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	es := NewEventStore(temp)
+	es.RegisterEvent(func() interface{} { return &TestEvent{} })
+
+	// write some events
+	assert.NoError(t, es.Write(TestEvent{Name: "Before_1", SetNumber: 1}))
+	assert.NoError(t, es.Write(TestEvent{Name: "Before_2", SetNumber: 2}))
+
+	// register a new projection
+	es.RegisterProjection(
+		"logs",
+		func() interface{} {
+			return &OrderedEvents{}
+		},
+		func(state, event interface{}) interface{} {
+			m := state.(*OrderedEvents)
+			e := event.(*TestEvent)
+
+			m.Names = append(m.Names, e.Name)
+
+			return state
+		})
+
+	// write a new event
+	assert.NoError(t, es.Write(TestEvent{Name: "After_1", SetNumber: 3}))
+
+	// view should contain all 3 events in order
+	var view OrderedEvents
+	assert.NoError(t, es.ReadView("logs", &view))
+
+	assert.Equal(t, []string{"Before_1", "Before_2", "After_1"}, view.Names)
+
+}
+
+type OrderedEvents struct {
+	Names []string
+}
