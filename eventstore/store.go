@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"reflect"
-	"strconv"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -19,6 +17,7 @@ var newline = []byte("\n")
 type EventStore struct {
 	root string
 
+	checkIndex  CheckIndex
 	registry    map[string]Initialiser
 	projections map[string]Projection
 }
@@ -42,6 +41,7 @@ type readEvent struct {
 func NewEventStore(root string) *EventStore {
 	return &EventStore{
 		root:        root,
+		checkIndex:  NewCheckIndex(),
 		registry:    map[string]Initialiser{},
 		projections: map[string]Projection{},
 	}
@@ -51,8 +51,8 @@ func (es *EventStore) RegisterEvent(creator Initialiser) {
 	es.registry[eventName(creator())] = creator
 }
 
-func (es *EventStore) RegisterProjection(name string, initialisState Initialiser, project Projector) {
-	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialisState, project)
+func (es *EventStore) RegisterProjection(name string, initialiseState Initialiser, project Projector) {
+	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
 func eventName(event interface{}) string {
@@ -62,19 +62,6 @@ func eventName(event interface{}) string {
 	}
 
 	return t.Name()
-}
-
-func (es *EventStore) checkIndex(filename string) (int, error) {
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return 0, err
-	}
-
-	return strconv.Atoi(string(content))
-}
-
-func (es *EventStore) updateCheckIndex(filename string, index int) error {
-	return ioutil.WriteFile(filename, []byte(strconv.Itoa(index)), 0666)
 }
 
 func (es *EventStore) Write(event interface{}) error {
@@ -92,8 +79,7 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 
 	defer file.Close()
 
-	checkIndexPath := path.Join(es.root, "checkindex")
-	checkindex, err := es.checkIndex(checkIndexPath)
+	checkindex, err := es.checkIndex.Read(filename)
 
 	for _, e := range events {
 
@@ -117,7 +103,7 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 		checkindex++
 	}
 
-	if err = es.updateCheckIndex(checkIndexPath, checkindex); err != nil {
+	if err = es.checkIndex.Write(filename, checkindex); err != nil {
 		return err
 	}
 
@@ -126,12 +112,16 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 
 func (es *EventStore) runProjections() error {
 
+	if err := os.MkdirAll(path.Join(es.root, "views"), os.ModePerm); err != nil {
+		return err
+	}
+
 	lowestIndex := 0
 	projectionIndex := map[string]int{}
 
 	for name, projection := range es.projections {
 
-		if index, err := projection.CheckIndex(); err != nil {
+		if index, err := es.checkIndex.Read(projection.path); err != nil {
 			return err
 		} else {
 			lowestIndex = min(lowestIndex, index)
@@ -146,15 +136,15 @@ func (es *EventStore) runProjections() error {
 
 	lastIndex := lowestIndex + len(events)
 
-	for _, projection := range es.projections {
+	for name, projection := range es.projections {
 
-		firstEvent := projectionIndex[projection.name] - lowestIndex
+		firstEvent := projectionIndex[name] - lowestIndex
 
 		if err := projection.Project(events[firstEvent:]); err != nil {
 			return err
 		}
 
-		if err := projection.WriteCheckIndex(lastIndex); err != nil {
+		if err := es.checkIndex.Write(projection.path, lastIndex); err != nil {
 			return err
 		}
 	}

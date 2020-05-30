@@ -5,49 +5,29 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"strconv"
 )
 
 type Projector func(state interface{}, event interface{}) interface{}
 
 type Projection struct {
-	root         string
-	name         string
-	initialState Initialiser
-	project      Projector
+	path            string
+	initialiseState Initialiser
+	project         Projector
 }
 
-func NewProjection(root string, name string, initialisState Initialiser, project Projector) Projection {
-	return Projection{root, name, initialisState, project}
-}
+func NewProjection(root string, name string, initialiseState Initialiser, project Projector) Projection {
+	filepath := path.Join(root, name+".json")
 
-func (p *Projection) CheckIndex() (int, error) {
-
-	filename := path.Join(p.root, p.name+".idx")
-	contents, err := ioutil.ReadFile(filename)
-
-	if os.IsNotExist(err) {
-		return 0, nil
+	return Projection{
+		path:            filepath,
+		initialiseState: initialiseState,
+		project:         project,
 	}
-
-	if err != nil {
-		return 0, err
-	}
-
-	return strconv.Atoi(string(contents))
-}
-
-func (p *Projection) WriteCheckIndex(index int) error {
-	filename := path.Join(p.root, p.name+".idx")
-	contents := strconv.Itoa(index)
-
-	return ioutil.WriteFile(filename, []byte(contents), 0666)
 }
 
 func (p *Projection) ReadView(view interface{}) error {
 
-	filename := path.Join(p.root, p.name+".json")
-	content, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(p.path)
 
 	if err != nil {
 		return err
@@ -58,7 +38,7 @@ func (p *Projection) ReadView(view interface{}) error {
 
 func (p *Projection) Project(events []interface{}) error {
 
-	state := p.initialState()
+	state := p.initialiseState()
 	err := p.ReadView(state)
 
 	if err != nil && !os.IsNotExist(err) {
@@ -75,15 +55,5 @@ func (p *Projection) Project(events []interface{}) error {
 		return err
 	}
 
-	err = os.MkdirAll(path.Join(p.root), os.ModePerm)
-	if err != nil {
-		return err
-	}
-
-	err = ioutil.WriteFile(path.Join(p.root, p.name+".json"), viewBytes, 0666)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return ioutil.WriteFile(p.path, viewBytes, 0666)
 }
