@@ -3,45 +3,64 @@ package lego
 type Project struct {
 	Name string
 
-	parts []*Part
+	parts *PartList
+
+	changes []interface{}
+	version int
 }
 
-func NewProject(name string, parts []Part) Project {
-	m := Project{
-		Name:  name,
-		parts: make([]*Part, len(parts)),
-	}
+func NewProject(name string, parts []Part) *Project {
 
-	for i, p := range parts {
-		m.parts[i] = &p
-	}
+	project := Project{}
+	project.apply(&ProjectCreated{Name: name})
+	project.apply(&PartsAdded{Parts: parts})
 
-	return m
+	return &project
 }
 
-func (m *Project) AddPart(part Part) {
-
-	id := part.BrickLinkID
-	colour := part.Colour.BrickLinkID
-
-	existing, found := m.partByTypeAndColour(id, colour)
-
-	if found {
-		existing.Quantity += part.Quantity
-		return
+func (prj *Project) FromEvents(events []interface{}) {
+	for _, event := range events {
+		prj.on(event)
+		prj.version++
 	}
-
-	m.parts = append(m.parts, &part)
 }
 
-func (m *Project) partByTypeAndColour(brickLinkID string, colourID int) (*Part, bool) {
+func (prj *Project) apply(event interface{}) {
+	prj.changes = append(prj.changes, event)
+	prj.on(event)
+}
 
-	for _, p := range m.parts {
+func (prj *Project) Version() int {
+	return prj.version
+}
 
-		if p.BrickLinkID == brickLinkID && p.Colour.BrickLinkID == colourID {
-			return p, true
+func (prj *Project) Changes() []interface{} {
+	return prj.changes
+}
+
+func (prj *Project) ClearChanges() {
+	prj.changes = []interface{}{}
+}
+
+func (prj *Project) on(event interface{}) {
+
+	switch e := event.(type) {
+
+	case *ProjectCreated:
+		prj.Name = e.Name
+
+	case *PartsAdded:
+		for _, p := range e.Parts {
+			prj.parts.Add(p)
 		}
 	}
 
-	return nil, false
+}
+
+type ProjectCreated struct {
+	Name string
+}
+
+type PartsAdded struct {
+	Parts []Part
 }

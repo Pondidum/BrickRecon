@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestModelPartAdding(t *testing.T) {
+func TestPartListAdding(t *testing.T) {
 
-	model := NewProject("test", []Part{})
+	model := NewPartsList([]Part{})
 	assert.Len(t, model.parts, 0)
 
 	// add a part
-	model.AddPart(Part{
+	model.Add(Part{
 		BrickLinkID: "1234",
 		Colour:      Colour{BrickLinkID: 1, Name: "Black"},
 		Quantity:    1,
@@ -20,7 +20,7 @@ func TestModelPartAdding(t *testing.T) {
 	assert.Len(t, model.parts, 1)
 
 	// duplicate part should increase quantity
-	model.AddPart(Part{
+	model.Add(Part{
 		BrickLinkID: "1234",
 		Colour:      Colour{BrickLinkID: 1, Name: "Black"},
 		Quantity:    17,
@@ -29,7 +29,7 @@ func TestModelPartAdding(t *testing.T) {
 	assert.Equal(t, 18, model.parts[0].Quantity)
 
 	// duplicate part with differnt colour
-	model.AddPart(Part{
+	model.Add(Part{
 		BrickLinkID: "1234",
 		Colour:      Colour{BrickLinkID: 2, Name: "Red"},
 		Quantity:    1,
