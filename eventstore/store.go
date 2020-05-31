@@ -1,9 +1,7 @@
 package eventstore
 
 import (
-	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -23,19 +21,21 @@ type EventStore struct {
 }
 
 type Event struct {
-	Timestamp time.Time
-	ID        string
-	Type      string
-	Content   interface{}
+	Timestamp   time.Time
+	ID          uuid.UUID
+	AggregateID uuid.UUID
+	Type        string
+	Content     interface{}
 }
 
 type Initialiser func() interface{}
 
 type readEvent struct {
-	Timestamp time.Time
-	ID        string
-	Type      string
-	Content   json.RawMessage
+	Timestamp   time.Time
+	ID          uuid.UUID
+	AggregateID uuid.UUID
+	Type        string
+	Content     json.RawMessage
 }
 
 func NewEventStore(root string) *EventStore {
@@ -55,11 +55,11 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
-func (es *EventStore) Write(event interface{}) error {
-	return es.WriteEvents([]interface{}{event})
+func (es *EventStore) Write(aggregateID uuid.UUID, event interface{}) error {
+	return es.WriteEvents(aggregateID, []interface{}{event})
 }
 
-func (es *EventStore) WriteEvents(events []interface{}) error {
+func (es *EventStore) WriteEvents(aggregateID uuid.UUID, events []interface{}) error {
 
 	filename := path.Join(es.root, "events")
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -73,10 +73,11 @@ func (es *EventStore) WriteEvents(events []interface{}) error {
 	for _, e := range events {
 
 		dto := &Event{
-			Timestamp: time.Now(),
-			ID:        uuid.NewV4().String(),
-			Type:      eventName(e),
-			Content:   e,
+			Timestamp:   time.Now(),
+			ID:          uuid.NewV4(),
+			AggregateID: aggregateID,
+			Type:        eventName(e),
+			Content:     e,
 		}
 
 		bytes, err := json.Marshal(dto)
@@ -142,40 +143,19 @@ func (es *EventStore) ReadView(name string, view interface{}) error {
 
 func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 
-	filename := path.Join(es.root, "events")
-	file, err := os.Open(filename)
-
+	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
 		return nil, err
 	}
 
-	defer file.Close()
+	defer er.Close()
 
 	events := []interface{}{}
-	scanner := bufio.NewScanner(file)
-	lines := 0
 
-	for scanner.Scan() {
+	for er.ReadFrom(offset) {
 
-		if lines < offset {
-			lines++
-			continue
-		}
-
-		var read readEvent
-		if err := json.Unmarshal(scanner.Bytes(), &read); err != nil {
-			return nil, err
-		}
-
-		creator, found := es.registry[read.Type]
-
-		if !found {
-			return nil, fmt.Errorf("Unable to find an event of type %s", read.Type)
-		}
-
-		e := creator()
-
-		if err := json.Unmarshal(read.Content, &e); err != nil {
+		e, err := er.Event()
+		if err != nil {
 			return nil, err
 		}
 
