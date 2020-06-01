@@ -2,6 +2,7 @@ package eventstore
 
 import (
 	"io/ioutil"
+	"mvc/lego"
 	"os"
 	"testing"
 
@@ -154,4 +155,27 @@ func TestProjectionCatchup(t *testing.T) {
 
 type OrderedEvents struct {
 	Names []string
+}
+
+func TestAggregateSaveLoad(t *testing.T) {
+
+	temp, _ := ioutil.TempDir(".", "er")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	store := NewEventStore(temp)
+	store.RegisterEvent(func() interface{} { return &lego.ProjectCreated{} })
+	store.RegisterEvent(func() interface{} { return &lego.PartsAdded{} })
+
+	project := lego.NewProject("test", []lego.Part{})
+	assert.NoError(t, store.SaveAggregate(project))
+
+	var loaded lego.Project
+	assert.NoError(t, store.LoadAggregate(project.ID(), &loaded))
+
+	assert.Equal(t, project.ID(), loaded.ID())
+	assert.Equal(t, project.Name, loaded.Name)
+	assert.Empty(t, loaded.Changes())
+	assert.Equal(t, 2, loaded.Version())
 }

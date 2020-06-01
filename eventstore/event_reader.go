@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -14,6 +15,14 @@ type EventReader struct {
 	file         *os.File
 	scanner      *bufio.Scanner
 	currentIndex int
+}
+
+type readEvent struct {
+	Timestamp   time.Time
+	ID          uuid.UUID
+	AggregateID uuid.UUID
+	Type        string
+	Content     json.RawMessage
 }
 
 func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {

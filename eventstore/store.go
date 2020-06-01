@@ -20,6 +20,14 @@ type EventStore struct {
 	projections map[string]Projection
 }
 
+type Aggregate interface {
+	ID() uuid.UUID
+	FromEvents(events []interface{})
+	Changes() []interface{}
+	ClearChanges()
+	Version() int
+}
+
 type Event struct {
 	Timestamp   time.Time
 	ID          uuid.UUID
@@ -29,14 +37,6 @@ type Event struct {
 }
 
 type Initialiser func() interface{}
-
-type readEvent struct {
-	Timestamp   time.Time
-	ID          uuid.UUID
-	AggregateID uuid.UUID
-	Type        string
-	Content     json.RawMessage
-}
 
 func NewEventStore(root string) *EventStore {
 	return &EventStore{
@@ -57,6 +57,33 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 
 func (es *EventStore) Write(aggregateID uuid.UUID, event interface{}) error {
 	return es.WriteEvents(aggregateID, []interface{}{event})
+}
+
+func (es *EventStore) SaveAggregate(a Aggregate) error {
+
+	id := a.ID()
+	events := a.Changes()
+
+	if err := es.WriteEvents(id, events); err != nil {
+		return err
+	}
+
+	a.ClearChanges()
+
+	return nil
+}
+
+func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
+
+	events, err := es.ReadAggregateEvents(id)
+
+	if err != nil {
+		return err
+	}
+
+	a.FromEvents(events)
+
+	return nil
 }
 
 func (es *EventStore) WriteEvents(aggregateID uuid.UUID, events []interface{}) error {
