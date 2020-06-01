@@ -15,7 +15,9 @@ type Project struct {
 
 func NewProject(name string, parts []Part) *Project {
 
-	project := Project{}
+	project := Project{
+		parts: &PartList{},
+	}
 	project.Aggregator = eventstore.NewAggregator(project.on)
 
 	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
