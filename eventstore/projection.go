@@ -7,21 +7,21 @@ import (
 	"path"
 )
 
-type Projector func(state interface{}, event interface{}) interface{}
+type Projector func(state interface{}, event Record) interface{}
 
 type Projection struct {
 	path            string
 	initialiseState Initialiser
-	project         Projector
+	projector       Projector
 }
 
-func NewProjection(root string, name string, initialiseState Initialiser, project Projector) Projection {
+func NewProjection(root string, name string, initialiseState Initialiser, projector Projector) Projection {
 	filepath := path.Join(root, name+".json")
 
 	return Projection{
 		path:            filepath,
 		initialiseState: initialiseState,
-		project:         project,
+		projector:       projector,
 	}
 }
 
@@ -36,7 +36,7 @@ func (p *Projection) ReadView(view interface{}) error {
 	return json.Unmarshal(content, view)
 }
 
-func (p *Projection) Project(events []interface{}) error {
+func (p *Projection) Project(records []Record) error {
 
 	state := p.initialiseState()
 	err := p.ReadView(state)
@@ -45,8 +45,8 @@ func (p *Projection) Project(events []interface{}) error {
 		return err
 	}
 
-	for _, e := range events {
-		state = p.project(state, e)
+	for _, r := range records {
+		state = p.projector(state, r)
 	}
 
 	viewBytes, err := json.Marshal(state)

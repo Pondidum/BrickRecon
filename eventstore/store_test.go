@@ -14,41 +14,6 @@ type TestEvent struct {
 	SetNumber int
 }
 
-func TestWritingEvents(t *testing.T) {
-
-	temp, _ := ioutil.TempDir(".", "es")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
-
-	es := NewEventStore(temp)
-	es.RegisterEvent(func() interface{} { return &TestEvent{} })
-
-	a := &Aggregator{
-		id: uuid.NewV4(),
-		changes: []interface{}{
-			TestEvent{Name: "One", SetNumber: 1234},
-		},
-	}
-
-	assert.NoError(t, es.SaveAggregate(a))
-
-	events, err := es.readEvents(0)
-	assert.NoError(t, err)
-	assert.Len(t, events, 1)
-
-	for _, e := range events {
-
-		switch event := e.(type) {
-		case *TestEvent:
-			assert.Equal(t, "One", event.Name)
-		default:
-			assert.Fail(t, "")
-		}
-
-	}
-}
-
 func TestProjections(t *testing.T) {
 
 	temp, _ := ioutil.TempDir(".", "es")
@@ -62,8 +27,9 @@ func TestProjections(t *testing.T) {
 	es.RegisterProjection(
 		"names",
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state, event interface{}) interface{} {
+		func(state interface{}, record Record) interface{} {
 			m := state.(*TestProjectionState)
+			event, _ := record.Event()
 			e := event.(*TestEvent)
 
 			m.Names[e.Name] = true
@@ -93,31 +59,6 @@ type TestProjectionState struct {
 	Names map[string]bool
 }
 
-func TestReadOffset(t *testing.T) {
-	temp, _ := ioutil.TempDir(".", "es")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
-
-	es := NewEventStore(temp)
-	es.RegisterEvent(func() interface{} { return &TestEvent{} })
-
-	a := &Aggregator{
-		id:      uuid.NewV4(),
-		changes: make([]interface{}, 10),
-	}
-	for i := range a.changes {
-		a.changes[i] = TestEvent{SetNumber: i}
-	}
-	assert.NoError(t, es.SaveAggregate(a))
-
-	readEvents, err := es.readEvents(7)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 7, readEvents[0].(*TestEvent).SetNumber)
-	assert.Len(t, readEvents, 3)
-}
-
 func TestProjectionCatchup(t *testing.T) {
 	temp, _ := ioutil.TempDir(".", "es")
 	defer func() {
@@ -144,8 +85,9 @@ func TestProjectionCatchup(t *testing.T) {
 		func() interface{} {
 			return &OrderedEvents{}
 		},
-		func(state, event interface{}) interface{} {
+		func(state interface{}, record Record) interface{} {
 			m := state.(*OrderedEvents)
+			event, _ := record.Event()
 			e := event.(*TestEvent)
 
 			m.Names = append(m.Names, e.Name)

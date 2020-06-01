@@ -124,7 +124,7 @@ func readEvents(method func(reader *EventReader) bool) ([]string, error) {
 	seenEvents := []string{}
 
 	for method(reader) {
-		if event, err := reader.readEvent(); err != nil {
+		if event, err := reader.Record(); err != nil {
 			return nil, err
 		} else {
 			seenEvents = append(seenEvents, event.ID.String())

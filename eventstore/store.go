@@ -51,13 +51,29 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 
 func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 
-	events, err := es.readAggregateEvents(id)
-
+	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
 		return err
 	}
 
-	a.fromEvents(events)
+	defer er.Close()
+
+	for er.ReadFor(id) {
+
+		r, err := er.Record()
+		if err != nil {
+			return err
+		}
+
+		e, err := r.Event()
+
+		if err != nil {
+			return err
+		}
+
+		a.onEvent(e)
+		a.version = r.Version
+	}
 
 	return nil
 }
@@ -138,18 +154,32 @@ func (es *EventStore) runProjections() error {
 		}
 	}
 
-	events, err := es.readEvents(lowestIndex)
+	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
 		return err
 	}
 
-	lastIndex := lowestIndex + len(events)
+	defer er.Close()
+
+	records := []Record{}
+
+	for er.ReadFrom(lowestIndex) {
+
+		record, err := er.Record()
+		if err != nil {
+			return err
+		}
+
+		records = append(records, record)
+	}
+
+	lastIndex := lowestIndex + len(records)
 
 	for name, projection := range es.projections {
 
 		firstEvent := projectionIndex[name] - lowestIndex
 
-		if err := projection.Project(events[firstEvent:]); err != nil {
+		if err := projection.Project(records[firstEvent:]); err != nil {
 			return err
 		}
 
@@ -159,53 +189,6 @@ func (es *EventStore) runProjections() error {
 	}
 
 	return nil
-}
-
-func (es *EventStore) readEvents(offset int) ([]interface{}, error) {
-
-	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
-	if err != nil {
-		return nil, err
-	}
-
-	defer er.Close()
-
-	events := []interface{}{}
-
-	for er.ReadFrom(offset) {
-
-		e, err := er.Event()
-		if err != nil {
-			return nil, err
-		}
-
-		events = append(events, e)
-	}
-
-	return events, nil
-}
-func (es *EventStore) readAggregateEvents(aggregateID uuid.UUID) ([]interface{}, error) {
-
-	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
-	if err != nil {
-		return nil, err
-	}
-
-	defer er.Close()
-
-	events := []interface{}{}
-
-	for er.ReadFor(aggregateID) {
-
-		e, err := er.Event()
-		if err != nil {
-			return nil, err
-		}
-
-		events = append(events, e)
-	}
-
-	return events, nil
 }
 
 func eventName(event interface{}) string {
