@@ -28,10 +28,10 @@ func TestWritingEvents(t *testing.T) {
 	id := uuid.NewV4()
 	eventOne := TestEvent{Name: "One", SetNumber: 1234}
 
-	err := es.Write(id, eventOne)
+	err := es.write(id, eventOne)
 	assert.NoError(t, err)
 
-	events, err := es.ReadEvents(0)
+	events, err := es.readEvents(0)
 	assert.NoError(t, err)
 	assert.Len(t, events, 1)
 
@@ -70,10 +70,10 @@ func TestProjections(t *testing.T) {
 		})
 
 	id := uuid.NewV4()
-	err := es.Write(id, TestEvent{Name: "One"})
+	err := es.write(id, TestEvent{Name: "One"})
 	assert.NoError(t, err)
 
-	err = es.Write(id, TestEvent{Name: "Two"})
+	err = es.write(id, TestEvent{Name: "Two"})
 	assert.NoError(t, err)
 
 	var view TestProjectionState
@@ -103,9 +103,9 @@ func TestReadOffset(t *testing.T) {
 		events[i] = TestEvent{SetNumber: i}
 	}
 
-	assert.NoError(t, es.WriteEvents(id, events))
+	assert.NoError(t, es.writeEvents(id, events))
 
-	readEvents, err := es.ReadEvents(7)
+	readEvents, err := es.readEvents(7)
 	assert.NoError(t, err)
 
 	assert.Equal(t, 7, readEvents[0].(*TestEvent).SetNumber)
@@ -124,8 +124,8 @@ func TestProjectionCatchup(t *testing.T) {
 	id := uuid.NewV4()
 
 	// write some events
-	assert.NoError(t, es.Write(id, TestEvent{Name: "Before_1", SetNumber: 1}))
-	assert.NoError(t, es.Write(id, TestEvent{Name: "Before_2", SetNumber: 2}))
+	assert.NoError(t, es.write(id, TestEvent{Name: "Before_1", SetNumber: 1}))
+	assert.NoError(t, es.write(id, TestEvent{Name: "Before_2", SetNumber: 2}))
 
 	// register a new projection
 	es.RegisterProjection(
@@ -143,7 +143,7 @@ func TestProjectionCatchup(t *testing.T) {
 		})
 
 	// write a new event
-	assert.NoError(t, es.Write(id, TestEvent{Name: "After_1", SetNumber: 3}))
+	assert.NoError(t, es.write(id, TestEvent{Name: "After_1", SetNumber: 3}))
 
 	// view should contain all 3 events in order
 	var view OrderedEvents

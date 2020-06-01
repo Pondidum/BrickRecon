@@ -55,16 +55,12 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
-func (es *EventStore) Write(aggregateID uuid.UUID, event interface{}) error {
-	return es.WriteEvents(aggregateID, []interface{}{event})
-}
-
 func (es *EventStore) SaveAggregate(a Aggregate) error {
 
 	id := a.ID()
 	events := a.Changes()
 
-	if err := es.WriteEvents(id, events); err != nil {
+	if err := es.writeEvents(id, events); err != nil {
 		return err
 	}
 
@@ -75,7 +71,7 @@ func (es *EventStore) SaveAggregate(a Aggregate) error {
 
 func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 
-	events, err := es.ReadAggregateEvents(id)
+	events, err := es.readAggregateEvents(id)
 
 	if err != nil {
 		return err
@@ -86,7 +82,16 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 	return nil
 }
 
-func (es *EventStore) WriteEvents(aggregateID uuid.UUID, events []interface{}) error {
+func (es *EventStore) ReadView(name string, view interface{}) error {
+	p := es.projections[name]
+	return p.ReadView(view)
+}
+
+func (es *EventStore) write(aggregateID uuid.UUID, event interface{}) error {
+	return es.writeEvents(aggregateID, []interface{}{event})
+}
+
+func (es *EventStore) writeEvents(aggregateID uuid.UUID, events []interface{}) error {
 
 	filename := path.Join(es.root, "events")
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -140,7 +145,7 @@ func (es *EventStore) runProjections() error {
 		}
 	}
 
-	events, err := es.ReadEvents(lowestIndex)
+	events, err := es.readEvents(lowestIndex)
 	if err != nil {
 		return err
 	}
@@ -163,12 +168,7 @@ func (es *EventStore) runProjections() error {
 	return nil
 }
 
-func (es *EventStore) ReadView(name string, view interface{}) error {
-	p := es.projections[name]
-	return p.ReadView(view)
-}
-
-func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
+func (es *EventStore) readEvents(offset int) ([]interface{}, error) {
 
 	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
@@ -191,7 +191,7 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 
 	return events, nil
 }
-func (es *EventStore) ReadAggregateEvents(aggregateID uuid.UUID) ([]interface{}, error) {
+func (es *EventStore) readAggregateEvents(aggregateID uuid.UUID) ([]interface{}, error) {
 
 	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
