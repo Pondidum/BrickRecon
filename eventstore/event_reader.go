@@ -3,7 +3,6 @@ package eventstore
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
@@ -24,12 +23,10 @@ type Record struct {
 	Version     int
 	Type        string
 	Content     json.RawMessage
-
-	creator func() (interface{}, error)
 }
 
-func (r *Record) Event() (interface{}, error) {
-	return r.creator()
+func (r *Record) Event(e interface{}) error {
+	return json.Unmarshal(r.Content, &e)
 }
 
 func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {
@@ -85,22 +82,6 @@ func (er *EventReader) ReadFrom(offset int) bool {
 
 func (er *EventReader) Record() (Record, error) {
 	var read Record
-	if err := json.Unmarshal(er.scanner.Bytes(), &read); err != nil {
-		return read, err
-	}
-
-	creator, found := er.registry[read.Type]
-
-	read.creator = func() (interface{}, error) {
-		if !found {
-			return nil, fmt.Errorf("Unable to find an event of type %s", read.Type)
-		}
-
-		e := creator()
-		err := json.Unmarshal(read.Content, &e)
-
-		return e, err
-	}
-
-	return read, nil
+	err := json.Unmarshal(er.scanner.Bytes(), &read)
+	return read, err
 }

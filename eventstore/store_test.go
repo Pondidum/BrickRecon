@@ -29,8 +29,8 @@ func TestProjections(t *testing.T) {
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
 		func(state interface{}, record Record) interface{} {
 			m := state.(*TestProjectionState)
-			event, _ := record.Event()
-			e := event.(*TestEvent)
+			var e TestEvent
+			record.Event(&e)
 
 			m.Names[e.Name] = true
 
@@ -87,8 +87,8 @@ func TestProjectionCatchup(t *testing.T) {
 		},
 		func(state interface{}, record Record) interface{} {
 			m := state.(*OrderedEvents)
-			event, _ := record.Event()
-			e := event.(*TestEvent)
+			var e TestEvent
+			record.Event(&e)
 
 			m.Names = append(m.Names, e.Name)
 
@@ -159,6 +159,36 @@ func TestAggregateSave(t *testing.T) {
 
 }
 
+// func TestStuff(t *testing.T) {
+
+// 	event := Nester{}
+// 	event.ID = uuid.NewV4()
+// 	event.Version = 1234
+// 	event.Name = "test"
+
+// 	bytes, _ := json.Marshal(event)
+
+// 	assert.Equal(t, "", string(bytes))
+
+// 	var loaded Nester
+// 	json.Unmarshal(bytes, &loaded)
+
+// 	assert.Equal(t, nil, loaded)
+
+// }
+
+type EventInner struct {
+	ID      uuid.UUID
+	Version int
+}
+
+type Nester struct {
+	EventInner
+
+	Name string
+}
+
+// ------------------------------------------------------------------------- //
 type TestAggregate struct {
 	*Aggregator
 

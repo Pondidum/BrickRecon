@@ -3,6 +3,7 @@ package eventstore
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -65,13 +66,18 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 			return err
 		}
 
-		e, err := r.Event()
+		creator, found := es.registry[r.Type]
 
-		if err != nil {
+		if !found {
+			return fmt.Errorf("Unable to find an event of type %s", r.Type)
+		}
+
+		event := creator()
+		if err := r.Event(event); err != nil {
 			return err
 		}
 
-		a.onEvent(e)
+		a.onEvent(event)
 		a.version = r.Version
 	}
 
