@@ -1,12 +1,11 @@
 package app
 
 import (
-	"mvc/store"
 	"net/http"
 )
 
 type AppController struct {
-	DB *store.Storage
+	Store *AppStore
 }
 
 func (c AppController) Path() string {
@@ -14,5 +13,5 @@ func (c AppController) Path() string {
 }
 
 func (c AppController) Get(req *http.Request) interface{} {
-	return SiteModel{AllModels: c.DB.GetModelNames()}
+	return c.Store.SiteModel()
 }

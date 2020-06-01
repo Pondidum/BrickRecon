@@ -2,14 +2,19 @@ package model
 
 import (
 	"mvc/app"
-	"mvc/store"
+	"mvc/lego"
+	"mvc/preen"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
+type ProjectModel struct {
+	Project *lego.ProjectView
+}
+
 type ModelController struct {
-	DB *store.Storage
+	Store *app.AppStore
 }
 
 func (c ModelController) Path() string {
@@ -23,7 +28,14 @@ func (c ModelController) View() string {
 func (c ModelController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
-	names := c.DB.GetModelNames()
 
-	return app.SiteModel{AllModels: names, SelectedModel: c.DB.GetModel(vars["name"])}
+	siteModel := c.Store.SiteModel()
+	selected, _ := c.Store.Project(vars["name"])
+
+	return preen.ComposeModels(
+		siteModel,
+		ProjectModel{
+			Project: selected,
+		},
+	)
 }
