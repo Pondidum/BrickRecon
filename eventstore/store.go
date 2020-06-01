@@ -1,6 +1,7 @@
 package eventstore
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path"
@@ -87,6 +88,8 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 	currentVersion := a.version
 
+	block := bytes.Buffer{}
+
 	for _, e := range a.changes {
 
 		currentVersion++
@@ -105,9 +108,17 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 			return err
 		}
 
-		if _, err := file.Write(append(bytes, newline...)); err != nil {
+		if _, err := block.Write(bytes); err != nil {
 			return err
 		}
+
+		if _, err := block.Write(newline); err != nil {
+			return err
+		}
+	}
+
+	if _, err := file.Write(block.Bytes()); err != nil {
+		return err
 	}
 
 	a.version = currentVersion
