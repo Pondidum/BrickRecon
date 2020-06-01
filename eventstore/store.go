@@ -164,6 +164,29 @@ func (es *EventStore) ReadEvents(offset int) ([]interface{}, error) {
 
 	return events, nil
 }
+func (es *EventStore) ReadAggregateEvents(aggregateID uuid.UUID) ([]interface{}, error) {
+
+	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
+	if err != nil {
+		return nil, err
+	}
+
+	defer er.Close()
+
+	events := []interface{}{}
+
+	for er.ReadFor(aggregateID) {
+
+		e, err := er.Event()
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, e)
+	}
+
+	return events, nil
+}
 
 func eventName(event interface{}) string {
 	t := reflect.TypeOf(event)
