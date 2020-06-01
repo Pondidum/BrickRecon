@@ -21,14 +21,6 @@ type EventStore struct {
 	projections map[string]Projection
 }
 
-type Aggregate interface {
-	ID() uuid.UUID
-	FromEvents(events []interface{})
-	Changes() []interface{}
-	ClearChanges()
-	Version() int
-}
-
 type Event struct {
 	ID          uuid.UUID
 	Timestamp   time.Time
@@ -121,6 +113,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 		return err
 	}
 
+	a.changes = []interface{}{}
 	a.version = currentVersion
 
 	return es.runProjections()

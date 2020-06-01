@@ -208,6 +208,12 @@ func TestAggregateSave(t *testing.T) {
 	ta.Rename("two")
 	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
 	assert.Equal(t, 2, ta.version)
+	assert.Empty(t, ta.changes)
+
+	ta.Rename("three")
+	ta.Rename("four")
+	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
+	assert.Equal(t, 4, ta.version)
 
 }
 
