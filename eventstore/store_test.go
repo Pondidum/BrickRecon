@@ -2,7 +2,6 @@ package eventstore
 
 import (
 	"io/ioutil"
-	"mvc/lego"
 	"os"
 	"testing"
 
@@ -25,11 +24,14 @@ func TestWritingEvents(t *testing.T) {
 	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
-	id := uuid.NewV4()
-	eventOne := TestEvent{Name: "One", SetNumber: 1234}
+	a := &Aggregator{
+		id: uuid.NewV4(),
+		changes: []interface{}{
+			TestEvent{Name: "One", SetNumber: 1234},
+		},
+	}
 
-	err := es.write(id, eventOne)
-	assert.NoError(t, err)
+	assert.NoError(t, es.SaveAggregate(a))
 
 	events, err := es.readEvents(0)
 	assert.NoError(t, err)
@@ -69,16 +71,19 @@ func TestProjections(t *testing.T) {
 			return m
 		})
 
-	id := uuid.NewV4()
-	err := es.write(id, TestEvent{Name: "One"})
-	assert.NoError(t, err)
+	a := &Aggregator{
+		id: uuid.NewV4(),
+		changes: []interface{}{
+			TestEvent{Name: "One"},
+		},
+	}
+	assert.NoError(t, es.SaveAggregate(a))
 
-	err = es.write(id, TestEvent{Name: "Two"})
-	assert.NoError(t, err)
+	a.changes = []interface{}{TestEvent{Name: "Two"}}
+	assert.NoError(t, es.SaveAggregate(a))
 
 	var view TestProjectionState
-	err = es.ReadView("names", &view)
-	assert.NoError(t, err)
+	assert.NoError(t, es.ReadView("names", &view))
 
 	assert.Contains(t, view.Names, "One")
 	assert.Contains(t, view.Names, "Two")
@@ -97,13 +102,14 @@ func TestReadOffset(t *testing.T) {
 	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
-	id := uuid.NewV4()
-	events := make([]interface{}, 10)
-	for i := range events {
-		events[i] = TestEvent{SetNumber: i}
+	a := &Aggregator{
+		id:      uuid.NewV4(),
+		changes: make([]interface{}, 10),
 	}
-
-	assert.NoError(t, es.writeEvents(id, events))
+	for i := range a.changes {
+		a.changes[i] = TestEvent{SetNumber: i}
+	}
+	assert.NoError(t, es.SaveAggregate(a))
 
 	readEvents, err := es.readEvents(7)
 	assert.NoError(t, err)
@@ -121,11 +127,16 @@ func TestProjectionCatchup(t *testing.T) {
 	es := NewEventStore(temp)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
-	id := uuid.NewV4()
+	a := &Aggregator{
+		id: uuid.NewV4(),
+		changes: []interface{}{
+			TestEvent{Name: "Before_1", SetNumber: 1},
+			TestEvent{Name: "Before_2", SetNumber: 2},
+		},
+	}
 
 	// write some events
-	assert.NoError(t, es.write(id, TestEvent{Name: "Before_1", SetNumber: 1}))
-	assert.NoError(t, es.write(id, TestEvent{Name: "Before_2", SetNumber: 2}))
+	assert.NoError(t, es.SaveAggregate(a))
 
 	// register a new projection
 	es.RegisterProjection(
@@ -143,7 +154,10 @@ func TestProjectionCatchup(t *testing.T) {
 		})
 
 	// write a new event
-	assert.NoError(t, es.write(id, TestEvent{Name: "After_1", SetNumber: 3}))
+	a.changes = []interface{}{
+		TestEvent{Name: "After_1", SetNumber: 3},
+	}
+	assert.NoError(t, es.SaveAggregate(a))
 
 	// view should contain all 3 events in order
 	var view OrderedEvents
@@ -165,17 +179,65 @@ func TestAggregateSaveLoad(t *testing.T) {
 	}()
 
 	store := NewEventStore(temp)
-	store.RegisterEvent(func() interface{} { return &lego.ProjectCreated{} })
-	store.RegisterEvent(func() interface{} { return &lego.PartsAdded{} })
+	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
+	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
 
-	project := lego.NewProject("test", []lego.Part{})
-	assert.NoError(t, store.SaveAggregate(project))
+	project := NewTestAggregate("test")
+	assert.NoError(t, store.SaveAggregate(project.Aggregator))
 
-	var loaded lego.Project
-	assert.NoError(t, store.LoadAggregate(project.ID(), &loaded))
+	loaded := BlankTestAggregate()
+	assert.NoError(t, store.LoadAggregate(project.id, loaded.Aggregator))
 
-	assert.Equal(t, project.ID(), loaded.ID())
+	assert.Equal(t, project.id, loaded.id)
 	assert.Equal(t, project.Name, loaded.Name)
-	assert.Empty(t, loaded.Changes())
-	assert.Equal(t, 2, loaded.Version())
+	assert.Empty(t, loaded.changes)
+	assert.Equal(t, 1, loaded.version)
+}
+
+type TestAggregate struct {
+	*Aggregator
+
+	Name string
+}
+
+func BlankTestAggregate() *TestAggregate {
+	a := TestAggregate{}
+	a.Aggregator = NewAggregator(a.on)
+	return &a
+}
+
+func NewTestAggregate(name string) *TestAggregate {
+	a := BlankTestAggregate()
+	a.Apply(&TestAggregateCreated{NewID: uuid.NewV4(), Name: name})
+
+	return a
+}
+
+func (a *TestAggregate) Rename(newName string) {
+	if newName != a.Name {
+		a.Apply(&TestAggregateRenamed{NewName: newName})
+	}
+}
+
+func (a *TestAggregate) on(event interface{}) {
+
+	switch e := event.(type) {
+
+	case *TestAggregateCreated:
+		a.SetID(e.NewID)
+		a.Name = e.Name
+
+	case *TestAggregateRenamed:
+		a.Name = e.NewName
+	}
+
+}
+
+type TestAggregateCreated struct {
+	NewID uuid.UUID
+	Name  string
+}
+
+type TestAggregateRenamed struct {
+	NewName string
 }

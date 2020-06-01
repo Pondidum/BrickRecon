@@ -55,21 +55,7 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
-func (es *EventStore) SaveAggregate(a Aggregate) error {
-
-	id := a.ID()
-	events := a.Changes()
-
-	if err := es.writeEvents(id, events); err != nil {
-		return err
-	}
-
-	a.ClearChanges()
-
-	return nil
-}
-
-func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
+func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 
 	events, err := es.readAggregateEvents(id)
 
@@ -77,7 +63,7 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 		return err
 	}
 
-	a.FromEvents(events)
+	a.fromEvents(events)
 
 	return nil
 }
@@ -87,11 +73,7 @@ func (es *EventStore) ReadView(name string, view interface{}) error {
 	return p.ReadView(view)
 }
 
-func (es *EventStore) write(aggregateID uuid.UUID, event interface{}) error {
-	return es.writeEvents(aggregateID, []interface{}{event})
-}
-
-func (es *EventStore) writeEvents(aggregateID uuid.UUID, events []interface{}) error {
+func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 	filename := path.Join(es.root, "events")
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
