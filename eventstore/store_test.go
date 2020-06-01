@@ -159,35 +159,6 @@ func TestAggregateSave(t *testing.T) {
 
 }
 
-// func TestStuff(t *testing.T) {
-
-// 	event := Nester{}
-// 	event.ID = uuid.NewV4()
-// 	event.Version = 1234
-// 	event.Name = "test"
-
-// 	bytes, _ := json.Marshal(event)
-
-// 	assert.Equal(t, "", string(bytes))
-
-// 	var loaded Nester
-// 	json.Unmarshal(bytes, &loaded)
-
-// 	assert.Equal(t, nil, loaded)
-
-// }
-
-type EventInner struct {
-	ID      uuid.UUID
-	Version int
-}
-
-type Nester struct {
-	EventInner
-
-	Name string
-}
-
 // ------------------------------------------------------------------------- //
 type TestAggregate struct {
 	*Aggregator

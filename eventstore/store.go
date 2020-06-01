@@ -22,15 +22,6 @@ type EventStore struct {
 	projections map[string]Projection
 }
 
-type Event struct {
-	ID          uuid.UUID
-	Timestamp   time.Time
-	AggregateID uuid.UUID
-	Version     int
-	Type        string
-	Content     interface{}
-}
-
 type Initialiser func() interface{}
 
 func NewEventStore(root string) *EventStore {
@@ -107,13 +98,19 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 	for _, e := range a.changes {
 
 		currentVersion++
-		dto := &Event{
+
+		eventBytes, err := json.Marshal(e)
+		if err != nil {
+			return err
+		}
+
+		dto := &Record{
 			ID:          uuid.NewV4(),
 			Timestamp:   time.Now(),
 			AggregateID: a.id,
 			Version:     currentVersion,
 			Type:        eventName(e),
-			Content:     e,
+			Content:     eventBytes,
 		}
 
 		bytes, err := json.Marshal(dto)
