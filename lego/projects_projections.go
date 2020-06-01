@@ -25,7 +25,7 @@ func ProjectsInitialState() interface{} {
 	}
 }
 
-func ProjectsProjector(state interface{}, record eventstore.Record) interface{} {
+func ProjectsProjector(state interface{}, record eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
 	switch record.Type {

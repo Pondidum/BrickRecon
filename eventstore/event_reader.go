@@ -16,7 +16,7 @@ type EventReader struct {
 	currentIndex int
 }
 
-type Record struct {
+type Event struct {
 	Timestamp   time.Time
 	ID          uuid.UUID
 	AggregateID uuid.UUID
@@ -25,7 +25,7 @@ type Record struct {
 	Content     json.RawMessage
 }
 
-func (r *Record) Event(e interface{}) error {
+func (r *Event) Event(e interface{}) error {
 	return json.Unmarshal(r.Content, &e)
 }
 
@@ -80,8 +80,8 @@ func (er *EventReader) ReadFrom(offset int) bool {
 	return er.scanner.Scan()
 }
 
-func (er *EventReader) Record() (Record, error) {
-	var read Record
+func (er *EventReader) Record() (Event, error) {
+	var read Event
 	err := json.Unmarshal(er.scanner.Bytes(), &read)
 	return read, err
 }

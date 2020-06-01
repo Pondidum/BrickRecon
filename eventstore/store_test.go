@@ -27,7 +27,7 @@ func TestProjections(t *testing.T) {
 	es.RegisterProjection(
 		"names",
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state interface{}, record Record) interface{} {
+		func(state interface{}, record Event) interface{} {
 			m := state.(*TestProjectionState)
 			var e TestEvent
 			record.Event(&e)
@@ -85,7 +85,7 @@ func TestProjectionCatchup(t *testing.T) {
 		func() interface{} {
 			return &OrderedEvents{}
 		},
-		func(state interface{}, record Record) interface{} {
+		func(state interface{}, record Event) interface{} {
 			m := state.(*OrderedEvents)
 			var e TestEvent
 			record.Event(&e)

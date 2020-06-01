@@ -104,7 +104,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 			return err
 		}
 
-		dto := &Record{
+		dto := &Event{
 			ID:          uuid.NewV4(),
 			Timestamp:   time.Now(),
 			AggregateID: a.id,
@@ -164,7 +164,7 @@ func (es *EventStore) runProjections() error {
 
 	defer er.Close()
 
-	records := []Record{}
+	records := []Event{}
 
 	for er.ReadFrom(lowestIndex) {
 
