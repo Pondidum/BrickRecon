@@ -3,7 +3,6 @@ package eventstore
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -57,18 +56,7 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 			return err
 		}
 
-		creator, found := es.registry[r.Type]
-
-		if !found {
-			return fmt.Errorf("Unable to find an event of type %s", r.Type)
-		}
-
-		event := creator()
-		if err := r.Event(event); err != nil {
-			return err
-		}
-
-		a.onEvent(event)
+		a.onEvent(r.event)
 		a.version = r.Version
 	}
 
@@ -104,7 +92,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 			return err
 		}
 
-		dto := &Event{
+		dto := &Record{
 			ID:          uuid.NewV4(),
 			Timestamp:   time.Now(),
 			AggregateID: a.id,
@@ -164,7 +152,7 @@ func (es *EventStore) runProjections() error {
 
 	defer er.Close()
 
-	records := []Event{}
+	records := []Record{}
 
 	for er.ReadFrom(lowestIndex) {
 
