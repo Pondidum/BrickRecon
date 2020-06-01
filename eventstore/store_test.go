@@ -194,6 +194,23 @@ func TestAggregateSaveLoad(t *testing.T) {
 	assert.Equal(t, 1, loaded.version)
 }
 
+func TestAggregateSave(t *testing.T) {
+	temp, _ := ioutil.TempDir(".", "er")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	store := NewEventStore(temp)
+	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
+	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
+
+	ta := NewTestAggregate("test")
+	ta.Rename("two")
+	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
+	assert.Equal(t, 2, ta.version)
+
+}
+
 type TestAggregate struct {
 	*Aggregator
 

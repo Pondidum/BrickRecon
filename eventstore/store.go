@@ -29,9 +29,10 @@ type Aggregate interface {
 }
 
 type Event struct {
-	Timestamp   time.Time
 	ID          uuid.UUID
+	Timestamp   time.Time
 	AggregateID uuid.UUID
+	Version     int
 	Type        string
 	Content     interface{}
 }
@@ -84,12 +85,16 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 	defer file.Close()
 
-	for _, e := range events {
+	currentVersion := a.version
 
+	for _, e := range a.changes {
+
+		currentVersion++
 		dto := &Event{
-			Timestamp:   time.Now(),
 			ID:          uuid.NewV4(),
-			AggregateID: aggregateID,
+			Timestamp:   time.Now(),
+			AggregateID: a.id,
+			Version:     currentVersion,
 			Type:        eventName(e),
 			Content:     e,
 		}
@@ -104,6 +109,8 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 			return err
 		}
 	}
+
+	a.version = currentVersion
 
 	return es.runProjections()
 }
