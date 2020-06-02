@@ -80,7 +80,7 @@ func parsePart(fields []string) (Part, error) {
 		BrickLinkID: fields[brickLinkID],
 		ElementID:   parseElementID(fields[elementID]),
 		LDrawID:     fields[ldrawID],
-		PartName:    fields[partName],
+		Name:        fields[partName],
 	}
 
 	if part.Colour, err = parseColour(fields); err != nil {

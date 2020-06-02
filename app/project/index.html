@@ -1,6 +1,6 @@
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-  <h1 class="h2">{{ .SelectedModel.Name }}</h1>
+  <h1 class="h2">{{ .Project.Name }}</h1>
 </div>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
@@ -47,86 +47,28 @@
       <th tabindex="0"><strong class="name-header">Name</strong></th>
       <th tabindex="0"><strong class="name-header">Colour</strong></th>
       <th tabindex="0"><strong class="name-header">Quantity</strong></th>
-      <th tabindex="0"><strong class="name-header">Category</strong></th>
       <th class="" tabindex="0"><strong class="name-header">Links</strong></th>
     </tr>
   </thead>
 
   <tbody class="reactable-data">
+
+    {{ range .Project.Parts }}
     <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/2569-85.png"
-          alt="part 2569" width="66px" height="50px"></td>
-      <td>2569</td>
-      <td>Antenna Whip 8H</td>
-      <td>Dark Bluish Gray</td>
-      <td>0 <span class="text-muted">/ 4</span></td>
-      <td>Antenna</td>
+      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/{{ .LDrawID }}-{{ .Colour.LDrawID }}.png"
+          alt="part {{ .LDrawID }}" width="66px" height="50px"></td>
+      <td>{{ .BrickLinkID }}</td>
+      <td>{{ .Name }}</td>
+      <td>{{ .Colour.Name }}</td>
+      <td>0 <span class="text-muted">/ {{ .Quantity }}</span></td>
       <td>
         <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query=2569&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/2569">Peeron</a></li>
+          <li><a href="http://www.brickowl.com/search/catalog?query={{ .LDrawID }}&amp;cat=1">BrickOwl</a></li>
+          <li><a href="http://peeron.com/inv/parts/{{ .LDrawID }}">Peeron</a></li>
         </ul>
       </td>
     </tr>
-    <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/30377-86.png"
-          alt="part 30377" width="66px" height="50px"></td>
-      <td>30377</td>
-      <td>Arm Mechanical, Battle Droid</td>
-      <td>Light Bluish Gray</td>
-      <td><span class="text-muted">4 / 4</span></td>
-      <td>Minifig, Body Part</td>
-      <td>
-        <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query=30377&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/30377">Peeron</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/62113-85.png"
-          alt="part 62113" width="66px" height="50px"></td>
-      <td>62113</td>
-      <td>Bar 1 x 4 x 3 with End Protrusions</td>
-      <td>Dark Bluish Gray</td>
-      <td>1 <span class="text-muted">/ 7</span></td>
-      <td>Bar</td>
-      <td>
-        <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query=62113&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/62113">Peeron</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/30374-85.png"
-          alt="part 30374" width="66px" height="50px"></td>
-      <td>30374</td>
-      <td>Bar 4L (Lightsaber Blade / Wand)</td>
-      <td>Dark Bluish Gray</td>
-      <td>5 <span class="text-muted">/ 7</span></td>
-      <td>Bar</td>
-      <td>
-        <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query=30374&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/30374">Peeron</a></li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/99780-85.png"
-          alt="part 99780" width="66px" height="50px"></td>
-      <td>99780</td>
-      <td>Bracket 1 x 2 - 1 x 2 Inverted</td>
-      <td>Dark Bluish Gray</td>
-      <td><span class="text-muted">14 / 14</span></td>
-      <td>Bracket</td>
-      <td>
-        <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query=99780&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/99780">Peeron</a></li>
-        </ul>
-      </td>
-    </tr>
+    {{ end }}
+
   </tbody>
 </table>

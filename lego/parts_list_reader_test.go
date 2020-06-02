@@ -21,7 +21,7 @@ func TestPartReading(t *testing.T) {
 	assert.Equal(t, "2412b", part.BrickLinkID)
 	assert.Equal(t, 241226, part.ElementID)
 	assert.Equal(t, "2412b", part.LDrawID)
-	assert.Equal(t, "Tile, Modified 1 x 2 Grille with Bottom Groove / Lip", part.PartName)
+	assert.Equal(t, "Tile, Modified 1 x 2 Grille with Bottom Groove / Lip", part.Name)
 	assert.Equal(t, 11, part.Colour.BrickLinkID)
 	assert.Equal(t, 0, part.Colour.LDrawID)
 	assert.Equal(t, "Black", part.Colour.Name)

@@ -13,8 +13,8 @@ type Part struct {
 	ElementID   int
 	LDrawID     string
 
-	PartName string
-	Colour   Colour
+	Name   string
+	Colour Colour
 
 	Quantity int
 	Weight   float64
