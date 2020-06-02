@@ -17,20 +17,20 @@ type EventReader struct {
 	currentIndex int
 }
 
-type Event struct {
-	Timestamp   time.Time
-	ID          uuid.UUID
-	AggregateID uuid.UUID
-	Version     int
-	Type        string
+type EventMeta struct {
+	Timestamp       time.Time
+	ID              uuid.UUID
+	AggregateRootID uuid.UUID
+	Version         int
+	Type            string
 }
 
-func (e *Event) event() *Event              { return e }
-func (e *Event) AggregateRootID() uuid.UUID { return e.ID }
+func (e *EventMeta) event() *EventMeta      { return e }
+func (e *EventMeta) AggregateID() uuid.UUID { return e.ID }
 
-type IsEvent interface {
-	event() *Event
-	AggregateRootID() uuid.UUID
+type Event interface {
+	event() *EventMeta
+	AggregateID() uuid.UUID
 }
 
 func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {
@@ -58,13 +58,13 @@ func (er *EventReader) ReadFor(uuid uuid.UUID) bool {
 
 	for er.scanner.Scan() {
 		er.currentIndex++
-		record, err := er.Record()
+		record, err := er.Event()
 
 		if err != nil {
 			return false
 		}
 
-		if record.event().AggregateID == uuid {
+		if record.event().AggregateRootID == uuid {
 			return true
 		}
 	}
@@ -88,7 +88,7 @@ type eventType struct {
 	Type string
 }
 
-func (er *EventReader) Record() (IsEvent, error) {
+func (er *EventReader) Event() (Event, error) {
 	var et eventType
 	if err := json.Unmarshal(er.scanner.Bytes(), &et); err != nil {
 		return nil, err
@@ -105,5 +105,5 @@ func (er *EventReader) Record() (IsEvent, error) {
 		return nil, err
 	}
 
-	return event.(IsEvent), nil
+	return event.(Event), nil
 }

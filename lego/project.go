@@ -26,7 +26,7 @@ func NewProject(name string, parts []Part) *Project {
 	return &project
 }
 
-func (prj *Project) on(event eventstore.IsEvent) {
+func (prj *Project) on(event eventstore.Event) {
 
 	switch e := event.(type) {
 
@@ -43,14 +43,14 @@ func (prj *Project) on(event eventstore.IsEvent) {
 }
 
 type ProjectCreated struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	ID   uuid.UUID
 	Name string
 }
 
 type PartsAdded struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	Parts []Part
 }

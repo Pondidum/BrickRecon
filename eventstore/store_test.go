@@ -10,7 +10,7 @@ import (
 )
 
 type TestEvent struct {
-	Event
+	EventMeta
 
 	Name      string
 	SetNumber int
@@ -29,7 +29,7 @@ func TestProjections(t *testing.T) {
 	es.RegisterProjection(
 		"names",
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state interface{}, event IsEvent) interface{} {
+		func(state interface{}, event Event) interface{} {
 			m := state.(*TestProjectionState)
 			e := event.(*TestEvent)
 
@@ -40,13 +40,13 @@ func TestProjections(t *testing.T) {
 
 	a := &Aggregator{
 		id: uuid.NewV4(),
-		changes: []IsEvent{
+		changes: []Event{
 			&TestEvent{Name: "One"},
 		},
 	}
 	assert.NoError(t, es.SaveAggregate(a))
 
-	a.changes = []IsEvent{&TestEvent{Name: "Two"}}
+	a.changes = []Event{&TestEvent{Name: "Two"}}
 	assert.NoError(t, es.SaveAggregate(a))
 
 	var view TestProjectionState
@@ -71,7 +71,7 @@ func TestProjectionCatchup(t *testing.T) {
 
 	a := &Aggregator{
 		id: uuid.NewV4(),
-		changes: []IsEvent{
+		changes: []Event{
 			&TestEvent{Name: "Before_1", SetNumber: 1},
 			&TestEvent{Name: "Before_2", SetNumber: 2},
 		},
@@ -86,7 +86,7 @@ func TestProjectionCatchup(t *testing.T) {
 		func() interface{} {
 			return &OrderedEvents{}
 		},
-		func(state interface{}, event IsEvent) interface{} {
+		func(state interface{}, event Event) interface{} {
 			m := state.(*OrderedEvents)
 			e := event.(*TestEvent)
 
@@ -96,7 +96,7 @@ func TestProjectionCatchup(t *testing.T) {
 		})
 
 	// write a new event
-	a.changes = []IsEvent{
+	a.changes = []Event{
 		&TestEvent{Name: "After_1", SetNumber: 3},
 	}
 	assert.NoError(t, es.SaveAggregate(a))
@@ -185,7 +185,7 @@ func (a *TestAggregate) Rename(newName string) {
 	}
 }
 
-func (a *TestAggregate) on(event IsEvent) {
+func (a *TestAggregate) on(event Event) {
 
 	switch e := event.(type) {
 
@@ -200,14 +200,14 @@ func (a *TestAggregate) on(event IsEvent) {
 }
 
 type TestAggregateCreated struct {
-	Event
+	EventMeta
 
 	NewID uuid.UUID
 	Name  string
 }
 
 type TestAggregateRenamed struct {
-	Event
+	EventMeta
 
 	NewName string
 }

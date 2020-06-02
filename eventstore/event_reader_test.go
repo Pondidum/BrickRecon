@@ -13,11 +13,11 @@ import (
 )
 
 var testEvents string = strings.TrimSpace(`
-{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"7e0b10e5-2c81-4ac7-a29f-4781fd7d4e0c","AggregateID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
-{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"afabeb6b-045d-489b-b085-df1a60653b1e","AggregateID":"43354630-8276-49d2-a30b-30710d047127","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
-{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"983f19c8-268f-4903-b4bf-37a3031d242b","AggregateID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"Two","SetNumber":1234}}
-{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"42b70c6a-2e38-42a8-9fa2-778ffc963c93","AggregateID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"Three","SetNumber":1234}}
-{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"f02227a0-ab65-4c9d-b271-a2287cb0ecf6","AggregateID":"81f30eee-0861-4db2-b512-3e0a6c2fdd13","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
+{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"7e0b10e5-2c81-4ac7-a29f-4781fd7d4e0c","AggregateRootID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
+{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"afabeb6b-045d-489b-b085-df1a60653b1e","AggregateRootID":"43354630-8276-49d2-a30b-30710d047127","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
+{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"983f19c8-268f-4903-b4bf-37a3031d242b","AggregateRootID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"Two","SetNumber":1234}}
+{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"42b70c6a-2e38-42a8-9fa2-778ffc963c93","AggregateRootID":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","Type":"TestEvent","Content":{"Name":"Three","SetNumber":1234}}
+{"Timestamp":"2020-05-31T19:35:06.615025231+03:00","ID":"f02227a0-ab65-4c9d-b271-a2287cb0ecf6","AggregateRootID":"81f30eee-0861-4db2-b512-3e0a6c2fdd13","Type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
 `)
 
 func TestReadingAllEvents(t *testing.T) {
@@ -125,7 +125,7 @@ func readEvents(method func(reader *EventReader) bool) ([]string, error) {
 	seenEvents := []string{}
 
 	for method(reader) {
-		if event, err := reader.Record(); err != nil {
+		if event, err := reader.Event(); err != nil {
 			return nil, err
 		} else {
 			seenEvents = append(seenEvents, event.event().ID.String())

@@ -7,7 +7,7 @@ import (
 	"path"
 )
 
-type Projector func(state interface{}, event IsEvent) interface{}
+type Projector func(state interface{}, event Event) interface{}
 
 type Projection struct {
 	path            string
@@ -36,7 +36,7 @@ func (p *Projection) ReadView(view interface{}) error {
 	return json.Unmarshal(content, view)
 }
 
-func (p *Projection) Project(events []IsEvent) error {
+func (p *Projection) Project(events []Event) error {
 
 	state := p.initialiseState()
 	err := p.ReadView(state)

@@ -51,7 +51,7 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 
 	for er.ReadFor(id) {
 
-		r, err := er.Record()
+		r, err := er.Event()
 		if err != nil {
 			return err
 		}
@@ -91,7 +91,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 		meta.Timestamp = time.Now()
 		meta.ID = uuid.UUID{}
-		meta.AggregateID = a.id
+		meta.AggregateRootID = a.id
 		meta.Version = currentVersion
 		meta.Type = eventName(e)
 
@@ -114,7 +114,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 		return err
 	}
 
-	a.changes = []IsEvent{}
+	a.changes = []Event{}
 	a.version = currentVersion
 
 	return es.runProjections()
@@ -146,11 +146,11 @@ func (es *EventStore) runProjections() error {
 
 	defer er.Close()
 
-	events := []IsEvent{}
+	events := []Event{}
 
 	for er.ReadFrom(lowestIndex) {
 
-		record, err := er.Record()
+		record, err := er.Event()
 		if err != nil {
 			return err
 		}

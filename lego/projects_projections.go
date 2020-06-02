@@ -25,16 +25,16 @@ func ProjectsInitialState() interface{} {
 	}
 }
 
-func ProjectsProjector(state interface{}, record eventstore.IsEvent) interface{} {
+func ProjectsProjector(state interface{}, record eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
 	switch e := record.(type) {
 	case *ProjectCreated:
 		view.Names = append(view.Names, e.Name)
-		view.Projects[e.Name] = &ProjectView{ID: e.AggregateRootID(), Name: e.Name}
+		view.Projects[e.Name] = &ProjectView{ID: e.AggregateID(), Name: e.Name}
 
 	case *PartsAdded:
-		project := projectByID(view.Projects, e.AggregateRootID())
+		project := projectByID(view.Projects, e.AggregateID())
 		project.Parts = append(project.Parts, e.Parts...)
 	}
 
