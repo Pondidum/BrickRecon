@@ -1,4 +1,4 @@
-package model
+package project
 
 import (
 	"mvc/app"
@@ -13,19 +13,19 @@ type ProjectModel struct {
 	Project *lego.ProjectView
 }
 
-type ModelController struct {
+type ProjectController struct {
 	Store *app.AppStore
 }
 
-func (c ModelController) Path() string {
-	return "models/{name}"
+func (c ProjectController) Path() string {
+	return "project/{name}"
 }
 
-func (c ModelController) View() string {
-	return "models/model"
+func (c ProjectController) View() string {
+	return "project"
 }
 
-func (c ModelController) Get(req *http.Request) interface{} {
+func (c ProjectController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
 

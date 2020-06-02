@@ -5,8 +5,7 @@ import (
 	"mvc/app"
 	"mvc/app/create"
 	"mvc/app/login"
-	"mvc/app/models"
-	"mvc/app/models/model"
+	"mvc/app/project"
 	"mvc/preen"
 
 	"net/http"
@@ -46,8 +45,7 @@ func (c *ServeCommand) Run(_ []string) int {
 		Controllers: []preen.Controller{
 			&app.AppController{Store: store},
 			&create.CreateController{Store: store},
-			&models.ModelsController{Store: store},
-			&model.ModelController{Store: store},
+			&project.ProjectController{Store: store},
 			&login.LoginController{},
 		},
 	})
