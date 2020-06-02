@@ -1,6 +1,7 @@
 package eventstore
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"os"
 	"path"
@@ -127,9 +128,44 @@ func readEvents(method func(reader *EventReader) bool) ([]string, error) {
 		if event, err := reader.Record(); err != nil {
 			return nil, err
 		} else {
-			seenEvents = append(seenEvents, event.ID.String())
+			seenEvents = append(seenEvents, event.event().ID.String())
 		}
 	}
 
 	return seenEvents, nil
+}
+
+func TestEventEmbed(t *testing.T) {
+
+	e := UserDefined{}
+	e.ID = "im id"
+	e.Name = "name"
+
+	b, err := serialize(&e)
+
+	assert.NoError(t, err)
+	assert.Equal(t, `{"ID":"test","Name":"name"}`, string(b))
+}
+
+func serialize(e HasEmbed) ([]byte, error) {
+	extra := e.getEmbed()
+	extra.ID = "test"
+
+	return json.Marshal(e)
+}
+
+type Embed struct {
+	ID string
+}
+
+func (e *Embed) getEmbed() *Embed { return e }
+
+type HasEmbed interface {
+	getEmbed() *Embed
+}
+
+type UserDefined struct {
+	Embed
+
+	Name string
 }

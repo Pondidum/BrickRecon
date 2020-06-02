@@ -26,7 +26,7 @@ func NewProject(name string, parts []Part) *Project {
 	return &project
 }
 
-func (prj *Project) on(event interface{}) {
+func (prj *Project) on(event eventstore.IsEvent) {
 
 	switch e := event.(type) {
 
@@ -43,10 +43,14 @@ func (prj *Project) on(event interface{}) {
 }
 
 type ProjectCreated struct {
+	eventstore.Event
+
 	ID   uuid.UUID
 	Name string
 }
 
 type PartsAdded struct {
+	eventstore.Event
+
 	Parts []Part
 }

@@ -56,8 +56,8 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 			return err
 		}
 
-		a.onEvent(r.event)
-		a.version = r.Version
+		a.onEvent(r)
+		a.version = r.event().Version
 	}
 
 	return nil
@@ -87,21 +87,15 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 		currentVersion++
 
-		eventBytes, err := json.Marshal(e)
-		if err != nil {
-			return err
-		}
+		meta := e.event()
 
-		dto := &Record{
-			ID:          uuid.NewV4(),
-			Timestamp:   time.Now(),
-			AggregateID: a.id,
-			Version:     currentVersion,
-			Type:        eventName(e),
-			Content:     eventBytes,
-		}
+		meta.Timestamp = time.Now()
+		meta.ID = uuid.UUID{}
+		meta.AggregateID = a.id
+		meta.Version = currentVersion
+		meta.Type = eventName(e)
 
-		bytes, err := json.Marshal(dto)
+		bytes, err := json.Marshal(e)
 
 		if err != nil {
 			return err
@@ -120,7 +114,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 		return err
 	}
 
-	a.changes = []interface{}{}
+	a.changes = []IsEvent{}
 	a.version = currentVersion
 
 	return es.runProjections()
@@ -152,7 +146,7 @@ func (es *EventStore) runProjections() error {
 
 	defer er.Close()
 
-	records := []Record{}
+	events := []IsEvent{}
 
 	for er.ReadFrom(lowestIndex) {
 
@@ -161,16 +155,16 @@ func (es *EventStore) runProjections() error {
 			return err
 		}
 
-		records = append(records, record)
+		events = append(events, record)
 	}
 
-	lastIndex := lowestIndex + len(records)
+	lastIndex := lowestIndex + len(events)
 
 	for name, projection := range es.projections {
 
 		firstEvent := projectionIndex[name] - lowestIndex
 
-		if err := projection.Project(records[firstEvent:]); err != nil {
+		if err := projection.Project(events[firstEvent:]); err != nil {
 			return err
 		}
 

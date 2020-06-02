@@ -17,18 +17,20 @@ type EventReader struct {
 	currentIndex int
 }
 
-type Record struct {
+type Event struct {
 	Timestamp   time.Time
 	ID          uuid.UUID
 	AggregateID uuid.UUID
 	Version     int
 	Type        string
-	Content     json.RawMessage
-	event       interface{}
 }
 
-func (e Record) Event() interface{} {
-	return e.event
+func (e *Event) event() *Event              { return e }
+func (e *Event) AggregateRootID() uuid.UUID { return e.ID }
+
+type IsEvent interface {
+	event() *Event
+	AggregateRootID() uuid.UUID
 }
 
 func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {
@@ -62,7 +64,7 @@ func (er *EventReader) ReadFor(uuid uuid.UUID) bool {
 			return false
 		}
 
-		if record.AggregateID == uuid {
+		if record.event().AggregateID == uuid {
 			return true
 		}
 	}
@@ -82,20 +84,26 @@ func (er *EventReader) ReadFrom(offset int) bool {
 	return er.scanner.Scan()
 }
 
-func (er *EventReader) Record() (Record, error) {
-	var read Record
-	if err := json.Unmarshal(er.scanner.Bytes(), &read); err != nil {
-		return read, err
+type eventType struct {
+	Type string
+}
+
+func (er *EventReader) Record() (IsEvent, error) {
+	var et eventType
+	if err := json.Unmarshal(er.scanner.Bytes(), &et); err != nil {
+		return nil, err
 	}
 
-	creator, found := er.registry[read.Type]
+	creator, found := er.registry[et.Type]
 
 	if !found {
-		return read, fmt.Errorf("Unable to find an event of type %s", read.Type)
+		return nil, fmt.Errorf("Unable to find an event of type %s", et.Type)
 	}
 
-	read.event = creator()
-	err := json.Unmarshal(read.Content, read.event)
+	event := creator()
+	if err := json.Unmarshal(er.scanner.Bytes(), event); err != nil {
+		return nil, err
+	}
 
-	return read, err
+	return event.(IsEvent), nil
 }

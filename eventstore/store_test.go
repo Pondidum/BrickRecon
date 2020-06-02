@@ -10,6 +10,8 @@ import (
 )
 
 type TestEvent struct {
+	Event
+
 	Name      string
 	SetNumber int
 }
@@ -27,9 +29,9 @@ func TestProjections(t *testing.T) {
 	es.RegisterProjection(
 		"names",
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state interface{}, record Record) interface{} {
+		func(state interface{}, event IsEvent) interface{} {
 			m := state.(*TestProjectionState)
-			e := record.Event().(*TestEvent)
+			e := event.(*TestEvent)
 
 			m.Names[e.Name] = true
 
@@ -38,13 +40,13 @@ func TestProjections(t *testing.T) {
 
 	a := &Aggregator{
 		id: uuid.NewV4(),
-		changes: []interface{}{
-			TestEvent{Name: "One"},
+		changes: []IsEvent{
+			&TestEvent{Name: "One"},
 		},
 	}
 	assert.NoError(t, es.SaveAggregate(a))
 
-	a.changes = []interface{}{TestEvent{Name: "Two"}}
+	a.changes = []IsEvent{&TestEvent{Name: "Two"}}
 	assert.NoError(t, es.SaveAggregate(a))
 
 	var view TestProjectionState
@@ -69,9 +71,9 @@ func TestProjectionCatchup(t *testing.T) {
 
 	a := &Aggregator{
 		id: uuid.NewV4(),
-		changes: []interface{}{
-			TestEvent{Name: "Before_1", SetNumber: 1},
-			TestEvent{Name: "Before_2", SetNumber: 2},
+		changes: []IsEvent{
+			&TestEvent{Name: "Before_1", SetNumber: 1},
+			&TestEvent{Name: "Before_2", SetNumber: 2},
 		},
 	}
 
@@ -84,9 +86,9 @@ func TestProjectionCatchup(t *testing.T) {
 		func() interface{} {
 			return &OrderedEvents{}
 		},
-		func(state interface{}, record Record) interface{} {
+		func(state interface{}, event IsEvent) interface{} {
 			m := state.(*OrderedEvents)
-			e := record.Event().(*TestEvent)
+			e := event.(*TestEvent)
 
 			m.Names = append(m.Names, e.Name)
 
@@ -94,8 +96,8 @@ func TestProjectionCatchup(t *testing.T) {
 		})
 
 	// write a new event
-	a.changes = []interface{}{
-		TestEvent{Name: "After_1", SetNumber: 3},
+	a.changes = []IsEvent{
+		&TestEvent{Name: "After_1", SetNumber: 3},
 	}
 	assert.NoError(t, es.SaveAggregate(a))
 
@@ -183,7 +185,7 @@ func (a *TestAggregate) Rename(newName string) {
 	}
 }
 
-func (a *TestAggregate) on(event interface{}) {
+func (a *TestAggregate) on(event IsEvent) {
 
 	switch e := event.(type) {
 
@@ -198,10 +200,14 @@ func (a *TestAggregate) on(event interface{}) {
 }
 
 type TestAggregateCreated struct {
+	Event
+
 	NewID uuid.UUID
 	Name  string
 }
 
 type TestAggregateRenamed struct {
+	Event
+
 	NewName string
 }
