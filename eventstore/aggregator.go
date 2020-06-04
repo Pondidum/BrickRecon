@@ -10,6 +10,14 @@ type Aggregator struct {
 	onEvent func(event Event)
 }
 
+func (a *Aggregator) aggregator() *Aggregator {
+	return a
+}
+
+type Aggregate interface {
+	aggregator() *Aggregator
+}
+
 func NewAggregator(onEvent func(event Event)) *Aggregator {
 	return &Aggregator{
 		onEvent: onEvent,
@@ -30,4 +38,10 @@ func (a *Aggregator) fromEvents(events []Event) {
 		a.onEvent(event)
 		a.version++
 	}
+}
+
+// these are deliberately not exposed directly on Aggregator
+
+func ReadChanges(a *Aggregator) []Event {
+	return a.changes
 }

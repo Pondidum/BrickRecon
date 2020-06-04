@@ -40,7 +40,7 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
-func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
+func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 
 	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
 	if err != nil {
@@ -49,6 +49,8 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 
 	defer er.Close()
 
+	aggregator := a.aggregator()
+
 	for er.ReadFor(id) {
 
 		r, err := er.Event()
@@ -56,8 +58,8 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a *Aggregator) error {
 			return err
 		}
 
-		a.onEvent(r)
-		a.version = r.event().Version
+		aggregator.onEvent(r)
+		aggregator.version = r.event().Version
 	}
 
 	return nil
@@ -68,7 +70,7 @@ func (es *EventStore) ReadView(name string, view interface{}) error {
 	return p.ReadView(view)
 }
 
-func (es *EventStore) SaveAggregate(a *Aggregator) error {
+func (es *EventStore) SaveAggregate(a Aggregate) error {
 
 	filename := path.Join(es.root, "events")
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
@@ -79,11 +81,12 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 	defer file.Close()
 
-	currentVersion := a.version
+	aggregator := a.aggregator()
+	currentVersion := aggregator.version
 
 	block := bytes.Buffer{}
 
-	for _, e := range a.changes {
+	for _, e := range aggregator.changes {
 
 		currentVersion++
 
@@ -91,7 +94,7 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 
 		meta.Timestamp = time.Now()
 		meta.ID = uuid.UUID{}
-		meta.AggregateRootID = a.id
+		meta.AggregateRootID = aggregator.id
 		meta.Version = currentVersion
 		meta.Type = eventName(e)
 
@@ -114,8 +117,8 @@ func (es *EventStore) SaveAggregate(a *Aggregator) error {
 		return err
 	}
 
-	a.changes = []Event{}
-	a.version = currentVersion
+	aggregator.changes = []Event{}
+	aggregator.version = currentVersion
 
 	return es.runProjections()
 }
