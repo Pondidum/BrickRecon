@@ -42,6 +42,6 @@ func (a *Aggregator) fromEvents(events []Event) {
 
 // these are deliberately not exposed directly on Aggregator
 
-func ReadChanges(a *Aggregator) []Event {
-	return a.changes
+func ReadChanges(a Aggregate) []Event {
+	return a.aggregator().changes
 }
