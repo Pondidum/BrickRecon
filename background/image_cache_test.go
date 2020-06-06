@@ -38,6 +38,12 @@ func TestWhenPartFetchingFails(t *testing.T) {
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
+
+	event := state.events[0].(PartAttempted)
+
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
+	assert.Equal(t, "No network path available", event.Error)
 }
 
 func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
@@ -49,6 +55,11 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
+	event := state.events[0].(PartAttempted)
+
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
+	assert.Equal(t, "Unexpected statusCode: 500", event.Error)
 }
 
 func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
@@ -63,6 +74,11 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
+	event := state.events[0].(PartAttempted)
+
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
+	assert.Equal(t, "Error reading stream", event.Error)
 }
 
 func TestWhenPartSavingFails(t *testing.T) {
@@ -74,32 +90,53 @@ func TestWhenPartSavingFails(t *testing.T) {
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
+	event := state.events[0].(PartAttempted)
+
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
+	assert.Equal(t, "File write failed", event.Error)
 }
 
 func TestWhenPartImageDoesntExist(t *testing.T) {
 
 	state := createState()
 	state.httpClient = testutil.HttpNotFoundClient()
-	state.writeFile = func(filename string, content []byte) error { return nil }
 
 	Run(state)
 
+	attempt := state.events[0].(PartImageNotFound)
+
 	assert.Len(t, state.events, 2, print(state))
-	assert.IsType(t, PartImageNotFound{}, state.events[0], print(state))
-	assert.IsType(t, PartImageStored{}, state.events[1], print(state))
+	assert.Equal(t, state.partID, attempt.PartID)
+	assert.Equal(t, state.colourID, attempt.ColourID)
+
 }
 
 func TestWhenPartSavingWorks(t *testing.T) {
 
+	var fileWritten string
+	var contentWritten []byte
+
 	state := createState()
 
-	state.httpClient = testutil.HttpOkClient([]byte("some image"))
-	state.writeFile = func(filename string, content []byte) error { return nil }
+	state.httpClient = testutil.HttpOkClient([]byte("some image data"))
+	state.writeFile = func(filename string, content []byte) error {
+		fileWritten = filename
+		contentWritten = content
+		return nil
+	}
 
 	Run(state)
 
+	event := state.events[0].(PartImageStored)
+
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartImageStored{}, state.events[0], print(state))
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
+
+	assert.Equal(t, "567b-85.png", fileWritten)
+	assert.Equal(t, "some image data", string(contentWritten))
+
 }
 
 func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
@@ -109,8 +146,11 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
 	Run(state)
 
+	event := state.events[0].(PartFetchAttemptsExceeded)
+
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartFailed{}, state.events[0], print(state))
+	assert.Equal(t, state.partID, event.PartID)
+	assert.Equal(t, state.colourID, event.ColourID)
 }
 
 func print(state *dto) string {

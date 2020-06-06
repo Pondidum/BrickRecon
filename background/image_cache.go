@@ -14,20 +14,33 @@ type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type PartFailed struct {
+type PartFetchAttemptsExceeded struct {
 	eventstore.Event
+
+	PartID   string
+	ColourID int
 }
 
 type PartAttempted struct {
 	eventstore.Event
+
+	PartID   string
+	ColourID int
+	Error    string
 }
 
 type PartImageNotFound struct {
 	eventstore.Event
+
+	PartID   string
+	ColourID int
 }
 
 type PartImageStored struct {
 	eventstore.Event
+
+	PartID   string
+	ColourID int
 }
 
 // --- fsm
@@ -41,15 +54,19 @@ func Run(s *dto) {
 
 	s.ctx = ctx
 
+	beeline.AddField(ctx, "part_id", s.partID)
+	beeline.AddField(ctx, "colour_id", s.colourID)
+	beeline.AddField(ctx, "attempts", s.attempts)
+	beeline.AddField(ctx, "max_attempts", s.maxAttempts)
+
 	for state != nil {
 		state = state(s)
 	}
 }
 
 type dto struct {
-	partID   string
-	colourID int
-
+	partID      string
+	colourID    int
 	attempts    int
 	maxAttempts int
 
@@ -87,37 +104,41 @@ func (s *dto) enter(name string) context.Context {
 	return c
 }
 
-type State func(s *dto) (next State)
+type state func(s *dto) (next state)
 
-func ProcessPart(s *dto) State {
+func ProcessPart(s *dto) state {
 
 	c := s.enter("process_part")
+	maxExceeded := s.attempts < s.maxAttempts
 
-	beeline.AddField(c, "attempts", s.attempts)
-	beeline.AddField(c, "max_attempts", s.maxAttempts)
+	beeline.AddField(c, "max_attempts_exceeded", maxExceeded)
 
-	if s.attempts < s.maxAttempts {
+	if maxExceeded {
 		return fetchPart
 	}
 
 	return partFailed
 }
 
-func partFailed(s *dto) State {
+func partFailed(s *dto) state {
 	s.enter("part_failed")
 
-	s.event(PartFailed{})
+	s.event(PartFetchAttemptsExceeded{
+		PartID:   s.partID,
+		ColourID: s.colourID,
+	})
+
 	return nil
 }
 
-func fetchPart(s *dto) State {
+func fetchPart(s *dto) state {
 	s.enter("fetch_part")
 
 	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.%s`, s.colourID, s.partID, s.format)
 	res, err := s.httpGet(url)
 
 	if err != nil {
-		return fetchFailed
+		return fetchFailed(err)
 	}
 
 	defer res.Body.Close()
@@ -127,13 +148,13 @@ func fetchPart(s *dto) State {
 	}
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return fetchFailed
+		return fetchFailed(fmt.Errorf("Unexpected statusCode: %v", res.StatusCode))
 	}
 
 	content, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
-		return fetchFailed
+		return fetchFailed(err)
 	}
 
 	s.content = content
@@ -141,41 +162,59 @@ func fetchPart(s *dto) State {
 	return storePart
 }
 
-func fetchFailed(s *dto) State {
-	s.enter("fetch_failed")
+func fetchFailed(err error) state {
+	return func(s *dto) state {
+		s.enter("fetch_failed")
 
-	s.event(PartAttempted{})
-	return nil
+		s.event(PartAttempted{
+			PartID:   s.partID,
+			ColourID: s.colourID,
+			Error:    err.Error(),
+		})
+
+		return nil
+	}
 }
 
-func invalidPart(s *dto) State {
+func invalidPart(s *dto) state {
 	s.enter("invalid_part")
 
-	s.event(PartImageNotFound{})
+	s.event(PartImageNotFound{
+		PartID:   s.partID,
+		ColourID: s.colourID,
+	})
+
 	s.content = s.invalidImage
 
 	return storePart
 }
 
-func storePart(s *dto) State {
+func storePart(s *dto) state {
 	s.enter("store_part")
 
 	filename := fmt.Sprintf("%s-%v.%s", s.partID, s.colourID, s.format)
 
 	if err := s.writeFile(filename, s.content); err != nil {
-		return storeFailed
+		return storeFailed(err)
 	}
 
-	s.event(PartImageStored{})
+	s.event(PartImageStored{
+		PartID:   s.partID,
+		ColourID: s.colourID,
+	})
 
 	return nil
 }
 
-func storeFailed(s *dto) State {
-	s.enter("store_failed")
+func storeFailed(err error) state {
+	return func(s *dto) state {
+		s.enter("store_failed")
 
-	s.event(PartAttempted{})
-	return nil
+		s.event(PartAttempted{
+			PartID:   s.partID,
+			ColourID: s.colourID,
+			Error:    err.Error(),
+		})
+		return nil
+	}
 }
-
-// ---
