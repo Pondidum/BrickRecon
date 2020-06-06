@@ -1,22 +1,19 @@
 package background
 
 import (
-	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
-	"net/http"
 	"strings"
 	"testing"
+
+	"mvc/testutil"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func createState() *dto {
 	return &dto{
-		httpClient: &FakeClient{
-			err: errors.New("nope"),
-		},
+		httpClient: testutil.HttpNetworkErrorClient(),
 		writeFile: func(filename string, content []byte) error {
 			return errors.New("File write failed")
 		},
@@ -46,10 +43,7 @@ func TestWhenPartFetchingFails(t *testing.T) {
 func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 
 	state := createState()
-	state.httpClient = &FakeClient{
-		statusCode: 500,
-		content:    []byte("some image"),
-	}
+	state.httpClient = testutil.HttpServerErrorClient()
 
 	Run(state)
 
@@ -60,10 +54,9 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 
 	state := createState()
-	state.httpClient = &FakeClient{
-		statusCode:  200,
-		content:     []byte("some image"),
-		bodyBuilder: func(content []byte) io.Reader { return &ErrorReader{} },
+	state.httpClient = &testutil.FakeClient{
+		StatusCode:  200,
+		BodyBuilder: func(content []byte) io.Reader { return testutil.NewErrorReader() },
 	}
 
 	Run(state)
@@ -75,11 +68,7 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 func TestWhenPartSavingFails(t *testing.T) {
 
 	state := createState()
-
-	state.httpClient = &FakeClient{
-		statusCode: 200,
-		content:    []byte("some image"),
-	}
+	state.httpClient = testutil.HttpOkClient([]byte("some image"))
 
 	Run(state)
 
@@ -90,7 +79,7 @@ func TestWhenPartSavingFails(t *testing.T) {
 func TestWhenPartImageDoesntExist(t *testing.T) {
 
 	state := createState()
-	state.httpClient = &FakeClient{statusCode: 404, content: []byte{}}
+	state.httpClient = testutil.HttpNotFoundClient()
 	state.writeFile = func(filename string, content []byte) error { return nil }
 
 	Run(state)
@@ -104,7 +93,7 @@ func TestWhenPartSavingWorks(t *testing.T) {
 
 	state := createState()
 
-	state.httpClient = &FakeClient{statusCode: 200, content: []byte("some image")}
+	state.httpClient = testutil.HttpOkClient([]byte("some image"))
 	state.writeFile = func(filename string, content []byte) error { return nil }
 
 	Run(state)
@@ -118,9 +107,6 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 	state := createState()
 	state.attempts = state.maxAttempts
 
-	state.httpClient = &FakeClient{statusCode: 200, content: []byte("some image")}
-	state.writeFile = func(filename string, content []byte) error { return nil }
-
 	Run(state)
 
 	assert.Len(t, state.events, 1, print(state))
@@ -129,33 +115,4 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
 func print(state *dto) string {
 	return strings.Join(state.transitions, " -> ")
-}
-
-type FakeClient struct {
-	content     []byte
-	statusCode  int
-	err         error
-	bodyBuilder func(content []byte) io.Reader
-}
-
-func (f *FakeClient) Do(req *http.Request) (*http.Response, error) {
-
-	if f.bodyBuilder == nil {
-		f.bodyBuilder = func(content []byte) io.Reader {
-			return bytes.NewBuffer(f.content)
-		}
-	}
-
-	res := &http.Response{
-		StatusCode: f.statusCode,
-		Body:       ioutil.NopCloser(f.bodyBuilder(f.content)),
-	}
-
-	return res, f.err
-}
-
-type ErrorReader struct{}
-
-func (er *ErrorReader) Read(p []byte) (n int, err error) {
-	return 0, errors.New("error reading")
 }
