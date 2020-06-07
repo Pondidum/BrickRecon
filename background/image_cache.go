@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mvc/eventstore"
+	"mvc/lego"
 	"net/http"
 
 	"github.com/honeycombio/beeline-go"
@@ -12,6 +13,12 @@ import (
 
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
+}
+
+type PartImageRequested struct {
+	eventstore.Event
+
+	Part *lego.Part
 }
 
 type PartFetchAttemptsExceeded struct {
@@ -43,9 +50,105 @@ type PartImageStored struct {
 	ColourID int
 }
 
+type ImageCache struct {
+	*eventstore.Aggregator
+
+	done     map[string]bool
+	pending  map[string]*lego.Part
+	attempts map[string]int
+}
+
+func NewImageCache() *ImageCache {
+	ic := &ImageCache{}
+	ic.Aggregator = eventstore.NewAggregator(ic.on)
+	return ic
+}
+
+func (ic *ImageCache) on(event eventstore.Event) {
+	switch e := event.(type) {
+	case *PartImageRequested:
+		key := key(e.Part.LDrawID, e.Part.Colour.LDrawID)
+
+		if _, found := ic.pending[key]; !found {
+			ic.pending[key] = e.Part
+		}
+
+	case *PartAttempted:
+		key := key(e.PartID, e.ColourID)
+		ic.attempts[key]++
+
+	case *PartFetchAttemptsExceeded:
+		ic.onFinished(e.PartID, e.ColourID)
+
+	case *PartImageNotFound:
+		ic.onFinished(e.PartID, e.ColourID)
+
+	case *PartImageStored:
+		ic.onFinished(e.PartID, e.ColourID)
+
+	}
+}
+
+func (ic *ImageCache) onFinished(partID string, colourID int) {
+	key := key(partID, colourID)
+
+	ic.done[key] = true
+	delete(ic.attempts, key)
+	delete(ic.pending, key)
+}
+
+func (ic *ImageCache) Run() {
+
+	for key, part := range ic.pending {
+		fsm := NewImageFsm(part)
+		fsm.attempts = ic.attempts[key]
+
+		fsm.Run()
+
+		for _, e := range fsm.events {
+			ic.Apply(e)
+		}
+	}
+}
+
+func key(id string, colourID int) string {
+	return fmt.Sprintf("%s-%v", id, colourID)
+}
+
 // --- fsm
 
-func Run(s *dto) {
+type fsm struct {
+	partID      string
+	colourID    int
+	attempts    int
+	maxAttempts int
+
+	httpClient HttpClient
+	writeFile  func(filename string, content []byte) error
+	events     []eventstore.Event
+
+	invalidImage []byte
+
+	ctx         context.Context
+	transitions []string
+}
+
+func NewImageFsm(part *lego.Part) *fsm {
+	return &fsm{
+		partID:      part.LDrawID,
+		colourID:    part.Colour.LDrawID,
+		maxAttempts: 5,
+
+		invalidImage: []byte{}, //read a png into this
+
+		httpClient: &http.Client{},
+		writeFile: func(filename string, content []byte) error {
+			return ioutil.WriteFile(filename, content, 0666)
+		},
+	}
+}
+
+func (s *fsm) Run() {
 
 	state := ProcessPart
 
@@ -64,26 +167,7 @@ func Run(s *dto) {
 	}
 }
 
-type dto struct {
-	partID      string
-	colourID    int
-	attempts    int
-	maxAttempts int
-
-	content []byte
-	format  string
-
-	httpClient HttpClient
-	writeFile  func(filename string, content []byte) error
-	events     []eventstore.Event
-
-	invalidImage []byte
-
-	ctx         context.Context
-	transitions []string
-}
-
-func (s *dto) httpGet(url string) (*http.Response, error) {
+func (s *fsm) httpGet(url string) (*http.Response, error) {
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -93,20 +177,20 @@ func (s *dto) httpGet(url string) (*http.Response, error) {
 	return s.httpClient.Do(req)
 }
 
-func (s *dto) event(e eventstore.Event) {
+func (s *fsm) event(e eventstore.Event) {
 	s.events = append(s.events, e)
 }
 
-func (s *dto) enter(name string) context.Context {
+func (s *fsm) enter(name string) context.Context {
 	s.transitions = append(s.transitions, name)
 	c, _ := beeline.StartSpan(s.ctx, name)
 
 	return c
 }
 
-type state func(s *dto) (next state)
+type state func(s *fsm) (next state)
 
-func ProcessPart(s *dto) state {
+func ProcessPart(s *fsm) state {
 
 	c := s.enter("process_part")
 	maxExceeded := s.attempts < s.maxAttempts
@@ -120,7 +204,7 @@ func ProcessPart(s *dto) state {
 	return partFailed
 }
 
-func partFailed(s *dto) state {
+func partFailed(s *fsm) state {
 	s.enter("part_failed")
 
 	s.event(PartFetchAttemptsExceeded{
@@ -128,13 +212,13 @@ func partFailed(s *dto) state {
 		ColourID: s.colourID,
 	})
 
-	return nil
+	return storePart(s.invalidImage)
 }
 
-func fetchPart(s *dto) state {
+func fetchPart(s *fsm) state {
 	s.enter("fetch_part")
 
-	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.%s`, s.colourID, s.partID, s.format)
+	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, s.colourID, s.partID)
 	res, err := s.httpGet(url)
 
 	if err != nil {
@@ -157,13 +241,11 @@ func fetchPart(s *dto) state {
 		return fetchFailed(err)
 	}
 
-	s.content = content
-
-	return storePart
+	return storePart(content)
 }
 
 func fetchFailed(err error) state {
-	return func(s *dto) state {
+	return func(s *fsm) state {
 		s.enter("fetch_failed")
 
 		s.event(PartAttempted{
@@ -176,7 +258,7 @@ func fetchFailed(err error) state {
 	}
 }
 
-func invalidPart(s *dto) state {
+func invalidPart(s *fsm) state {
 	s.enter("invalid_part")
 
 	s.event(PartImageNotFound{
@@ -184,30 +266,31 @@ func invalidPart(s *dto) state {
 		ColourID: s.colourID,
 	})
 
-	s.content = s.invalidImage
-
-	return storePart
+	return storePart(s.invalidImage)
 }
 
-func storePart(s *dto) state {
-	s.enter("store_part")
+func storePart(content []byte) state {
+	return func(s *fsm) state {
+		s.enter("store_part")
 
-	filename := fmt.Sprintf("%s-%v.%s", s.partID, s.colourID, s.format)
+		filename := fmt.Sprintf("%s-%v.png", s.partID, s.colourID)
 
-	if err := s.writeFile(filename, s.content); err != nil {
-		return storeFailed(err)
+		if err := s.writeFile(filename, content); err != nil {
+			return storeFailed(err)
+		}
+
+		s.event(PartImageStored{
+			PartID:   s.partID,
+			ColourID: s.colourID,
+		})
+
+		return nil
 	}
 
-	s.event(PartImageStored{
-		PartID:   s.partID,
-		ColourID: s.colourID,
-	})
-
-	return nil
 }
 
 func storeFailed(err error) state {
-	return func(s *dto) state {
+	return func(s *fsm) state {
 		s.enter("store_failed")
 
 		s.event(PartAttempted{

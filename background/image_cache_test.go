@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func createState() *dto {
-	return &dto{
+func createState() *fsm {
+	return &fsm{
 		httpClient: testutil.HttpNetworkErrorClient(),
 		writeFile: func(filename string, content []byte) error {
 			return errors.New("File write failed")
@@ -22,7 +22,6 @@ func createState() *dto {
 
 		attempts:    0,
 		maxAttempts: 5,
-		format:      "png",
 
 		partID:   "567b",
 		colourID: 85,
@@ -33,8 +32,7 @@ func createState() *dto {
 func TestWhenPartFetchingFails(t *testing.T) {
 
 	state := createState()
-
-	Run(state)
+	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
@@ -50,8 +48,7 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 
 	state := createState()
 	state.httpClient = testutil.HttpServerErrorClient()
-
-	Run(state)
+	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
@@ -69,8 +66,7 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 		StatusCode:  200,
 		BodyBuilder: func(content []byte) io.Reader { return testutil.NewErrorReader() },
 	}
-
-	Run(state)
+	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
@@ -85,8 +81,7 @@ func TestWhenPartSavingFails(t *testing.T) {
 
 	state := createState()
 	state.httpClient = testutil.HttpOkClient([]byte("some image"))
-
-	Run(state)
+	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
@@ -99,10 +94,18 @@ func TestWhenPartSavingFails(t *testing.T) {
 
 func TestWhenPartImageDoesntExist(t *testing.T) {
 
-	state := createState()
-	state.httpClient = testutil.HttpNotFoundClient()
+	var fileWritten string
+	var contentWritten []byte
 
-	Run(state)
+	state := createState()
+
+	state.httpClient = testutil.HttpNotFoundClient()
+	state.writeFile = func(filename string, content []byte) error {
+		fileWritten = filename
+		contentWritten = content
+		return nil
+	}
+	state.Run()
 
 	attempt := state.events[0].(PartImageNotFound)
 
@@ -110,6 +113,8 @@ func TestWhenPartImageDoesntExist(t *testing.T) {
 	assert.Equal(t, state.partID, attempt.PartID)
 	assert.Equal(t, state.colourID, attempt.ColourID)
 
+	assert.Equal(t, "567b-85.png", fileWritten)
+	assert.Equal(t, "invalid image placeholder", string(contentWritten))
 }
 
 func TestWhenPartSavingWorks(t *testing.T) {
@@ -125,8 +130,7 @@ func TestWhenPartSavingWorks(t *testing.T) {
 		contentWritten = content
 		return nil
 	}
-
-	Run(state)
+	state.Run()
 
 	event := state.events[0].(PartImageStored)
 
@@ -141,18 +145,29 @@ func TestWhenPartSavingWorks(t *testing.T) {
 
 func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
+	var fileWritten string
+	var contentWritten []byte
+
 	state := createState()
 	state.attempts = state.maxAttempts
+	state.writeFile = func(filename string, content []byte) error {
+		fileWritten = filename
+		contentWritten = content
+		return nil
+	}
 
-	Run(state)
+	state.Run()
 
-	event := state.events[0].(PartFetchAttemptsExceeded)
+	exceed := state.events[0].(PartFetchAttemptsExceeded)
 
-	assert.Len(t, state.events, 1, print(state))
-	assert.Equal(t, state.partID, event.PartID)
-	assert.Equal(t, state.colourID, event.ColourID)
+	assert.Len(t, state.events, 2, print(state))
+	assert.Equal(t, state.partID, exceed.PartID)
+	assert.Equal(t, state.colourID, exceed.ColourID)
+
+	assert.Equal(t, "567b-85.png", fileWritten)
+	assert.Equal(t, "invalid image placeholder", string(contentWritten))
 }
 
-func print(state *dto) string {
+func print(state *fsm) string {
 	return strings.Join(state.transitions, " -> ")
 }
