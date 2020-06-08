@@ -7,6 +7,7 @@ import (
 	"mvc/eventstore"
 	"mvc/lego"
 	"net/http"
+	"path"
 
 	"github.com/honeycombio/beeline-go"
 	uuid "github.com/satori/go.uuid"
@@ -69,13 +70,16 @@ func ImageCacheEvents(register func(eventstore.Initialiser)) {
 type ImageCache struct {
 	*eventstore.Aggregator
 
+	location string
+
 	done     map[string]bool
 	pending  map[string]lego.Part
 	attempts map[string]int
 }
 
-func blankImageCache() *ImageCache {
+func blankImageCache(location string) *ImageCache {
 	ic := &ImageCache{
+		location: location,
 		done:     map[string]bool{},
 		pending:  map[string]lego.Part{},
 		attempts: map[string]int{},
@@ -86,8 +90,8 @@ func blankImageCache() *ImageCache {
 	return ic
 }
 
-func NewImageCache(id uuid.UUID) *ImageCache {
-	ic := blankImageCache()
+func NewImageCache(id uuid.UUID, location string) *ImageCache {
+	ic := blankImageCache(location)
 	ic.Apply(&ImageCacheCreated{ID: id})
 
 	return ic
@@ -111,7 +115,7 @@ func (ic *ImageCache) AddPart(part lego.Part) {
 func (ic *ImageCache) Run() {
 
 	for key, part := range ic.pending {
-		fsm := NewImageFsm(part.BrickLinkID, part.Colour.BrickLinkID)
+		fsm := ic.NewImageFsm(part.BrickLinkID, part.Colour.BrickLinkID)
 		fsm.attempts = ic.attempts[key]
 
 		fsm.Run()
@@ -179,7 +183,7 @@ type fsm struct {
 	transitions []string
 }
 
-func NewImageFsm(partID string, colourID int) *fsm {
+func (ic *ImageCache) NewImageFsm(partID string, colourID int) *fsm {
 	return &fsm{
 		partID:      partID,
 		colourID:    colourID,
@@ -189,7 +193,7 @@ func NewImageFsm(partID string, colourID int) *fsm {
 
 		httpClient: &http.Client{},
 		writeFile: func(filename string, content []byte) error {
-			return ioutil.WriteFile(filename, content, 0666)
+			return ioutil.WriteFile(path.Join(ic.location, filename), content, 0666)
 		},
 	}
 }

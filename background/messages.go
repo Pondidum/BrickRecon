@@ -31,7 +31,7 @@ var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de4
 
 func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
 
-	ic := blankImageCache()
+	ic := blankImageCache("./app/static/img/parts")
 
 	err := es.LoadAggregate(cacheID, ic)
 
@@ -43,7 +43,7 @@ func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
 		return nil, err
 	}
 
-	ic = NewImageCache(cacheID)
+	ic = NewImageCache(cacheID, "./app/static/img/parts")
 
 	if err = es.SaveAggregate(ic); err != nil {
 		return nil, err
