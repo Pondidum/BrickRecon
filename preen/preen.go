@@ -17,9 +17,10 @@ import (
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
 
 type Preen struct {
-	viewRoot    string
-	controllers []Controller
-	auth        basicAuth
+	viewRoot      string
+	controllers   []Controller
+	templateTypes map[string]bool
+	auth          basicAuth
 
 	layout    *template.Template
 	templates map[string]*template.Template
@@ -29,14 +30,30 @@ type PreenConfig struct {
 	ApplicationRoot string
 
 	Controllers []Controller
+
+	TemplateTypes []string
+}
+
+var defaultConfig PreenConfig = PreenConfig{
+	TemplateTypes: []string{".html", ".svg"},
 }
 
 func NewPreen(pc PreenConfig) (Preen, error) {
+
+	if pc.TemplateTypes == nil {
+		pc.TemplateTypes = defaultConfig.TemplateTypes
+	}
+
 	p := Preen{
-		viewRoot:    pc.ApplicationRoot,
-		controllers: pc.Controllers,
-		templates:   map[string]*template.Template{},
-		auth:        BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
+		viewRoot:      pc.ApplicationRoot,
+		controllers:   pc.Controllers,
+		templateTypes: map[string]bool{},
+		templates:     map[string]*template.Template{},
+		auth:          BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
+	}
+
+	for _, ext := range pc.TemplateTypes {
+		p.templateTypes[ext] = true
 	}
 
 	if err := p.loadLayoutRoot(); err != nil {
@@ -92,6 +109,12 @@ func (p *Preen) loadTemplates(dir string) error {
 		currentPath := path.Join(dir, entry.Name())
 
 		if entry.IsDir() == false {
+
+			ext := path.Ext(entry.Name())
+
+			if !p.templateTypes[ext] {
+				continue
+			}
 
 			content, err := ioutil.ReadFile(currentPath)
 
