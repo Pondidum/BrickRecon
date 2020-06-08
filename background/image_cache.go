@@ -59,19 +59,52 @@ type ImageCache struct {
 }
 
 func NewImageCache() *ImageCache {
-	ic := &ImageCache{}
+	ic := &ImageCache{
+		done:     map[string]bool{},
+		pending:  map[string]*lego.Part{},
+		attempts: map[string]int{},
+	}
+
 	ic.Aggregator = eventstore.NewAggregator(ic.on)
+
 	return ic
 }
 
+func (ic *ImageCache) AddPart(part *lego.Part) {
+
+	key := key(part.LDrawID, part.Colour.LDrawID)
+
+	if _, found := ic.pending[key]; found {
+		return
+	}
+
+	if _, found := ic.done[key]; found {
+		return
+	}
+
+	ic.Apply(&PartImageRequested{Part: part})
+}
+
+func (ic *ImageCache) Run() {
+
+	for key, part := range ic.pending {
+		fsm := NewImageFsm(part)
+		fsm.attempts = ic.attempts[key]
+
+		fsm.Run()
+
+		for _, e := range fsm.events {
+			ic.Apply(e)
+		}
+	}
+}
+
 func (ic *ImageCache) on(event eventstore.Event) {
+
 	switch e := event.(type) {
 	case *PartImageRequested:
 		key := key(e.Part.LDrawID, e.Part.Colour.LDrawID)
-
-		if _, found := ic.pending[key]; !found {
-			ic.pending[key] = e.Part
-		}
+		ic.pending[key] = e.Part
 
 	case *PartAttempted:
 		key := key(e.PartID, e.ColourID)
@@ -95,20 +128,6 @@ func (ic *ImageCache) onFinished(partID string, colourID int) {
 	ic.done[key] = true
 	delete(ic.attempts, key)
 	delete(ic.pending, key)
-}
-
-func (ic *ImageCache) Run() {
-
-	for key, part := range ic.pending {
-		fsm := NewImageFsm(part)
-		fsm.attempts = ic.attempts[key]
-
-		fsm.Run()
-
-		for _, e := range fsm.events {
-			ic.Apply(e)
-		}
-	}
 }
 
 func key(id string, colourID int) string {
@@ -207,7 +226,7 @@ func ProcessPart(s *fsm) state {
 func partFailed(s *fsm) state {
 	s.enter("part_failed")
 
-	s.event(PartFetchAttemptsExceeded{
+	s.event(&PartFetchAttemptsExceeded{
 		PartID:   s.partID,
 		ColourID: s.colourID,
 	})
@@ -248,7 +267,7 @@ func fetchFailed(err error) state {
 	return func(s *fsm) state {
 		s.enter("fetch_failed")
 
-		s.event(PartAttempted{
+		s.event(&PartAttempted{
 			PartID:   s.partID,
 			ColourID: s.colourID,
 			Error:    err.Error(),
@@ -261,7 +280,7 @@ func fetchFailed(err error) state {
 func invalidPart(s *fsm) state {
 	s.enter("invalid_part")
 
-	s.event(PartImageNotFound{
+	s.event(&PartImageNotFound{
 		PartID:   s.partID,
 		ColourID: s.colourID,
 	})
@@ -279,7 +298,7 @@ func storePart(content []byte) state {
 			return storeFailed(err)
 		}
 
-		s.event(PartImageStored{
+		s.event(&PartImageStored{
 			PartID:   s.partID,
 			ColourID: s.colourID,
 		})
@@ -293,7 +312,7 @@ func storeFailed(err error) state {
 	return func(s *fsm) state {
 		s.enter("store_failed")
 
-		s.event(PartAttempted{
+		s.event(&PartAttempted{
 			PartID:   s.partID,
 			ColourID: s.colourID,
 			Error:    err.Error(),

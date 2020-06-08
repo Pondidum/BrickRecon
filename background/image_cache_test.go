@@ -35,9 +35,8 @@ func TestWhenPartFetchingFails(t *testing.T) {
 	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
 
-	event := state.events[0].(PartAttempted)
+	event := state.events[0].(*PartAttempted)
 
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
@@ -51,8 +50,7 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
-	event := state.events[0].(PartAttempted)
+	event := state.events[0].(*PartAttempted)
 
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
@@ -69,8 +67,7 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
-	event := state.events[0].(PartAttempted)
+	event := state.events[0].(*PartAttempted)
 
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
@@ -84,8 +81,7 @@ func TestWhenPartSavingFails(t *testing.T) {
 	state.Run()
 
 	assert.Len(t, state.events, 1, print(state))
-	assert.IsType(t, PartAttempted{}, state.events[0], print(state))
-	event := state.events[0].(PartAttempted)
+	event := state.events[0].(*PartAttempted)
 
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
@@ -107,7 +103,7 @@ func TestWhenPartImageDoesntExist(t *testing.T) {
 	}
 	state.Run()
 
-	attempt := state.events[0].(PartImageNotFound)
+	attempt := state.events[0].(*PartImageNotFound)
 
 	assert.Len(t, state.events, 2, print(state))
 	assert.Equal(t, state.partID, attempt.PartID)
@@ -132,7 +128,7 @@ func TestWhenPartSavingWorks(t *testing.T) {
 	}
 	state.Run()
 
-	event := state.events[0].(PartImageStored)
+	event := state.events[0].(*PartImageStored)
 
 	assert.Len(t, state.events, 1, print(state))
 	assert.Equal(t, state.partID, event.PartID)
@@ -158,7 +154,7 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
 	state.Run()
 
-	exceed := state.events[0].(PartFetchAttemptsExceeded)
+	exceed := state.events[0].(*PartFetchAttemptsExceeded)
 
 	assert.Len(t, state.events, 2, print(state))
 	assert.Equal(t, state.partID, exceed.PartID)
