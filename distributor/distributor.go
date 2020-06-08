@@ -1,6 +1,9 @@
 package distributor
 
-import "reflect"
+import (
+	"reflect"
+	"sync"
+)
 
 type MessageHandlerFunc func(Message)
 
@@ -25,36 +28,27 @@ func (d *Distributor) RegisterFor(messageType Message, handler MessageHandlerFun
 	d.topics[name] = append(d.topics[name], handler)
 }
 
-func (d *Distributor) Dispatch(message Message) {
+func (d *Distributor) Dispatch(message Message) func() {
 
 	name := messageName(message)
 	listeners, found := d.topics[name]
 
 	if !found {
-		return
+		return func() {}
 	}
+
+	wg := sync.WaitGroup{}
 
 	for _, handler := range listeners {
-		go handler(message)
+		wg.Add(1)
+
+		go func(h MessageHandlerFunc) {
+			defer wg.Done()
+			h(message)
+		}(handler)
 	}
 
-	return
-}
-
-func (d *Distributor) DispatchSync(message Message) {
-
-	name := messageName(message)
-	listeners, found := d.topics[name]
-
-	if !found {
-		return
-	}
-
-	for _, handler := range listeners {
-		handler(message)
-	}
-
-	return
+	return wg.Wait
 }
 
 func messageName(event interface{}) string {

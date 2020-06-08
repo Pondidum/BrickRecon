@@ -69,9 +69,11 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	store.SendMessage(&background.PartsAddedMessage{
+	wait := store.SendMessage(&background.PartsAddedMessage{
 		Parts: parts,
 	})
+
+	wait()
 
 	c.UI.Info("Done.")
 

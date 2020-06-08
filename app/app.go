@@ -71,6 +71,6 @@ func (a *AppStore) Project(name string) (*lego.ProjectView, error) {
 
 }
 
-func (a *AppStore) SendMessage(message distributor.Message) {
-	a.bus.DispatchSync(message)
+func (a *AppStore) SendMessage(message distributor.Message) func() {
+	return a.bus.Dispatch(message)
 }
