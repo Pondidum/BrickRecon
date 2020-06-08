@@ -18,15 +18,15 @@ type EventReader struct {
 }
 
 type EventMeta struct {
-	Timestamp       time.Time
-	ID              uuid.UUID
-	AggregateRootID uuid.UUID
-	Version         int
-	Type            string
+	Timestamp       time.Time `json:"meta_timestamp"`
+	ID              uuid.UUID `json:"meta_id"`
+	AggregateRootID uuid.UUID `json:"meta_aggregate_id"`
+	Version         int       `json:"meta_version"`
+	Type            string    `json:"meta_type"`
 }
 
 func (e *EventMeta) event() *EventMeta      { return e }
-func (e *EventMeta) AggregateID() uuid.UUID { return e.ID }
+func (e *EventMeta) AggregateID() uuid.UUID { return e.AggregateRootID }
 
 type Event interface {
 	event() *EventMeta
@@ -85,7 +85,7 @@ func (er *EventReader) ReadFrom(offset int) bool {
 }
 
 type eventType struct {
-	Type string
+	Type string `json:"meta_type"`
 }
 
 func (er *EventReader) Event() (Event, error) {

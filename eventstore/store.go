@@ -93,7 +93,7 @@ func (es *EventStore) SaveAggregate(a Aggregate) error {
 		meta := e.event()
 
 		meta.Timestamp = time.Now()
-		meta.ID = uuid.UUID{}
+		meta.ID = uuid.NewV4()
 		meta.AggregateRootID = aggregator.id
 		meta.Version = currentVersion
 		meta.Type = eventName(e)
