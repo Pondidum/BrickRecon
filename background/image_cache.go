@@ -9,27 +9,34 @@ import (
 	"net/http"
 
 	"github.com/honeycombio/beeline-go"
+	uuid "github.com/satori/go.uuid"
 )
 
 type HttpClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type PartImageRequested struct {
-	eventstore.Event
+type ImageCacheCreated struct {
+	eventstore.EventMeta
 
-	Part *lego.Part
+	ID uuid.UUID
+}
+
+type PartImageRequested struct {
+	eventstore.EventMeta
+
+	Part lego.Part
 }
 
 type PartFetchAttemptsExceeded struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	PartID   string
 	ColourID int
 }
 
 type PartAttempted struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	PartID   string
 	ColourID int
@@ -37,31 +44,40 @@ type PartAttempted struct {
 }
 
 type PartImageNotFound struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	PartID   string
 	ColourID int
 }
 
 type PartImageStored struct {
-	eventstore.Event
+	eventstore.EventMeta
 
 	PartID   string
 	ColourID int
+}
+
+func ImageCacheEvents(register func(eventstore.Initialiser)) {
+	register(func() interface{} { return &ImageCacheCreated{} })
+	register(func() interface{} { return &PartImageRequested{} })
+	register(func() interface{} { return &PartFetchAttemptsExceeded{} })
+	register(func() interface{} { return &PartAttempted{} })
+	register(func() interface{} { return &PartImageNotFound{} })
+	register(func() interface{} { return &PartImageStored{} })
 }
 
 type ImageCache struct {
 	*eventstore.Aggregator
 
 	done     map[string]bool
-	pending  map[string]*lego.Part
+	pending  map[string]lego.Part
 	attempts map[string]int
 }
 
-func NewImageCache() *ImageCache {
+func blankImageCache() *ImageCache {
 	ic := &ImageCache{
 		done:     map[string]bool{},
-		pending:  map[string]*lego.Part{},
+		pending:  map[string]lego.Part{},
 		attempts: map[string]int{},
 	}
 
@@ -70,9 +86,16 @@ func NewImageCache() *ImageCache {
 	return ic
 }
 
-func (ic *ImageCache) AddPart(part *lego.Part) {
+func NewImageCache(id uuid.UUID) *ImageCache {
+	ic := blankImageCache()
+	ic.Apply(&ImageCacheCreated{ID: id})
 
-	key := key(part.LDrawID, part.Colour.LDrawID)
+	return ic
+}
+
+func (ic *ImageCache) AddPart(part lego.Part) {
+
+	key := key(part.BrickLinkID, part.Colour.BrickLinkID)
 
 	if _, found := ic.pending[key]; found {
 		return
@@ -88,7 +111,7 @@ func (ic *ImageCache) AddPart(part *lego.Part) {
 func (ic *ImageCache) Run() {
 
 	for key, part := range ic.pending {
-		fsm := NewImageFsm(part)
+		fsm := NewImageFsm(part.BrickLinkID, part.Colour.BrickLinkID)
 		fsm.attempts = ic.attempts[key]
 
 		fsm.Run()
@@ -102,8 +125,12 @@ func (ic *ImageCache) Run() {
 func (ic *ImageCache) on(event eventstore.Event) {
 
 	switch e := event.(type) {
+
+	case *ImageCacheCreated:
+		ic.SetID(e.ID)
+
 	case *PartImageRequested:
-		key := key(e.Part.LDrawID, e.Part.Colour.LDrawID)
+		key := key(e.Part.BrickLinkID, e.Part.Colour.BrickLinkID)
 		ic.pending[key] = e.Part
 
 	case *PartAttempted:
@@ -152,10 +179,10 @@ type fsm struct {
 	transitions []string
 }
 
-func NewImageFsm(part *lego.Part) *fsm {
+func NewImageFsm(partID string, colourID int) *fsm {
 	return &fsm{
-		partID:      part.LDrawID,
-		colourID:    part.Colour.LDrawID,
+		partID:      partID,
+		colourID:    colourID,
 		maxAttempts: 5,
 
 		invalidImage: []byte{}, //read a png into this
@@ -212,15 +239,15 @@ type state func(s *fsm) (next state)
 func ProcessPart(s *fsm) state {
 
 	c := s.enter("process_part")
-	maxExceeded := s.attempts < s.maxAttempts
+	maxExceeded := s.attempts >= s.maxAttempts
 
 	beeline.AddField(c, "max_attempts_exceeded", maxExceeded)
 
 	if maxExceeded {
-		return fetchPart
+		return partFailed
 	}
 
-	return partFailed
+	return fetchPart
 }
 
 func partFailed(s *fsm) state {
@@ -235,16 +262,19 @@ func partFailed(s *fsm) state {
 }
 
 func fetchPart(s *fsm) state {
-	s.enter("fetch_part")
+	c := s.enter("fetch_part")
 
 	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, s.colourID, s.partID)
 	res, err := s.httpGet(url)
 
 	if err != nil {
+		beeline.AddField(c, "error", err)
 		return fetchFailed(err)
 	}
 
 	defer res.Body.Close()
+
+	beeline.AddField(c, "status_code", res.StatusCode)
 
 	if res.StatusCode == http.StatusNotFound {
 		return invalidPart
@@ -257,8 +287,12 @@ func fetchPart(s *fsm) state {
 	content, err := ioutil.ReadAll(res.Body)
 
 	if err != nil {
+		beeline.AddField(c, "error", err)
+
 		return fetchFailed(err)
 	}
+
+	beeline.AddField(c, "content_length", len(content))
 
 	return storePart(content)
 }

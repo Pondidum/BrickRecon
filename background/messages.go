@@ -4,7 +4,6 @@ import (
 	"mvc/distributor"
 	"mvc/eventstore"
 	"mvc/lego"
-	"os"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -15,53 +14,65 @@ type PartsAddedMessage struct {
 	Parts []lego.Part
 }
 
-type PartsAddedMessageHandler struct {
-	es *eventstore.EventStore
+func AttachImageCacheListener(bus *distributor.Distributor, es *eventstore.EventStore) error {
+
+	if _, err := loadCache(es); err != nil {
+		return err
+	}
+
+	bus.RegisterFor(&PartsAddedMessage{}, func(message distributor.Message) {
+		handler(es, message)
+	})
+
+	return nil
 }
 
-func NewPartsAddedMessageHandler(es *eventstore.EventStore) (*PartsAddedMessageHandler, error) {
+var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
 
-	handler := &PartsAddedMessageHandler{es}
+func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
 
-	if _, err := handler.loadCache(); err != nil {
+	ic := blankImageCache()
+
+	err := es.LoadAggregate(cacheID, ic)
+
+	if err == nil {
+		return ic, nil
+	}
+
+	if !eventstore.IsAggregateNotFound(err) {
 		return nil, err
 	}
 
-	return handler, nil
-}
+	ic = NewImageCache(cacheID)
 
-func (h *PartsAddedMessageHandler) loadCache() (*ImageCache, error) {
-	id, _ := uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de")
-	ic := NewImageCache()
-
-	if err := h.es.LoadAggregate(id, ic); err != nil && !os.IsNotExist(err) {
+	if err = es.SaveAggregate(ic); err != nil {
 		return nil, err
 	}
 
 	return ic, nil
 }
 
-func (h *PartsAddedMessageHandler) Handle(message distributor.Message) {
+func handler(es *eventstore.EventStore, message distributor.Message) {
 
-	m, ok := message.(PartsAddedMessage)
+	m, ok := message.(*PartsAddedMessage)
 
 	if !ok {
 		return
 	}
 
-	ic, err := h.loadCache()
+	ic, err := loadCache(es)
 
 	if err != nil {
 		return
 	}
 
 	for _, part := range m.Parts {
-		ic.AddPart(&part)
+		ic.AddPart(part)
 	}
 
-	h.es.SaveAggregate(ic)
+	es.SaveAggregate(ic)
 
 	ic.Run()
 
-	h.es.SaveAggregate(ic)
+	es.SaveAggregate(ic)
 }
