@@ -17,6 +17,9 @@ func Commands(ui cli.Ui) map[string]cli.CommandFactory {
 		"serve": func() (cli.Command, error) {
 			return &ServeCommand{Meta: meta}, nil
 		},
+		"project create": func() (cli.Command, error) {
+			return &ProjectCreateCommand{Meta: meta}, nil
+		},
 	}
 
 	return all

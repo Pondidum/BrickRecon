@@ -2,6 +2,8 @@ package app
 
 import (
 	"fmt"
+	"mvc/background"
+	"mvc/distributor"
 	"mvc/eventstore"
 	"mvc/lego"
 	"os"
@@ -12,7 +14,8 @@ type SiteModel struct {
 }
 
 type AppStore struct {
-	es *eventstore.EventStore
+	es  *eventstore.EventStore
+	bus *distributor.Distributor
 }
 
 func NewAppStore() (*AppStore, error) {
@@ -25,9 +28,17 @@ func NewAppStore() (*AppStore, error) {
 	es.RegisterEvent(func() interface{} { return &lego.ProjectCreated{} })
 	es.RegisterEvent(func() interface{} { return &lego.ProjectPartsAdded{} })
 
+	background.ImageCacheEvents(es.RegisterEvent)
+
 	es.RegisterProjection("projects", lego.ProjectsInitialState, lego.ProjectsProjector)
 
-	return &AppStore{es: es}, nil
+	bus := distributor.NewDistributor()
+
+	if err := background.AttachImageCacheListener(bus, es); err != nil {
+		return nil, err
+	}
+
+	return &AppStore{es: es, bus: bus}, nil
 }
 
 func (a *AppStore) Save(project *lego.Project) error {
@@ -58,4 +69,8 @@ func (a *AppStore) Project(name string) (*lego.ProjectView, error) {
 
 	return project, nil
 
+}
+
+func (a *AppStore) SendMessage(message distributor.Message) {
+	a.bus.DispatchSync(message)
 }

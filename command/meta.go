@@ -8,12 +8,18 @@ import (
 	"github.com/spf13/pflag"
 )
 
+type NamedCommand interface {
+	Name() string
+	Help() string
+}
+
 type Meta struct {
 	UI cli.Ui
 }
 
-func (m *Meta) FlagSet(name string) *pflag.FlagSet {
-	f := pflag.NewFlagSet(name, pflag.ContinueOnError)
+func (m *Meta) FlagSet(cmd NamedCommand) *pflag.FlagSet {
+	f := pflag.NewFlagSet(cmd.Name(), pflag.ContinueOnError)
+	f.Usage = func() { m.UI.Output(cmd.Help()) }
 
 	// Create an io.Writer that writes to our UI properly for errors.
 	// This is kind of a hack, but it does the job. Basically: create

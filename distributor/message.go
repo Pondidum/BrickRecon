@@ -52,6 +52,22 @@ func (d *Distributor) Dispatch(message Message) {
 	return
 }
 
+func (d *Distributor) DispatchSync(message Message) {
+
+	name := messageName(message)
+	listeners, found := d.topics[name]
+
+	if !found {
+		return
+	}
+
+	for _, handler := range listeners {
+		handler(message)
+	}
+
+	return
+}
+
 func messageName(event interface{}) string {
 	t := reflect.TypeOf(event)
 	if t.Kind() == reflect.Ptr {
