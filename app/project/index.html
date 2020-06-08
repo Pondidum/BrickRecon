@@ -55,8 +55,8 @@
 
     {{ range .Project.Parts }}
     <tr>
-      <td width="66"><img loading="lazy" src="http://brickrecon-dev.stormbase.net.s3-eu-west-1.amazonaws.com/images/parts/{{ .LDrawID }}-{{ .Colour.LDrawID }}.png"
-          alt="part {{ .LDrawID }}" width="66px" height="50px"></td>
+      <td width="66"><img loading="lazy" src="/static/img/parts/{{ .BrickLinkID }}-{{ .Colour.BrickLinkID }}.png"
+          alt="part {{ .LDrawID }}" width="66px"></td>
       <td>{{ .BrickLinkID }}</td>
       <td>{{ .Name }}</td>
       <td>{{ .Colour.Name }}</td>
