@@ -2,7 +2,9 @@ package lego
 
 import (
 	"mvc/eventstore"
+	"reflect"
 
+	"github.com/honeycombio/libhoney-go"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -25,15 +27,26 @@ func ProjectsInitialState() interface{} {
 	}
 }
 
-func ProjectsProjector(state interface{}, record eventstore.Event) interface{} {
+func ProjectsProjector(state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
-	switch e := record.(type) {
+	o := libhoney.NewEvent()
+	defer o.Send()
+
+	o.AddField("event_type", reflect.TypeOf(event).Elem().Name())
+
+	switch e := event.(type) {
 	case *ProjectCreated:
+		o.AddField("project_name", e.Name)
+		o.AddField("project_id", e.AggregateID())
+
 		view.Names = append(view.Names, e.Name)
 		view.Projects[e.Name] = &ProjectView{ID: e.AggregateID(), Name: e.Name}
 
-	case *PartsAdded:
+	case *ProjectPartsAdded:
+		o.AddField("project_id", e.AggregateRootID)
+		o.AddField("part_count", len(e.Parts))
+
 		project := projectByID(view.Projects, e.AggregateID())
 		project.Parts = append(project.Parts, e.Parts...)
 	}

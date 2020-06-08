@@ -21,7 +21,7 @@ func NewProject(name string, parts []Part) *Project {
 	project.Aggregator = eventstore.NewAggregator(project.on)
 
 	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
-	project.Apply(&PartsAdded{Parts: parts})
+	project.Apply(&ProjectPartsAdded{Parts: parts})
 
 	return &project
 }
@@ -34,7 +34,7 @@ func (prj *Project) on(event eventstore.Event) {
 		prj.SetID(e.ID)
 		prj.Name = e.Name
 
-	case *PartsAdded:
+	case *ProjectPartsAdded:
 		for _, p := range e.Parts {
 			prj.parts.Add(p)
 		}
@@ -49,7 +49,7 @@ type ProjectCreated struct {
 	Name string
 }
 
-type PartsAdded struct {
+type ProjectPartsAdded struct {
 	eventstore.EventMeta
 
 	Parts []Part
