@@ -178,6 +178,20 @@ func TestWhenAggregateIsntFound(t *testing.T) {
 	assert.True(t, strings.HasPrefix(err.Error(), "No aggregate found for ID"))
 }
 
+func TestWhenReadingFromEmptyStore(t *testing.T) {
+	temp, _ := ioutil.TempDir(".", "er")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	store := NewEventStore(temp)
+	id := uuid.NewV4()
+	a := BlankTestAggregate()
+	err := store.LoadAggregate(id, a)
+
+	assert.True(t, strings.HasPrefix(err.Error(), "No aggregate found for ID"))
+}
+
 // ------------------------------------------------------------------------- //
 type TestAggregate struct {
 	*Aggregator

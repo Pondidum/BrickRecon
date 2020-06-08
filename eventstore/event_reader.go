@@ -36,7 +36,7 @@ type Event interface {
 func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {
 	file, err := os.Open(filename)
 
-	if err != nil {
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
 

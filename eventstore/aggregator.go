@@ -29,6 +29,10 @@ func (a *Aggregator) Apply(event Event) {
 	a.onEvent(event)
 }
 
+func (a *Aggregator) AggregateID() uuid.UUID {
+	return a.id
+}
+
 func (a *Aggregator) SetID(aggregateID uuid.UUID) {
 	a.id = aggregateID
 }
