@@ -2,7 +2,6 @@ package create
 
 import (
 	"mvc/app"
-	"mvc/lego"
 	"mvc/preen"
 	"net/http"
 )
@@ -33,14 +32,9 @@ func (c CreateController) Post(req *http.Request) interface{} {
 
 	defer file.Close()
 
-	parts, err := lego.ReadPartsList(file)
+	_, err = CreateProject(c.Store, modelName, file)
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(), preen.ErrorModel(err))
-	}
-
-	project := lego.NewProject(modelName, parts)
-	if err := c.Store.Save(project); err != nil {
 		return preen.ComposeModels(c.Store.SiteModel(), preen.ErrorModel(err))
 	}
 

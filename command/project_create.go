@@ -3,8 +3,7 @@ package command
 import (
 	"fmt"
 	"mvc/app"
-	"mvc/background"
-	"mvc/lego"
+	"mvc/app/create"
 	"os"
 )
 
@@ -50,30 +49,21 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 	}
 	defer file.Close()
 
-	parts, err := lego.ReadPartsList(file)
-	if err != nil {
-		c.UI.Error(err.Error())
-		return 1
-	}
-
-	project := lego.NewProject(modelName, parts)
-
 	store, err := app.NewAppStore()
+
 	if err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}
 
-	if err := store.Save(project); err != nil {
+	waiter, err := create.CreateProject(store, modelName, file)
+
+	if err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}
 
-	wait := store.SendMessage(&background.PartsAddedMessage{
-		Parts: parts,
-	})
-
-	wait()
+	waiter()
 
 	c.UI.Info("Done.")
 
