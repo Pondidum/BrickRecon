@@ -190,6 +190,7 @@ func TestWhenReadingFromEmptyStore(t *testing.T) {
 	err := store.LoadAggregate(id, a)
 
 	assert.True(t, strings.HasPrefix(err.Error(), "No aggregate found for ID"))
+	assert.True(t, IsAggregateNotFound(err))
 }
 
 // ------------------------------------------------------------------------- //

@@ -3,7 +3,6 @@ package eventstore
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path"
 	"reflect"
@@ -66,7 +65,7 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 	}
 
 	if !hasEvents {
-		return fmt.Errorf("No aggregate found for ID %s", id)
+		return &AggregateNotFoundError{ID: id}
 	}
 
 	return nil
