@@ -3,6 +3,7 @@ package eventstore
 import (
 	"io/ioutil"
 	"os"
+	"strings"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
@@ -157,6 +158,24 @@ func TestAggregateSave(t *testing.T) {
 	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
 	assert.Equal(t, 4, ta.version)
 
+}
+
+func TestWhenAggregateIsntFound(t *testing.T) {
+	temp, _ := ioutil.TempDir(".", "er")
+	defer func() {
+		os.RemoveAll(temp)
+	}()
+
+	store := NewEventStore(temp)
+	store.SaveAggregate(NewTestAggregate("test"))
+
+	// not the same ID
+	id := uuid.NewV4()
+
+	a := BlankTestAggregate()
+	err := store.LoadAggregate(id, a)
+
+	assert.True(t, strings.HasPrefix(err.Error(), "No aggregate found for ID"))
 }
 
 // ------------------------------------------------------------------------- //
