@@ -23,7 +23,7 @@ func TestCacheCreation(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, cacheID, ic.AggregateID())
 
-	fromStore := blankImageCache()
+	fromStore := blankImageCache("./app/static/img/parts")
 	assert.NoError(t, es.LoadAggregate(cacheID, fromStore))
 }
 
