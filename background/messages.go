@@ -16,7 +16,16 @@ type PartsAddedMessage struct {
 
 func AttachImageCacheListener(bus *distributor.Distributor, es *eventstore.EventStore) error {
 
-	if _, err := loadCache(es); err != nil {
+	ic, err := loadCache(es)
+	if err != nil {
+		return err
+	}
+
+	if err := ic.ReadFromCache(); err != nil {
+		return err
+	}
+
+	if err := es.SaveAggregate(ic); err != nil {
 		return err
 	}
 
