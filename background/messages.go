@@ -89,7 +89,7 @@ func handler(es *eventstore.EventStore, ctx context.Context, message distributor
 
 	// later, move this to a separate process to run periodically
 
-	ic.Run()
+	ic.Run(ctx)
 
 	if err := es.SaveAggregate(ic); err != nil {
 		beeline.AddField(ctx, "error_saving_processed_cache", err)

@@ -28,12 +28,12 @@ type fsm struct {
 
 type state func(s *fsm) (next state)
 
-func (s *fsm) Run() {
+func (s *fsm) Run(ctx context.Context) {
+
+	ctx, span := beeline.StartSpan(ctx, "part-"+s.partID)
+	defer span.Send()
 
 	state := processPart
-
-	ctx, span := beeline.StartSpan(context.Background(), "image_cache")
-	defer span.Send()
 
 	s.ctx = ctx
 
@@ -61,17 +61,19 @@ func (s *fsm) event(e eventstore.Event) {
 	s.events = append(s.events, e)
 }
 
-func (s *fsm) enter(name string) context.Context {
+func (s *fsm) enter(name string) (context.Context, func()) {
 	s.transitions = append(s.transitions, name)
-	c, _ := beeline.StartSpan(s.ctx, name)
+	c, span := beeline.StartSpan(s.ctx, name)
 
-	return c
+	return c, func() { span.Send() }
 }
 
-func processPart(s *fsm) state {
+func processPart(fsm *fsm) state {
 
-	c := s.enter("process_part")
-	maxExceeded := s.attempts >= s.maxAttempts
+	c, finish := fsm.enter("process_part")
+	defer finish()
+
+	maxExceeded := fsm.attempts >= fsm.maxAttempts
 
 	beeline.AddField(c, "max_attempts_exceeded", maxExceeded)
 
@@ -83,7 +85,8 @@ func processPart(s *fsm) state {
 }
 
 func partFailed(s *fsm) state {
-	s.enter("part_failed")
+	_, finish := s.enter("part_failed")
+	defer finish()
 
 	s.event(&PartFetchAttemptsExceeded{
 		PartID:   s.partID,
@@ -94,7 +97,8 @@ func partFailed(s *fsm) state {
 }
 
 func fetchPart(s *fsm) state {
-	c := s.enter("fetch_part")
+	c, finish := s.enter("fetch_part")
+	defer finish()
 
 	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, s.colourID, s.partID)
 	res, err := s.httpGet(url)
@@ -131,7 +135,8 @@ func fetchPart(s *fsm) state {
 
 func fetchFailed(err error) state {
 	return func(s *fsm) state {
-		s.enter("fetch_failed")
+		_, finish := s.enter("fetch_failed")
+		defer finish()
 
 		s.event(&PartAttempted{
 			PartID:   s.partID,
@@ -144,7 +149,8 @@ func fetchFailed(err error) state {
 }
 
 func invalidPart(s *fsm) state {
-	s.enter("invalid_part")
+	_, finish := s.enter("invalid_part")
+	defer finish()
 
 	s.event(&PartImageNotFound{
 		PartID:   s.partID,
@@ -156,7 +162,8 @@ func invalidPart(s *fsm) state {
 
 func storePart(content []byte) state {
 	return func(s *fsm) state {
-		s.enter("store_part")
+		_, finish := s.enter("store_part")
+		defer finish()
 
 		filename := fmt.Sprintf("%s-%v.png", s.partID, s.colourID)
 
@@ -176,7 +183,8 @@ func storePart(content []byte) state {
 
 func storeFailed(err error) state {
 	return func(s *fsm) state {
-		s.enter("store_failed")
+		_, finish := s.enter("store_failed")
+		defer finish()
 
 		s.event(&PartAttempted{
 			PartID:   s.partID,

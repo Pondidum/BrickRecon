@@ -1,6 +1,7 @@
 package background
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"mvc/eventstore"
@@ -179,17 +180,18 @@ func (ic *ImageCache) containsPart(key string) bool {
 	return false
 }
 
-func (ic *ImageCache) Run() {
+func (ic *ImageCache) Run(ctx context.Context) {
 
 	for key, part := range ic.pending {
 		fsm := ic.newImageFsm(part.BrickLinkID, part.Colour.BrickLinkID)
 		fsm.attempts = ic.attempts[key]
 
-		fsm.Run()
+		fsm.Run(ctx)
 
 		for _, e := range fsm.events {
 			ic.Apply(e)
 		}
+
 	}
 }
 

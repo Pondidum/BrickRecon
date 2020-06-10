@@ -62,7 +62,10 @@ func (d *Distributor) Dispatch(ctx context.Context, message Message) func() {
 
 		go func(h messageHandler) {
 			defer wg.Done()
-			c, _ := beeline.StartSpan(ctx, h.name)
+
+			c, span := beeline.StartSpan(ctx, h.name)
+			defer span.Send()
+
 			h.action(c, message)
 		}(handler)
 	}

@@ -1,6 +1,7 @@
 package background
 
 import (
+	"context"
 	"errors"
 	"io"
 	"strings"
@@ -32,7 +33,7 @@ func createState() *fsm {
 func TestWhenPartFetchingFails(t *testing.T) {
 
 	state := createState()
-	state.Run()
+	state.Run(context.Background())
 
 	assert.Len(t, state.events, 1, print(state))
 
@@ -47,7 +48,7 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 
 	state := createState()
 	state.httpClient = testutil.HttpServerErrorClient()
-	state.Run()
+	state.Run(context.Background())
 
 	assert.Len(t, state.events, 1, print(state))
 	event := state.events[0].(*PartAttempted)
@@ -64,7 +65,7 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 		StatusCode:  200,
 		BodyBuilder: func(content []byte) io.Reader { return testutil.NewErrorReader() },
 	}
-	state.Run()
+	state.Run(context.Background())
 
 	assert.Len(t, state.events, 1, print(state))
 	event := state.events[0].(*PartAttempted)
@@ -78,7 +79,7 @@ func TestWhenPartSavingFails(t *testing.T) {
 
 	state := createState()
 	state.httpClient = testutil.HttpOkClient([]byte("some image"))
-	state.Run()
+	state.Run(context.Background())
 
 	assert.Len(t, state.events, 1, print(state))
 	event := state.events[0].(*PartAttempted)
@@ -101,7 +102,7 @@ func TestWhenPartImageDoesntExist(t *testing.T) {
 		contentWritten = content
 		return nil
 	}
-	state.Run()
+	state.Run(context.Background())
 
 	attempt := state.events[0].(*PartImageNotFound)
 
@@ -126,7 +127,7 @@ func TestWhenPartSavingWorks(t *testing.T) {
 		contentWritten = content
 		return nil
 	}
-	state.Run()
+	state.Run(context.Background())
 
 	event := state.events[0].(*PartImageStored)
 
@@ -152,7 +153,7 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 		return nil
 	}
 
-	state.Run()
+	state.Run(context.Background())
 
 	exceed := state.events[0].(*PartFetchAttemptsExceeded)
 
