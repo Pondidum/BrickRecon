@@ -7,6 +7,8 @@ import (
 	"mvc/lego"
 	"net/http"
 	"path"
+	"strconv"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -56,8 +58,16 @@ type PartImageStored struct {
 	ColourID int
 }
 
+type PartAddedFromCache struct {
+	eventstore.EventMeta
+
+	PartID   string
+	ColourID int
+}
+
 func ImageCacheEvents(register func(eventstore.Initialiser)) {
 	register(func() interface{} { return &ImageCacheCreated{} })
+	register(func() interface{} { return &PartAddedFromCache{} })
 	register(func() interface{} { return &PartImageRequested{} })
 	register(func() interface{} { return &PartFetchAttemptsExceeded{} })
 	register(func() interface{} { return &PartAttempted{} })
@@ -73,6 +83,9 @@ type ImageCache struct {
 	done     map[string]bool
 	pending  map[string]lego.Part
 	attempts map[string]int
+
+	writeFile func(filename string, content []byte) error
+	listFiles func() ([]string, error)
 }
 
 func blankImageCache(location string) *ImageCache {
@@ -81,6 +94,25 @@ func blankImageCache(location string) *ImageCache {
 		done:     map[string]bool{},
 		pending:  map[string]lego.Part{},
 		attempts: map[string]int{},
+
+		writeFile: func(filename string, content []byte) error {
+			return ioutil.WriteFile(path.Join(location, filename), content, 0666)
+		},
+
+		listFiles: func() ([]string, error) {
+			entries, err := ioutil.ReadDir(location)
+			if err != nil {
+				return nil, err
+			}
+
+			files := []string{}
+			for _, entry := range entries {
+				if !entry.IsDir() {
+					files = append(files, entry.Name())
+				}
+			}
+			return files, nil
+		},
 	}
 
 	ic.Aggregator = eventstore.NewAggregator(ic.on)
@@ -95,19 +127,56 @@ func NewImageCache(id uuid.UUID, location string) *ImageCache {
 	return ic
 }
 
+func (ic *ImageCache) ReadFromCache() error {
+
+	files, err := ic.listFiles()
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		name := strings.TrimSuffix(file, path.Ext(file))
+		parts := strings.Split(name, "-")
+
+		partID := parts[0]
+		colourID, err := strconv.Atoi(parts[1])
+
+		if err != nil {
+			continue
+		}
+
+		if ic.containsPart(name) {
+			continue
+		}
+
+		ic.Apply(&PartAddedFromCache{PartID: partID, ColourID: colourID})
+	}
+
+	return nil
+}
+
 func (ic *ImageCache) AddPart(part lego.Part) {
 
 	key := key(part.BrickLinkID, part.Colour.BrickLinkID)
 
-	if _, found := ic.pending[key]; found {
-		return
-	}
-
-	if _, found := ic.done[key]; found {
+	if ic.containsPart(key) {
 		return
 	}
 
 	ic.Apply(&PartImageRequested{Part: part})
+}
+
+func (ic *ImageCache) containsPart(key string) bool {
+
+	if _, found := ic.pending[key]; found {
+		return true
+	}
+
+	if _, found := ic.done[key]; found {
+		return true
+	}
+
+	return false
 }
 
 func (ic *ImageCache) Run() {
@@ -130,6 +199,9 @@ func (ic *ImageCache) on(event eventstore.Event) {
 
 	case *ImageCacheCreated:
 		ic.SetID(e.ID)
+
+	case *PartAddedFromCache:
+		ic.onFinished(e.PartID, e.ColourID)
 
 	case *PartImageRequested:
 		key := key(e.Part.BrickLinkID, e.Part.Colour.BrickLinkID)
