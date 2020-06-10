@@ -1,10 +1,12 @@
 package background
 
 import (
+	"context"
 	"mvc/distributor"
 	"mvc/eventstore"
 	"mvc/lego"
 
+	"github.com/honeycombio/beeline-go"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -29,8 +31,8 @@ func AttachImageCacheListener(bus *distributor.Distributor, es *eventstore.Event
 		return err
 	}
 
-	bus.RegisterFor(&PartsAddedMessage{}, func(message distributor.Message) {
-		handler(es, message)
+	bus.RegisterFor(&PartsAddedMessage{}, func(ctx context.Context, message distributor.Message) {
+		handler(es, ctx, message)
 	})
 
 	return nil
@@ -61,7 +63,7 @@ func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
 	return ic, nil
 }
 
-func handler(es *eventstore.EventStore, message distributor.Message) {
+func handler(es *eventstore.EventStore, ctx context.Context, message distributor.Message) {
 
 	m, ok := message.(*PartsAddedMessage)
 
@@ -72,6 +74,7 @@ func handler(es *eventstore.EventStore, message distributor.Message) {
 	ic, err := loadCache(es)
 
 	if err != nil {
+		beeline.AddField(ctx, "error_loading_cache", err)
 		return
 	}
 
@@ -79,9 +82,16 @@ func handler(es *eventstore.EventStore, message distributor.Message) {
 		ic.AddPart(part)
 	}
 
-	es.SaveAggregate(ic)
+	if err := es.SaveAggregate(ic); err != nil {
+		beeline.AddField(ctx, "error_saving_cache", err)
+		return
+	}
+
+	// later, move this to a separate process to run periodically
 
 	ic.Run()
 
-	es.SaveAggregate(ic)
+	if err := es.SaveAggregate(ic); err != nil {
+		beeline.AddField(ctx, "error_saving_processed_cache", err)
+	}
 }

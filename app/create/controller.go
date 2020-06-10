@@ -32,7 +32,7 @@ func (c CreateController) Post(req *http.Request) interface{} {
 
 	defer file.Close()
 
-	_, err = CreateProject(c.Store, modelName, file)
+	_, err = CreateProject(req.Context(), c.Store, modelName, file)
 
 	if err != nil {
 		return preen.ComposeModels(c.Store.SiteModel(), preen.ErrorModel(err))

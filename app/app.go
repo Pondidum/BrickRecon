@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"mvc/background"
 	"mvc/distributor"
@@ -69,6 +70,6 @@ func (a *AppStore) Project(name string) (*lego.ProjectView, error) {
 
 }
 
-func (a *AppStore) SendMessage(message distributor.Message) func() {
-	return a.bus.Dispatch(message)
+func (a *AppStore) SendMessage(ctx context.Context, message distributor.Message) func() {
+	return a.bus.Dispatch(ctx, message)
 }

@@ -2,8 +2,10 @@ package command
 
 import (
 	"bufio"
+	"context"
 	"io"
 
+	"github.com/honeycombio/beeline-go"
 	"github.com/mitchellh/cli"
 	"github.com/spf13/pflag"
 )
@@ -35,4 +37,10 @@ func (m *Meta) FlagSet(cmd NamedCommand) *pflag.FlagSet {
 	f.SetOutput(errW)
 
 	return f
+}
+
+func (m *Meta) NewPhase(c NamedCommand) (context.Context, func()) {
+
+	ctx, span := beeline.StartSpan(context.Background(), c.Name())
+	return ctx, func() { span.Send() }
 }

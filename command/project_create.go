@@ -5,6 +5,8 @@ import (
 	"mvc/app"
 	"mvc/app/create"
 	"os"
+
+	"github.com/honeycombio/beeline-go"
 )
 
 type ProjectCreateCommand struct {
@@ -24,6 +26,9 @@ func (c *ProjectCreateCommand) Name() string {
 }
 
 func (c *ProjectCreateCommand) Run(args []string) int {
+
+	ctx, send := c.NewPhase(c)
+	defer send()
 
 	flags := c.FlagSet(c)
 
@@ -56,7 +61,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	waiter, err := create.CreateProject(store, modelName, file)
+	waiter, err := create.CreateProject(ctx, store, modelName, file)
 
 	if err != nil {
 		c.UI.Error(err.Error())
@@ -64,6 +69,8 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 	}
 
 	waiter()
+
+	beeline.AddField(ctx, "complete", true)
 
 	c.UI.Info("Done.")
 

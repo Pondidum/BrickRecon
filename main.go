@@ -7,8 +7,6 @@ import (
 	"mvc/command"
 
 	"github.com/honeycombio/beeline-go"
-	"github.com/honeycombio/libhoney-go"
-	"github.com/honeycombio/libhoney-go/transmission"
 	"github.com/mattn/go-colorable"
 	"github.com/mitchellh/cli"
 )
@@ -20,24 +18,11 @@ func main() {
 func Run(args []string) int {
 
 	beeline.Init(beeline.Config{
-		// WriteKey: os.Getenv("HONEYCOMB_API_KEY"),
-		STDOUT:  true,
+		WriteKey: os.Getenv("HONEYCOMB_API_KEY"),
+		//STDOUT:  true,
 		Dataset: "BrickRecon",
 	})
 	defer beeline.Close()
-
-	err := libhoney.Init(libhoney.Config{
-		APIHost:      "http://localhost",
-		APIKey:       "1234",
-		Transmission: &transmission.WriterSender{},
-		Dataset:      "BrickRecon",
-	})
-	defer libhoney.Close()
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error executing CLI: %s\n", err.Error())
-		return 1
-	}
 
 	ui := &cli.BasicUi{
 		Reader:      os.Stdin,

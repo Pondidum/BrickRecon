@@ -1,26 +1,35 @@
 package create
 
 import (
+	"context"
 	"io"
 	"mvc/app"
 	"mvc/background"
 	"mvc/lego"
+
+	"github.com/honeycombio/beeline-go"
 )
 
-func CreateProject(store *app.AppStore, modelName string, partsFile io.Reader) (func(), error) {
+func CreateProject(ctx context.Context, store *app.AppStore, modelName string, partsFile io.Reader) (func(), error) {
+
+	beeline.AddField(ctx, "model_name", modelName)
 
 	parts, err := lego.ReadPartsList(partsFile)
 	if err != nil {
+		beeline.AddField(ctx, "read_parts_error", err)
 		return nil, err
 	}
+
+	beeline.AddField(ctx, "parts_count", len(parts))
 
 	project := lego.NewProject(modelName, parts)
 
 	if err := store.Save(project); err != nil {
+		beeline.AddField(ctx, "save_project_error", err)
 		return nil, err
 	}
 
-	wait := store.SendMessage(&background.PartsAddedMessage{
+	wait := store.SendMessage(ctx, &background.PartsAddedMessage{
 		Parts: parts,
 	})
 
