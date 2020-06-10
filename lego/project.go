@@ -54,3 +54,8 @@ type ProjectPartsAdded struct {
 
 	Parts []Part
 }
+
+func ProjectEvents(register func(eventstore.Initialiser)) {
+	register(func() interface{} { return &ProjectCreated{} })
+	register(func() interface{} { return &ProjectPartsAdded{} })
+}

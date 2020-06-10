@@ -25,9 +25,7 @@ func NewAppStore() (*AppStore, error) {
 
 	es := eventstore.NewEventStore("_store")
 
-	es.RegisterEvent(func() interface{} { return &lego.ProjectCreated{} })
-	es.RegisterEvent(func() interface{} { return &lego.ProjectPartsAdded{} })
-
+	lego.ProjectEvents(es.RegisterEvent)
 	background.ImageCacheEvents(es.RegisterEvent)
 
 	es.RegisterProjection("projects", lego.ProjectsInitialState, lego.ProjectsProjector)
