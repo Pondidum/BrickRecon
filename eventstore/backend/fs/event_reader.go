@@ -1,47 +1,23 @@
-package eventstore
+package fs
 
 import (
+	"brickrecon/eventstore"
 	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
 
 type FsEventReader struct {
-	registry     map[string]Initialiser
+	registry     map[string]eventstore.Initialiser
 	file         *os.File
 	scanner      *bufio.Scanner
 	currentIndex int
 }
 
-type EventReader interface {
-	Close() error
-	ReadAll() bool
-	ReadFor(uuid uuid.UUID) bool
-	ReadFrom(offset int) bool
-	Event() (Event, error)
-}
-
-type EventMeta struct {
-	Timestamp       time.Time `json:"meta_timestamp"`
-	ID              uuid.UUID `json:"meta_id"`
-	AggregateRootID uuid.UUID `json:"meta_aggregate_id"`
-	Version         int       `json:"meta_version"`
-	Type            string    `json:"meta_type"`
-}
-
-func (e *EventMeta) event() *EventMeta      { return e }
-func (e *EventMeta) AggregateID() uuid.UUID { return e.AggregateRootID }
-
-type Event interface {
-	event() *EventMeta
-	AggregateID() uuid.UUID
-}
-
-func NewEventReader(registry map[string]Initialiser, filename string) (*FsEventReader, error) {
+func NewEventReader(registry map[string]eventstore.Initialiser, filename string) (*FsEventReader, error) {
 	file, err := os.Open(filename)
 
 	if err != nil && !os.IsNotExist(err) {
@@ -72,7 +48,7 @@ func (er *FsEventReader) ReadFor(uuid uuid.UUID) bool {
 			return false
 		}
 
-		if record.event().AggregateRootID == uuid {
+		if record.AggregateID() == uuid {
 			return true
 		}
 	}
@@ -96,7 +72,7 @@ type eventType struct {
 	Type string `json:"meta_type"`
 }
 
-func (er *FsEventReader) Event() (Event, error) {
+func (er *FsEventReader) Event() (eventstore.Event, error) {
 	var et eventType
 	if err := json.Unmarshal(er.scanner.Bytes(), &et); err != nil {
 		return nil, err
@@ -113,5 +89,5 @@ func (er *FsEventReader) Event() (Event, error) {
 		return nil, err
 	}
 
-	return event.(Event), nil
+	return event.(eventstore.Event), nil
 }

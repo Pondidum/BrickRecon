@@ -1,4 +1,4 @@
-package eventstore
+package fs
 
 import (
 	"io/ioutil"

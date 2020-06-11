@@ -4,6 +4,7 @@ import (
 	"brickrecon/background"
 	"brickrecon/distributor"
 	"brickrecon/eventstore"
+	"brickrecon/eventstore/backend/fs"
 	"brickrecon/lego"
 	"context"
 	"fmt"
@@ -24,7 +25,7 @@ func NewAppStore() (*AppStore, error) {
 		return nil, err
 	}
 
-	backend, err := eventstore.NewFileSystemBackend("_store")
+	backend, err := fs.NewFileSystemBackend("_store")
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
-package eventstore
+package fs
 
 import (
+	"brickrecon/eventstore"
 	"bytes"
 	"encoding/json"
 	"os"
@@ -9,19 +10,17 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type EventWriter interface {
-	WriteEvents(aggregateID uuid.UUID, currentVersion int, changes []Event) (int, error)
-}
+var newline = []byte("\n")
 
 type FsEventWriter struct {
 	filename string
 }
 
-func NewEventWriter(filename string) EventWriter {
+func NewEventWriter(filename string) *FsEventWriter {
 	return &FsEventWriter{filename}
 }
 
-func (ew *FsEventWriter) WriteEvents(aggregateID uuid.UUID, currentVersion int, changes []Event) (int, error) {
+func (ew *FsEventWriter) WriteEvents(aggregateID uuid.UUID, currentVersion int, changes []eventstore.Event) (int, error) {
 	file, err := os.OpenFile(ew.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 
 	if err != nil {
@@ -36,13 +35,13 @@ func (ew *FsEventWriter) WriteEvents(aggregateID uuid.UUID, currentVersion int, 
 
 		currentVersion++
 
-		meta := e.event()
+		meta := e.Meta()
 
 		meta.Timestamp = time.Now()
 		meta.ID = uuid.NewV4()
 		meta.AggregateRootID = aggregateID
 		meta.Version = currentVersion
-		meta.Type = eventName(e)
+		meta.Type = eventstore.EventName(e)
 
 		bytes, err := json.Marshal(e)
 

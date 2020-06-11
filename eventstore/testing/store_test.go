@@ -1,6 +1,8 @@
-package eventstore
+package testing
 
 import (
+	"brickrecon/eventstore"
+	"brickrecon/eventstore/backend/fs"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -10,17 +12,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type TestEvent struct {
-	EventMeta
-
-	Name      string
-	SetNumber int
-}
-
-func createBackend() (Backend, func()) {
+func createBackend() (eventstore.Backend, func()) {
 
 	temp, _ := ioutil.TempDir(".", "es")
-	be, _ := NewFileSystemBackend(temp)
+	be, _ := fs.NewFileSystemBackend(temp)
 
 	return be, func() { os.RemoveAll(temp) }
 
@@ -31,13 +26,13 @@ func TestProjections(t *testing.T) {
 	be, cleanup := createBackend()
 	defer cleanup()
 
-	es := NewEventStore(be)
+	es := eventstore.NewEventStore(be)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	es.RegisterProjection(
 		"names",
 		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state interface{}, event Event) interface{} {
+		func(state interface{}, event eventstore.Event) interface{} {
 			m := state.(*TestProjectionState)
 			e := event.(*TestEvent)
 
@@ -46,15 +41,13 @@ func TestProjections(t *testing.T) {
 			return m
 		})
 
-	a := &Aggregator{
-		id: uuid.NewV4(),
-		changes: []Event{
-			&TestEvent{Name: "One"},
-		},
-	}
+	a := eventstore.NewAggregator(func(e eventstore.Event) {})
+	a.SetID(uuid.NewV4())
+	a.Apply(&TestEvent{Name: "One"})
+
 	assert.NoError(t, es.SaveAggregate(a))
 
-	a.changes = []Event{&TestEvent{Name: "Two"}}
+	a.Apply(&TestEvent{Name: "Two"})
 	assert.NoError(t, es.SaveAggregate(a))
 
 	var view TestProjectionState
@@ -72,16 +65,13 @@ func TestProjectionCatchup(t *testing.T) {
 	be, cleanup := createBackend()
 	defer cleanup()
 
-	es := NewEventStore(be)
+	es := eventstore.NewEventStore(be)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
-	a := &Aggregator{
-		id: uuid.NewV4(),
-		changes: []Event{
-			&TestEvent{Name: "Before_1", SetNumber: 1},
-			&TestEvent{Name: "Before_2", SetNumber: 2},
-		},
-	}
+	a := eventstore.NewAggregator(func(e eventstore.Event) {})
+	a.SetID(uuid.NewV4())
+	a.Apply(&TestEvent{Name: "Before_1", SetNumber: 1})
+	a.Apply(&TestEvent{Name: "Before_2", SetNumber: 2})
 
 	// write some events
 	assert.NoError(t, es.SaveAggregate(a))
@@ -92,7 +82,7 @@ func TestProjectionCatchup(t *testing.T) {
 		func() interface{} {
 			return &OrderedEvents{}
 		},
-		func(state interface{}, event Event) interface{} {
+		func(state interface{}, event eventstore.Event) interface{} {
 			m := state.(*OrderedEvents)
 			e := event.(*TestEvent)
 
@@ -102,9 +92,7 @@ func TestProjectionCatchup(t *testing.T) {
 		})
 
 	// write a new event
-	a.changes = []Event{
-		&TestEvent{Name: "After_1", SetNumber: 3},
-	}
+	a.Apply(&TestEvent{Name: "After_1", SetNumber: 3})
 	assert.NoError(t, es.SaveAggregate(a))
 
 	// view should contain all 3 events in order
@@ -120,13 +108,10 @@ type OrderedEvents struct {
 }
 
 func TestAggregateSaveLoad(t *testing.T) {
+	be, cleanup := createBackend()
+	defer cleanup()
 
-	temp, _ := ioutil.TempDir(".", "er")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
-
-	store := NewEventStore(&FsBackend{temp})
+	store := eventstore.NewEventStore(be)
 	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
 	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
 
@@ -134,44 +119,40 @@ func TestAggregateSaveLoad(t *testing.T) {
 	assert.NoError(t, store.SaveAggregate(project.Aggregator))
 
 	loaded := BlankTestAggregate()
-	assert.NoError(t, store.LoadAggregate(project.id, loaded.Aggregator))
+	assert.NoError(t, store.LoadAggregate(project.AggregateID(), loaded.Aggregator))
 
-	assert.Equal(t, project.id, loaded.id)
+	assert.Equal(t, project.AggregateID(), loaded.AggregateID())
 	assert.Equal(t, project.Name, loaded.Name)
-	assert.Empty(t, loaded.changes)
-	assert.Equal(t, 1, loaded.version)
+	assert.Empty(t, eventstore.ReadChanges(loaded))
+	// assert.Equal(t, 1, loaded.version)
 }
 
 func TestAggregateSave(t *testing.T) {
-	temp, _ := ioutil.TempDir(".", "er")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
+	be, cleanup := createBackend()
+	defer cleanup()
 
-	store := NewEventStore(&FsBackend{temp})
+	store := eventstore.NewEventStore(be)
 	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
 	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
 
 	ta := NewTestAggregate("test")
 	ta.Rename("two")
 	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
-	assert.Equal(t, 2, ta.version)
-	assert.Empty(t, ta.changes)
+	// assert.Equal(t, 2, ta.version)
+	assert.Empty(t, eventstore.ReadChanges(ta))
 
 	ta.Rename("three")
 	ta.Rename("four")
 	assert.NoError(t, store.SaveAggregate(ta.Aggregator))
-	assert.Equal(t, 4, ta.version)
+	// assert.Equal(t, 4, ta.version)
 
 }
 
 func TestWhenAggregateIsntFound(t *testing.T) {
-	temp, _ := ioutil.TempDir(".", "er")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
+	be, cleanup := createBackend()
+	defer cleanup()
 
-	store := NewEventStore(&FsBackend{temp})
+	store := eventstore.NewEventStore(be)
 	store.SaveAggregate(NewTestAggregate("test"))
 
 	// not the same ID
@@ -184,69 +165,14 @@ func TestWhenAggregateIsntFound(t *testing.T) {
 }
 
 func TestWhenReadingFromEmptyStore(t *testing.T) {
-	temp, _ := ioutil.TempDir(".", "er")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
+	be, cleanup := createBackend()
+	defer cleanup()
 
-	store := NewEventStore(&FsBackend{temp})
+	store := eventstore.NewEventStore(be)
 	id := uuid.NewV4()
 	a := BlankTestAggregate()
 	err := store.LoadAggregate(id, a)
 
 	assert.True(t, strings.HasPrefix(err.Error(), "No aggregate found for ID"))
-	assert.True(t, IsAggregateNotFound(err))
-}
-
-// ------------------------------------------------------------------------- //
-type TestAggregate struct {
-	*Aggregator
-
-	Name string
-}
-
-func BlankTestAggregate() *TestAggregate {
-	a := TestAggregate{}
-	a.Aggregator = NewAggregator(a.on)
-	return &a
-}
-
-func NewTestAggregate(name string) *TestAggregate {
-	a := BlankTestAggregate()
-	a.Apply(&TestAggregateCreated{NewID: uuid.NewV4(), Name: name})
-
-	return a
-}
-
-func (a *TestAggregate) Rename(newName string) {
-	if newName != a.Name {
-		a.Apply(&TestAggregateRenamed{NewName: newName})
-	}
-}
-
-func (a *TestAggregate) on(event Event) {
-
-	switch e := event.(type) {
-
-	case *TestAggregateCreated:
-		a.SetID(e.NewID)
-		a.Name = e.Name
-
-	case *TestAggregateRenamed:
-		a.Name = e.NewName
-	}
-
-}
-
-type TestAggregateCreated struct {
-	EventMeta
-
-	NewID uuid.UUID
-	Name  string
-}
-
-type TestAggregateRenamed struct {
-	EventMeta
-
-	NewName string
+	assert.True(t, eventstore.IsAggregateNotFound(err))
 }

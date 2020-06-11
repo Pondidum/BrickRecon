@@ -2,6 +2,7 @@ package background
 
 import (
 	"brickrecon/eventstore"
+	"brickrecon/eventstore/backend/fs"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -16,7 +17,7 @@ func TestCacheCreation(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	be, _ := eventstore.NewFileSystemBackend(temp)
+	be, _ := fs.NewFileSystemBackend(temp)
 	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(es.RegisterEvent)
 
@@ -35,7 +36,7 @@ func TestCacheAlreadyExists(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	be, _ := eventstore.NewFileSystemBackend(temp)
+	be, _ := fs.NewFileSystemBackend(temp)
 	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(es.RegisterEvent)
 

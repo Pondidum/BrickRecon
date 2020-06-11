@@ -1,16 +1,10 @@
-package eventstore
+package fs
 
 import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
 )
-
-type View interface {
-	LastEventIndex() (int, error)
-	ReadView(view interface{}) error
-	WriteView(view interface{}, lastIndex int) error
-}
 
 type FsView struct {
 	filename string

@@ -1,6 +1,7 @@
-package eventstore
+package fs
 
 import (
+	"brickrecon/eventstore"
 	"io/ioutil"
 	"os"
 	"path"
@@ -41,11 +42,11 @@ func TestDeserialization(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, expectedAggregateID, event.AggregateID())
-	assert.Equal(t, expectedEventID, event.event().ID)
-	assert.Equal(t, expectedAggregateID, event.event().AggregateRootID)
-	assert.Equal(t, "TestEvent", event.event().Type)
-	assert.Equal(t, 4, event.event().Version)
-	assert.Equal(t, expectedTime, event.event().Timestamp)
+	assert.Equal(t, expectedEventID, event.Meta().ID)
+	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
+	assert.Equal(t, "TestEvent", event.Meta().Type)
+	assert.Equal(t, 4, event.Meta().Version)
+	assert.Equal(t, expectedTime, event.Meta().Timestamp)
 }
 
 func TestReadingAllEvents(t *testing.T) {
@@ -129,7 +130,7 @@ func createTestReader(temp string) (*FsEventReader, error) {
 	ioutil.WriteFile(eventsFile, []byte(testEvents), 0666)
 
 	reader, err := NewEventReader(
-		map[string]Initialiser{
+		map[string]eventstore.Initialiser{
 			"TestEvent": func() interface{} { return &TestEvent{} },
 		},
 		eventsFile,
@@ -156,9 +157,16 @@ func readEvents(method func(reader *FsEventReader) bool) ([]string, error) {
 		if event, err := reader.Event(); err != nil {
 			return nil, err
 		} else {
-			seenEvents = append(seenEvents, event.event().ID.String())
+			seenEvents = append(seenEvents, event.Meta().ID.String())
 		}
 	}
 
 	return seenEvents, nil
+}
+
+type TestEvent struct {
+	eventstore.EventMeta
+
+	Name      string
+	SetNumber int
 }
