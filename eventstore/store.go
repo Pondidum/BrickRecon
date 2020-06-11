@@ -11,6 +11,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type Backend interface {
+	NewEventReader(map[string]Initialiser) (EventReader, error)
+}
+
+type FsBackend struct {
+	root string
+}
+
+func (be *FsBackend) NewEventReader(registry map[string]Initialiser) (EventReader, error) {
+	return NewEventReader(registry, path.Join(be.root, "events"))
+}
+
+// ------------
+
 var newline = []byte("\n")
 
 type EventStore struct {
@@ -19,6 +33,8 @@ type EventStore struct {
 	checkIndex  CheckIndex
 	registry    map[string]Initialiser
 	projections map[string]Projection
+
+	backend Backend
 }
 
 type Initialiser func() interface{}
@@ -29,6 +45,10 @@ func NewEventStore(root string) *EventStore {
 		checkIndex:  NewCheckIndex(),
 		registry:    map[string]Initialiser{},
 		projections: map[string]Projection{},
+
+		backend: &FsBackend{
+			root: root,
+		},
 	}
 }
 
@@ -42,7 +62,7 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 
 func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 
-	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
+	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
 		return err
 	}

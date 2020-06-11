@@ -10,11 +10,19 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type EventReader struct {
+type FsEventReader struct {
 	registry     map[string]Initialiser
 	file         *os.File
 	scanner      *bufio.Scanner
 	currentIndex int
+}
+
+type EventReader interface {
+	Close() error
+	ReadAll() bool
+	ReadFor(uuid uuid.UUID) bool
+	ReadFrom(offset int) bool
+	Event() (Event, error)
 }
 
 type EventMeta struct {
@@ -33,7 +41,7 @@ type Event interface {
 	AggregateID() uuid.UUID
 }
 
-func NewEventReader(registry map[string]Initialiser, filename string) (*EventReader, error) {
+func NewEventReader(registry map[string]Initialiser, filename string) (*FsEventReader, error) {
 	file, err := os.Open(filename)
 
 	if err != nil && !os.IsNotExist(err) {
@@ -42,19 +50,19 @@ func NewEventReader(registry map[string]Initialiser, filename string) (*EventRea
 
 	scanner := bufio.NewScanner(file)
 
-	return &EventReader{registry, file, scanner, 0}, nil
+	return &FsEventReader{registry, file, scanner, 0}, nil
 }
 
-func (er *EventReader) Close() error {
+func (er *FsEventReader) Close() error {
 	return er.file.Close()
 }
 
-func (er *EventReader) ReadAll() bool {
+func (er *FsEventReader) ReadAll() bool {
 	er.currentIndex++
 	return er.scanner.Scan()
 }
 
-func (er *EventReader) ReadFor(uuid uuid.UUID) bool {
+func (er *FsEventReader) ReadFor(uuid uuid.UUID) bool {
 
 	for er.scanner.Scan() {
 		er.currentIndex++
@@ -72,7 +80,7 @@ func (er *EventReader) ReadFor(uuid uuid.UUID) bool {
 	return false
 }
 
-func (er *EventReader) ReadFrom(offset int) bool {
+func (er *FsEventReader) ReadFrom(offset int) bool {
 
 	if er.currentIndex < offset {
 		for i := 0; i < offset; i++ {
@@ -88,7 +96,7 @@ type eventType struct {
 	Type string `json:"meta_type"`
 }
 
-func (er *EventReader) Event() (Event, error) {
+func (er *FsEventReader) Event() (Event, error) {
 	var et eventType
 	if err := json.Unmarshal(er.scanner.Bytes(), &et); err != nil {
 		return nil, err

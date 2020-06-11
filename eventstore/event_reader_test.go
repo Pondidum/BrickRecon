@@ -50,7 +50,7 @@ func TestDeserialization(t *testing.T) {
 
 func TestReadingAllEvents(t *testing.T) {
 
-	seenEvents, err := readEvents(func(reader *EventReader) bool {
+	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
 		return reader.ReadAll()
 	})
 
@@ -71,7 +71,7 @@ func TestReadingAggregateEvents(t *testing.T) {
 
 	aggregateID := uuid.FromStringOrNil("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6")
 
-	seenEvents, err := readEvents(func(reader *EventReader) bool {
+	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
 		return reader.ReadFor(aggregateID)
 	})
 
@@ -90,7 +90,7 @@ func TestReadingFromOffset(t *testing.T) {
 
 	offset := 2
 
-	seenEvents, err := readEvents(func(reader *EventReader) bool {
+	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
 		return reader.ReadFrom(offset)
 	})
 
@@ -107,7 +107,7 @@ func TestReadingFromOffset(t *testing.T) {
 
 func TestReadingAllEventsFromOffsetZero(t *testing.T) {
 
-	seenEvents, err := readEvents(func(reader *EventReader) bool {
+	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
 		return reader.ReadFrom(0)
 	})
 
@@ -124,7 +124,7 @@ func TestReadingAllEventsFromOffsetZero(t *testing.T) {
 	)
 }
 
-func createTestReader(temp string) (*EventReader, error) {
+func createTestReader(temp string) (*FsEventReader, error) {
 	eventsFile := path.Join(temp, "events")
 	ioutil.WriteFile(eventsFile, []byte(testEvents), 0666)
 
@@ -138,7 +138,7 @@ func createTestReader(temp string) (*EventReader, error) {
 	return reader, err
 }
 
-func readEvents(method func(reader *EventReader) bool) ([]string, error) {
+func readEvents(method func(reader *FsEventReader) bool) ([]string, error) {
 
 	temp, _ := ioutil.TempDir(".", "er")
 	defer func() {
