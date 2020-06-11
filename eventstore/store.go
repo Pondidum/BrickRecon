@@ -139,49 +139,27 @@ func (es *EventStore) runProjections() error {
 		return err
 	}
 
-	lowestIndex := 0
-	projectionIndex := map[string]int{}
+	views := es.allViews()
+	lowestIndex, err := findUnprocessedEvents(views)
 
-	views := map[string]View{}
-
-	for name := range es.projections {
-
-		view := es.backend.NewView(name)
-		views[name] = view
-
-		if index, err := view.LastEventIndex(); err != nil {
-			return err
-		} else {
-			lowestIndex = min(lowestIndex, index)
-			projectionIndex[name] = index
-		}
-	}
-
-	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
 		return err
 	}
 
-	defer er.Close()
-
-	events := []Event{}
-
-	for er.ReadFrom(lowestIndex) {
-
-		record, err := er.Event()
-		if err != nil {
-			return err
-		}
-
-		events = append(events, record)
+	events, err := es.loadEvents(lowestIndex)
+	if err != nil {
+		return err
 	}
+
+	lastIndex := lowestIndex + len(events)
 
 	for name, projection := range es.projections {
 
 		view := views[name]
 
-		firstEvent := projectionIndex[name] - lowestIndex
-		projectionEvents := events[firstEvent:]
+		// we will have already failed if this didn't work
+		viewLastIndex, _ := view.LastEventIndex()
+		projectionEvents := events[viewLastIndex-lowestIndex:]
 
 		if len(projectionEvents) == 0 {
 			continue
@@ -190,19 +168,64 @@ func (es *EventStore) runProjections() error {
 		state := projection.initialiseState()
 		if err := view.ReadView(state); err != nil {
 			return err
-
 		}
 
-		var lastIndex int
 		for _, e := range projectionEvents {
 			state = projection.projector(state, e)
-			lastIndex = e.event().Version
 		}
 
 		return view.WriteView(state, lastIndex)
 	}
 
 	return nil
+}
+
+func (es *EventStore) allViews() map[string]View {
+	views := make(map[string]View, len(es.projections))
+
+	for name := range es.projections {
+		views[name] = es.backend.NewView(name)
+	}
+
+	return views
+}
+
+func findUnprocessedEvents(views map[string]View) (int, error) {
+
+	lowestIndex := 0
+
+	for _, view := range views {
+		index, err := view.LastEventIndex()
+		if err != nil {
+			return 0, err
+		}
+
+		lowestIndex = min(lowestIndex, index)
+	}
+
+	return lowestIndex, nil
+}
+
+func (es *EventStore) loadEvents(lowestIndex int) ([]Event, error) {
+	er, err := es.backend.NewEventReader(es.registry)
+	if err != nil {
+		return nil, err
+	}
+	defer er.Close()
+
+	events := []Event{}
+
+	for er.ReadFrom(lowestIndex) {
+
+		record, err := er.Event()
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, record)
+	}
+
+	return events, nil
 }
 
 func eventName(event interface{}) string {
