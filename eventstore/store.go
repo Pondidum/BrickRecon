@@ -1,18 +1,16 @@
 package eventstore
 
 import (
-	"bytes"
-	"encoding/json"
 	"os"
 	"path"
 	"reflect"
-	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
 
 type Backend interface {
 	NewEventReader(map[string]Initialiser) (EventReader, error)
+	NewEventWriter() EventWriter
 }
 
 type FsBackend struct {
@@ -21,6 +19,10 @@ type FsBackend struct {
 
 func (be *FsBackend) NewEventReader(registry map[string]Initialiser) (EventReader, error) {
 	return NewEventReader(registry, path.Join(be.root, "events"))
+}
+
+func (be *FsBackend) NewEventWriter() EventWriter {
+	return NewEventWriter(path.Join(be.root, "events"))
 }
 
 // ------------
@@ -98,53 +100,17 @@ func (es *EventStore) ReadView(name string, view interface{}) error {
 
 func (es *EventStore) SaveAggregate(a Aggregate) error {
 
-	filename := path.Join(es.root, "events")
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	writer := es.backend.NewEventWriter()
+	aggregate := a.aggregator()
+
+	newVersion, err := writer.WriteEvents(aggregate.id, aggregate.version, aggregate.changes)
 
 	if err != nil {
 		return err
 	}
 
-	defer file.Close()
-
-	aggregator := a.aggregator()
-	currentVersion := aggregator.version
-
-	block := bytes.Buffer{}
-
-	for _, e := range aggregator.changes {
-
-		currentVersion++
-
-		meta := e.event()
-
-		meta.Timestamp = time.Now()
-		meta.ID = uuid.NewV4()
-		meta.AggregateRootID = aggregator.id
-		meta.Version = currentVersion
-		meta.Type = eventName(e)
-
-		bytes, err := json.Marshal(e)
-
-		if err != nil {
-			return err
-		}
-
-		if _, err := block.Write(bytes); err != nil {
-			return err
-		}
-
-		if _, err := block.Write(newline); err != nil {
-			return err
-		}
-	}
-
-	if _, err := file.Write(block.Bytes()); err != nil {
-		return err
-	}
-
-	aggregator.changes = []Event{}
-	aggregator.version = currentVersion
+	aggregate.changes = []Event{}
+	aggregate.version = newVersion
 
 	return es.runProjections()
 }
