@@ -18,6 +18,17 @@ type FsBackend struct {
 	root string
 }
 
+func NewFileSystemBackend(root string) (Backend, error) {
+
+	if err := os.MkdirAll(path.Join(root, "views"), os.ModePerm); err != nil {
+		return nil, err
+	}
+
+	return &FsBackend{
+		root: root,
+	}, nil
+}
+
 func (be *FsBackend) NewEventReader(registry map[string]Initialiser) (EventReader, error) {
 	return NewEventReader(registry, path.Join(be.root, "events"))
 }
@@ -39,8 +50,6 @@ type Projector func(state interface{}, event Event) interface{}
 var newline = []byte("\n")
 
 type EventStore struct {
-	root string
-
 	registry    map[string]Initialiser
 	projections map[string]projection
 
@@ -49,15 +58,11 @@ type EventStore struct {
 
 type Initialiser func() interface{}
 
-func NewEventStore(root string) *EventStore {
+func NewEventStore(backend Backend) *EventStore {
 	return &EventStore{
-		root:        root,
 		registry:    map[string]Initialiser{},
 		projections: map[string]projection{},
-
-		backend: &FsBackend{
-			root: root,
-		},
+		backend:     backend,
 	}
 }
 
@@ -134,10 +139,6 @@ func (es *EventStore) SaveAggregate(a Aggregate) error {
 }
 
 func (es *EventStore) runProjections() error {
-
-	if err := os.MkdirAll(path.Join(es.root, "views"), os.ModePerm); err != nil {
-		return err
-	}
 
 	views := es.allViews()
 	lowestIndex, err := findUnprocessedEvents(views)

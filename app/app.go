@@ -24,7 +24,12 @@ func NewAppStore() (*AppStore, error) {
 		return nil, err
 	}
 
-	es := eventstore.NewEventStore("_store")
+	backend, err := eventstore.NewFileSystemBackend("_store")
+	if err != nil {
+		return nil, err
+	}
+
+	es := eventstore.NewEventStore(backend)
 
 	lego.ProjectEvents(es.RegisterEvent)
 	background.ImageCacheEvents(es.RegisterEvent)

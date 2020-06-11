@@ -16,7 +16,8 @@ func TestCacheCreation(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	es := eventstore.NewEventStore(temp)
+	be, _ := eventstore.NewFileSystemBackend(temp)
+	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(es.RegisterEvent)
 
 	ic, err := loadCache(es)
@@ -34,7 +35,8 @@ func TestCacheAlreadyExists(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	es := eventstore.NewEventStore(temp)
+	be, _ := eventstore.NewFileSystemBackend(temp)
+	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(es.RegisterEvent)
 
 	_, err := loadCache(es)

@@ -17,14 +17,21 @@ type TestEvent struct {
 	SetNumber int
 }
 
-func TestProjections(t *testing.T) {
+func createBackend() (Backend, func()) {
 
 	temp, _ := ioutil.TempDir(".", "es")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
+	be, _ := NewFileSystemBackend(temp)
 
-	es := NewEventStore(temp)
+	return be, func() { os.RemoveAll(temp) }
+
+}
+
+func TestProjections(t *testing.T) {
+
+	be, cleanup := createBackend()
+	defer cleanup()
+
+	es := NewEventStore(be)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	es.RegisterProjection(
@@ -62,12 +69,10 @@ type TestProjectionState struct {
 }
 
 func TestProjectionCatchup(t *testing.T) {
-	temp, _ := ioutil.TempDir(".", "es")
-	defer func() {
-		os.RemoveAll(temp)
-	}()
+	be, cleanup := createBackend()
+	defer cleanup()
 
-	es := NewEventStore(temp)
+	es := NewEventStore(be)
 	es.RegisterEvent(func() interface{} { return &TestEvent{} })
 
 	a := &Aggregator{
@@ -121,7 +126,7 @@ func TestAggregateSaveLoad(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	store := NewEventStore(temp)
+	store := NewEventStore(&FsBackend{temp})
 	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
 	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
 
@@ -143,7 +148,7 @@ func TestAggregateSave(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	store := NewEventStore(temp)
+	store := NewEventStore(&FsBackend{temp})
 	store.RegisterEvent(func() interface{} { return &TestAggregateCreated{} })
 	store.RegisterEvent(func() interface{} { return &TestAggregateRenamed{} })
 
@@ -166,7 +171,7 @@ func TestWhenAggregateIsntFound(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	store := NewEventStore(temp)
+	store := NewEventStore(&FsBackend{temp})
 	store.SaveAggregate(NewTestAggregate("test"))
 
 	// not the same ID
@@ -184,7 +189,7 @@ func TestWhenReadingFromEmptyStore(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	store := NewEventStore(temp)
+	store := NewEventStore(&FsBackend{temp})
 	id := uuid.NewV4()
 	a := BlankTestAggregate()
 	err := store.LoadAggregate(id, a)
