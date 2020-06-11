@@ -6,14 +6,7 @@ import (
 	"strconv"
 )
 
-type CheckIndex struct {
-}
-
-func NewCheckIndex() CheckIndex {
-	return CheckIndex{}
-}
-
-func (ci *CheckIndex) Read(relatedFilePath string) (int, error) {
+func readCheckIndex(relatedFilePath string) (int, error) {
 
 	contents, err := ioutil.ReadFile(relatedFilePath + ".idx")
 
@@ -28,7 +21,7 @@ func (ci *CheckIndex) Read(relatedFilePath string) (int, error) {
 	return strconv.Atoi(string(contents))
 }
 
-func (ci *CheckIndex) Write(relatedFilePath string, index int) error {
+func writeCheckIndex(relatedFilePath string, index int) error {
 	contents := []byte(strconv.Itoa(index))
 
 	return ioutil.WriteFile(relatedFilePath+".idx", contents, 0666)

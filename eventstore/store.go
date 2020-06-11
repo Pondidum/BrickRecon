@@ -32,7 +32,6 @@ var newline = []byte("\n")
 type EventStore struct {
 	root string
 
-	checkIndex  CheckIndex
 	registry    map[string]Initialiser
 	projections map[string]Projection
 
@@ -44,7 +43,6 @@ type Initialiser func() interface{}
 func NewEventStore(root string) *EventStore {
 	return &EventStore{
 		root:        root,
-		checkIndex:  NewCheckIndex(),
 		registry:    map[string]Initialiser{},
 		projections: map[string]Projection{},
 
@@ -126,7 +124,7 @@ func (es *EventStore) runProjections() error {
 
 	for name, projection := range es.projections {
 
-		if index, err := es.checkIndex.Read(projection.path); err != nil {
+		if index, err := projection.LastEventIndex(); err != nil {
 			return err
 		} else {
 			lowestIndex = min(lowestIndex, index)
@@ -153,17 +151,11 @@ func (es *EventStore) runProjections() error {
 		events = append(events, record)
 	}
 
-	lastIndex := lowestIndex + len(events)
-
 	for name, projection := range es.projections {
 
 		firstEvent := projectionIndex[name] - lowestIndex
 
 		if err := projection.Project(events[firstEvent:]); err != nil {
-			return err
-		}
-
-		if err := es.checkIndex.Write(projection.path, lastIndex); err != nil {
 			return err
 		}
 	}

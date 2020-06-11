@@ -9,7 +9,13 @@ import (
 
 type Projector func(state interface{}, event Event) interface{}
 
-type Projection struct {
+type Projection interface {
+	ReadView(view interface{}) error
+	Project(events []Event) error
+	LastEventIndex() (int, error)
+}
+
+type FsProjection struct {
 	path            string
 	initialiseState Initialiser
 	projector       Projector
@@ -18,14 +24,18 @@ type Projection struct {
 func NewProjection(root string, name string, initialiseState Initialiser, projector Projector) Projection {
 	filepath := path.Join(root, name+".json")
 
-	return Projection{
+	return &FsProjection{
 		path:            filepath,
 		initialiseState: initialiseState,
 		projector:       projector,
 	}
 }
 
-func (p *Projection) ReadView(view interface{}) error {
+func (p *FsProjection) LastEventIndex() (int, error) {
+	return readCheckIndex(p.path)
+}
+
+func (p *FsProjection) ReadView(view interface{}) error {
 
 	content, err := ioutil.ReadFile(p.path)
 
@@ -36,7 +46,11 @@ func (p *Projection) ReadView(view interface{}) error {
 	return json.Unmarshal(content, view)
 }
 
-func (p *Projection) Project(events []Event) error {
+func (p *FsProjection) Project(events []Event) error {
+
+	if len(events) == 0 {
+		return nil
+	}
 
 	state := p.initialiseState()
 	err := p.ReadView(state)
@@ -45,8 +59,10 @@ func (p *Projection) Project(events []Event) error {
 		return err
 	}
 
+	var lastIndex int
 	for _, e := range events {
 		state = p.projector(state, e)
+		lastIndex = e.event().Version
 	}
 
 	viewBytes, err := json.Marshal(state)
@@ -55,5 +71,13 @@ func (p *Projection) Project(events []Event) error {
 		return err
 	}
 
-	return ioutil.WriteFile(p.path, viewBytes, 0666)
+	if err := ioutil.WriteFile(p.path, viewBytes, 0666); err != nil {
+		return err
+	}
+
+	if err := writeCheckIndex(p.path, lastIndex); err != nil {
+		return err
+	}
+
+	return nil
 }
