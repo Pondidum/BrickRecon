@@ -11,6 +11,7 @@ import (
 type Backend interface {
 	NewEventReader(map[string]Initialiser) (EventReader, error)
 	NewEventWriter() EventWriter
+	NewView(name string) View
 }
 
 type FsBackend struct {
@@ -25,6 +26,14 @@ func (be *FsBackend) NewEventWriter() EventWriter {
 	return NewEventWriter(path.Join(be.root, "events"))
 }
 
+func (be *FsBackend) NewView(name string) View {
+	return &FsView{
+		filename: path.Join(be.root, "views", name+".json"),
+	}
+}
+
+type Projector func(state interface{}, event Event) interface{}
+
 // ------------
 
 var newline = []byte("\n")
@@ -33,7 +42,7 @@ type EventStore struct {
 	root string
 
 	registry    map[string]Initialiser
-	projections map[string]Projection
+	projections map[string]projection
 
 	backend Backend
 }
@@ -44,7 +53,7 @@ func NewEventStore(root string) *EventStore {
 	return &EventStore{
 		root:        root,
 		registry:    map[string]Initialiser{},
-		projections: map[string]Projection{},
+		projections: map[string]projection{},
 
 		backend: &FsBackend{
 			root: root,
@@ -52,17 +61,28 @@ func NewEventStore(root string) *EventStore {
 	}
 }
 
+type projection struct {
+	name            string
+	initialiseState Initialiser
+	projector       Projector
+}
+
 func (es *EventStore) RegisterEvent(creator Initialiser) {
 	es.registry[eventName(creator())] = creator
 }
 
 func (es *EventStore) RegisterProjection(name string, initialiseState Initialiser, project Projector) {
-	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
+	es.projections[name] = projection{
+		name:            name,
+		initialiseState: initialiseState,
+		projector:       project,
+	}
 }
 
 func (es *EventStore) ReadView(name string, view interface{}) error {
-	p := es.projections[name]
-	return p.ReadView(view)
+	v := es.backend.NewView(name)
+
+	return v.ReadView(view)
 }
 
 func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
@@ -122,9 +142,14 @@ func (es *EventStore) runProjections() error {
 	lowestIndex := 0
 	projectionIndex := map[string]int{}
 
-	for name, projection := range es.projections {
+	views := map[string]View{}
 
-		if index, err := projection.LastEventIndex(); err != nil {
+	for name := range es.projections {
+
+		view := es.backend.NewView(name)
+		views[name] = view
+
+		if index, err := view.LastEventIndex(); err != nil {
 			return err
 		} else {
 			lowestIndex = min(lowestIndex, index)
@@ -153,11 +178,28 @@ func (es *EventStore) runProjections() error {
 
 	for name, projection := range es.projections {
 
-		firstEvent := projectionIndex[name] - lowestIndex
+		view := views[name]
 
-		if err := projection.Project(events[firstEvent:]); err != nil {
-			return err
+		firstEvent := projectionIndex[name] - lowestIndex
+		projectionEvents := events[firstEvent:]
+
+		if len(projectionEvents) == 0 {
+			continue
 		}
+
+		state := projection.initialiseState()
+		if err := view.ReadView(state); err != nil {
+			return err
+
+		}
+
+		var lastIndex int
+		for _, e := range projectionEvents {
+			state = projection.projector(state, e)
+			lastIndex = e.event().Version
+		}
+
+		return view.WriteView(state, lastIndex)
 	}
 
 	return nil

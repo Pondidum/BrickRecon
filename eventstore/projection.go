@@ -4,78 +4,50 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"path"
 )
 
-type Projector func(state interface{}, event Event) interface{}
-
-type Projection interface {
-	ReadView(view interface{}) error
-	Project(events []Event) error
+type View interface {
 	LastEventIndex() (int, error)
+	ReadView(view interface{}) error
+	WriteView(view interface{}, lastIndex int) error
 }
 
-type FsProjection struct {
-	path            string
-	initialiseState Initialiser
-	projector       Projector
+type FsView struct {
+	filename string
 }
 
-func NewProjection(root string, name string, initialiseState Initialiser, projector Projector) Projection {
-	filepath := path.Join(root, name+".json")
-
-	return &FsProjection{
-		path:            filepath,
-		initialiseState: initialiseState,
-		projector:       projector,
-	}
+func (v *FsView) LastEventIndex() (int, error) {
+	return readCheckIndex(v.filename)
 }
 
-func (p *FsProjection) LastEventIndex() (int, error) {
-	return readCheckIndex(p.path)
-}
+func (v *FsView) ReadView(view interface{}) error {
 
-func (p *FsProjection) ReadView(view interface{}) error {
-
-	content, err := ioutil.ReadFile(p.path)
+	content, err := ioutil.ReadFile(v.filename)
 
 	if err != nil {
+
+		if os.IsNotExist(err) {
+			return nil
+		}
+
 		return err
 	}
 
 	return json.Unmarshal(content, view)
 }
 
-func (p *FsProjection) Project(events []Event) error {
-
-	if len(events) == 0 {
-		return nil
-	}
-
-	state := p.initialiseState()
-	err := p.ReadView(state)
-
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	var lastIndex int
-	for _, e := range events {
-		state = p.projector(state, e)
-		lastIndex = e.event().Version
-	}
-
-	viewBytes, err := json.Marshal(state)
+func (v *FsView) WriteView(view interface{}, lastIndex int) error {
+	viewBytes, err := json.Marshal(view)
 
 	if err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(p.path, viewBytes, 0666); err != nil {
+	if err := ioutil.WriteFile(v.filename, viewBytes, 0666); err != nil {
 		return err
 	}
 
-	if err := writeCheckIndex(p.path, lastIndex); err != nil {
+	if err := writeCheckIndex(v.filename, lastIndex); err != nil {
 		return err
 	}
 
