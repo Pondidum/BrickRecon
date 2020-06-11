@@ -62,6 +62,11 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	es.projections[name] = NewProjection(path.Join(es.root, "views"), name, initialiseState, project)
 }
 
+func (es *EventStore) ReadView(name string, view interface{}) error {
+	p := es.projections[name]
+	return p.ReadView(view)
+}
+
 func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 
 	er, err := es.backend.NewEventReader(es.registry)
@@ -91,11 +96,6 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 	}
 
 	return nil
-}
-
-func (es *EventStore) ReadView(name string, view interface{}) error {
-	p := es.projections[name]
-	return p.ReadView(view)
 }
 
 func (es *EventStore) SaveAggregate(a Aggregate) error {
@@ -134,7 +134,7 @@ func (es *EventStore) runProjections() error {
 		}
 	}
 
-	er, err := NewEventReader(es.registry, path.Join(es.root, "events"))
+	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
 		return err
 	}
