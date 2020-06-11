@@ -1,7 +1,7 @@
 package command
 
 import (
-	"mvc/version"
+	"brickrecon/version"
 
 	"github.com/mitchellh/cli"
 )

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"mvc/command"
+	"brickrecon/command"
 
 	"github.com/honeycombio/beeline-go"
 	"github.com/mattn/go-colorable"
@@ -33,12 +33,12 @@ func Run(args []string) int {
 	commands := command.Commands(ui)
 
 	cli := &cli.CLI{
-		Name:                       "mvc",
+		Name:                       "brickrecon",
 		Args:                       args,
 		Commands:                   commands,
 		Autocomplete:               true,
 		AutocompleteNoDefaultFlags: false,
-		HelpFunc:                   cli.BasicHelpFunc("mvc"),
+		HelpFunc:                   cli.BasicHelpFunc("brickrecon"),
 		HelpWriter:                 os.Stdout,
 	}
 

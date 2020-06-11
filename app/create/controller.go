@@ -1,8 +1,8 @@
 package create
 
 import (
-	"mvc/app"
-	"mvc/preen"
+	"brickrecon/app"
+	"brickrecon/preen"
 	"net/http"
 )
 

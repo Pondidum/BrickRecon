@@ -1,8 +1,8 @@
 package background
 
 import (
+	"brickrecon/eventstore"
 	"io/ioutil"
-	"mvc/eventstore"
 	"os"
 	"testing"
 

@@ -1,6 +1,6 @@
 package command
 
-import "mvc/version"
+import "brickrecon/version"
 
 // VersionCommand is a Command implementation prints the version.
 type VersionCommand struct {
@@ -13,7 +13,7 @@ func (c *VersionCommand) Help() string {
 }
 
 func (c *VersionCommand) Synopsis() string {
-	return "Prints the mvc version"
+	return "Prints the brickrecon version"
 }
 
 func (c *VersionCommand) Name() string {

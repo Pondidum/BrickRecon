@@ -1,4 +1,4 @@
-module mvc
+module brickrecon
 
 go 1.14
 

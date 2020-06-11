@@ -1,9 +1,9 @@
 package background
 
 import (
+	"brickrecon/eventstore"
+	"brickrecon/lego"
 	"io/ioutil"
-	"mvc/eventstore"
-	"mvc/lego"
 	"os"
 	"testing"
 

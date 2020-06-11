@@ -1,7 +1,7 @@
 package lego
 
 import (
-	"mvc/eventstore"
+	"brickrecon/eventstore"
 
 	uuid "github.com/satori/go.uuid"
 )

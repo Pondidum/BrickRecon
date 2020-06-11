@@ -1,9 +1,9 @@
 package project
 
 import (
-	"mvc/app"
-	"mvc/lego"
-	"mvc/preen"
+	"brickrecon/app"
+	"brickrecon/lego"
+	"brickrecon/preen"
 	"net/http"
 
 	"github.com/gorilla/mux"

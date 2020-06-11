@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"mvc/testutil"
+	"brickrecon/testutil"
 
 	"github.com/stretchr/testify/assert"
 )

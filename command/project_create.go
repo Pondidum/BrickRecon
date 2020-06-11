@@ -1,9 +1,9 @@
 package command
 
 import (
+	"brickrecon/app"
+	"brickrecon/app/create"
 	"fmt"
-	"mvc/app"
-	"mvc/app/create"
 	"os"
 
 	"github.com/honeycombio/beeline-go"

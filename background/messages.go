@@ -1,10 +1,10 @@
 package background
 
 import (
+	"brickrecon/distributor"
+	"brickrecon/eventstore"
+	"brickrecon/lego"
 	"context"
-	"mvc/distributor"
-	"mvc/eventstore"
-	"mvc/lego"
 
 	"github.com/honeycombio/beeline-go"
 	uuid "github.com/satori/go.uuid"

@@ -1,12 +1,12 @@
 package app
 
 import (
+	"brickrecon/background"
+	"brickrecon/distributor"
+	"brickrecon/eventstore"
+	"brickrecon/lego"
 	"context"
 	"fmt"
-	"mvc/background"
-	"mvc/distributor"
-	"mvc/eventstore"
-	"mvc/lego"
 	"os"
 )
 

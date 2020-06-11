@@ -1,11 +1,11 @@
 package background
 
 import (
+	"brickrecon/eventstore"
+	"brickrecon/lego"
 	"context"
 	"fmt"
 	"io/ioutil"
-	"mvc/eventstore"
-	"mvc/lego"
 	"net/http"
 	"path"
 	"strconv"

@@ -1,12 +1,12 @@
 package command
 
 import (
+	"brickrecon/app"
+	"brickrecon/app/create"
+	"brickrecon/app/login"
+	"brickrecon/app/project"
+	"brickrecon/preen"
 	"fmt"
-	"mvc/app"
-	"mvc/app/create"
-	"mvc/app/login"
-	"mvc/app/project"
-	"mvc/preen"
 
 	"net/http"
 
