@@ -33,7 +33,10 @@ func (c *ServeCommand) Name() string {
 
 func (c *ServeCommand) Run(_ []string) int {
 
-	store, err := app.NewAppStore()
+	ctx, send := c.NewPhase(c)
+	defer send()
+
+	store, err := app.NewAppStore(ctx)
 
 	if err != nil {
 		c.UI.Error(err.Error())

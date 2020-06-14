@@ -29,8 +29,8 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
 
-	siteModel := c.Store.SiteModel()
-	selected, _ := c.Store.Project(vars["name"])
+	siteModel := c.Store.SiteModel(req.Context())
+	selected, _ := c.Store.ReadProject(req.Context(), vars["name"])
 
 	return preen.ComposeModels(
 		siteModel,

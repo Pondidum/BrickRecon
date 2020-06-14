@@ -1,6 +1,7 @@
 package eventstore
 
 import (
+	"context"
 	"reflect"
 
 	uuid "github.com/satori/go.uuid"
@@ -11,11 +12,11 @@ type Projector func(state interface{}, event Event) interface{}
 // ------------
 
 type EventStore interface {
-	RegisterEvent(creator Initialiser)
-	RegisterProjection(name string, initialiseState Initialiser, project Projector)
-	ReadView(name string, view interface{}) error
-	LoadAggregate(id uuid.UUID, a Aggregate) error
-	SaveAggregate(a Aggregate) error
+	RegisterEvent(context context.Context, creator Initialiser)
+	RegisterProjection(context context.Context, name string, initialiseState Initialiser, project Projector)
+	ReadView(context context.Context, name string, view interface{}) error
+	LoadAggregate(context context.Context, id uuid.UUID, a Aggregate) error
+	SaveAggregate(context context.Context, a Aggregate) error
 }
 
 type eventStore struct {
@@ -41,11 +42,11 @@ type projection struct {
 	projector       Projector
 }
 
-func (es *eventStore) RegisterEvent(creator Initialiser) {
+func (es *eventStore) RegisterEvent(context context.Context, creator Initialiser) {
 	es.registry[EventName(creator())] = creator
 }
 
-func (es *eventStore) RegisterProjection(name string, initialiseState Initialiser, project Projector) {
+func (es *eventStore) RegisterProjection(context context.Context, name string, initialiseState Initialiser, project Projector) {
 	es.projections[name] = projection{
 		name:            name,
 		initialiseState: initialiseState,
@@ -53,13 +54,13 @@ func (es *eventStore) RegisterProjection(name string, initialiseState Initialise
 	}
 }
 
-func (es *eventStore) ReadView(name string, view interface{}) error {
+func (es *eventStore) ReadView(context context.Context, name string, view interface{}) error {
 	v := es.backend.NewView(name)
 
 	return v.ReadView(view)
 }
 
-func (es *eventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
+func (es *eventStore) LoadAggregate(context context.Context, id uuid.UUID, a Aggregate) error {
 
 	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
@@ -90,7 +91,7 @@ func (es *eventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 	return nil
 }
 
-func (es *eventStore) SaveAggregate(a Aggregate) error {
+func (es *eventStore) SaveAggregate(context context.Context, a Aggregate) error {
 
 	writer := es.backend.NewEventWriter()
 	aggregate := a.aggregator()

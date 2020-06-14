@@ -18,7 +18,7 @@ type PartsAddedMessage struct {
 
 func AttachImageCacheListener(bus *distributor.Distributor, es eventstore.EventStore) error {
 
-	ic, err := loadCache(es)
+	ic, err := loadCache(es, context.TODO())
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func AttachImageCacheListener(bus *distributor.Distributor, es eventstore.EventS
 		return err
 	}
 
-	if err := es.SaveAggregate(ic); err != nil {
+	if err := es.SaveAggregate(context.TODO(), ic); err != nil {
 		return err
 	}
 
@@ -40,11 +40,11 @@ func AttachImageCacheListener(bus *distributor.Distributor, es eventstore.EventS
 
 var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
 
-func loadCache(es eventstore.EventStore) (*ImageCache, error) {
+func loadCache(es eventstore.EventStore, context context.Context) (*ImageCache, error) {
 
 	ic := blankImageCache("./app/static/img/parts")
 
-	err := es.LoadAggregate(cacheID, ic)
+	err := es.LoadAggregate(context, cacheID, ic)
 
 	if err == nil {
 		return ic, nil
@@ -56,7 +56,7 @@ func loadCache(es eventstore.EventStore) (*ImageCache, error) {
 
 	ic = NewImageCache(cacheID, "./app/static/img/parts")
 
-	if err = es.SaveAggregate(ic); err != nil {
+	if err = es.SaveAggregate(context, ic); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func handler(es eventstore.EventStore, ctx context.Context, message distributor.
 		return
 	}
 
-	ic, err := loadCache(es)
+	ic, err := loadCache(es, ctx)
 
 	if err != nil {
 		beeline.AddField(ctx, "error_loading_cache", err)
@@ -82,7 +82,7 @@ func handler(es eventstore.EventStore, ctx context.Context, message distributor.
 		ic.AddPart(part)
 	}
 
-	if err := es.SaveAggregate(ic); err != nil {
+	if err := es.SaveAggregate(ctx, ic); err != nil {
 		beeline.AddField(ctx, "error_saving_cache", err)
 		return
 	}
@@ -91,7 +91,7 @@ func handler(es eventstore.EventStore, ctx context.Context, message distributor.
 
 	ic.Run(ctx)
 
-	if err := es.SaveAggregate(ic); err != nil {
+	if err := es.SaveAggregate(ctx, ic); err != nil {
 		beeline.AddField(ctx, "error_saving_processed_cache", err)
 	}
 }

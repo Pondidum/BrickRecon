@@ -2,6 +2,7 @@ package lego
 
 import (
 	"brickrecon/eventstore"
+	"context"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -55,7 +56,7 @@ type ProjectPartsAdded struct {
 	Parts []Part
 }
 
-func ProjectEvents(register func(eventstore.Initialiser)) {
-	register(func() interface{} { return &ProjectCreated{} })
-	register(func() interface{} { return &ProjectPartsAdded{} })
+func ProjectEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
+	register(ctx, func() interface{} { return &ProjectCreated{} })
+	register(ctx, func() interface{} { return &ProjectPartsAdded{} })
 }

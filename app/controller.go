@@ -13,5 +13,5 @@ func (c AppController) Path() string {
 }
 
 func (c AppController) Get(req *http.Request) interface{} {
-	return c.Store.SiteModel()
+	return c.Store.SiteModel(req.Context())
 }

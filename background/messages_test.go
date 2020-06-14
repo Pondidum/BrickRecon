@@ -3,6 +3,7 @@ package background
 import (
 	"brickrecon/eventstore"
 	"brickrecon/eventstore/backend/fs"
+	"context"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -12,6 +13,7 @@ import (
 
 func TestCacheCreation(t *testing.T) {
 
+	ctx := context.TODO()
 	temp, _ := ioutil.TempDir(".", "es")
 	defer func() {
 		os.RemoveAll(temp)
@@ -19,18 +21,19 @@ func TestCacheCreation(t *testing.T) {
 
 	be, _ := fs.NewFileSystemBackend(temp)
 	es := eventstore.NewEventStore(be)
-	ImageCacheEvents(es.RegisterEvent)
+	ImageCacheEvents(ctx, es.RegisterEvent)
 
-	ic, err := loadCache(es)
+	ic, err := loadCache(es, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, cacheID, ic.AggregateID())
 
 	fromStore := blankImageCache("./app/static/img/parts")
-	assert.NoError(t, es.LoadAggregate(cacheID, fromStore))
+	assert.NoError(t, es.LoadAggregate(ctx, cacheID, fromStore))
 }
 
 func TestCacheAlreadyExists(t *testing.T) {
 
+	ctx := context.TODO()
 	temp, _ := ioutil.TempDir(".", "es")
 	defer func() {
 		os.RemoveAll(temp)
@@ -38,12 +41,12 @@ func TestCacheAlreadyExists(t *testing.T) {
 
 	be, _ := fs.NewFileSystemBackend(temp)
 	es := eventstore.NewEventStore(be)
-	ImageCacheEvents(es.RegisterEvent)
+	ImageCacheEvents(ctx, es.RegisterEvent)
 
-	_, err := loadCache(es)
+	_, err := loadCache(es, ctx)
 	assert.NoError(t, err)
 
-	ic, err := loadCache(es)
+	ic, err := loadCache(es, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, cacheID, ic.AggregateID())
 }

@@ -24,7 +24,7 @@ func CreateProject(ctx context.Context, store *app.AppStore, modelName string, p
 
 	project := lego.NewProject(modelName, parts)
 
-	if err := store.Save(project); err != nil {
+	if err := store.Save(ctx, project); err != nil {
 		beeline.AddField(ctx, "save_project_error", err)
 		return nil, err
 	}

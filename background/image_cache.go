@@ -66,14 +66,14 @@ type PartAddedFromCache struct {
 	ColourID int
 }
 
-func ImageCacheEvents(register func(eventstore.Initialiser)) {
-	register(func() interface{} { return &ImageCacheCreated{} })
-	register(func() interface{} { return &PartAddedFromCache{} })
-	register(func() interface{} { return &PartImageRequested{} })
-	register(func() interface{} { return &PartFetchAttemptsExceeded{} })
-	register(func() interface{} { return &PartAttempted{} })
-	register(func() interface{} { return &PartImageNotFound{} })
-	register(func() interface{} { return &PartImageStored{} })
+func ImageCacheEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
+	register(ctx, func() interface{} { return &ImageCacheCreated{} })
+	register(ctx, func() interface{} { return &PartAddedFromCache{} })
+	register(ctx, func() interface{} { return &PartImageRequested{} })
+	register(ctx, func() interface{} { return &PartFetchAttemptsExceeded{} })
+	register(ctx, func() interface{} { return &PartAttempted{} })
+	register(ctx, func() interface{} { return &PartImageNotFound{} })
+	register(ctx, func() interface{} { return &PartImageStored{} })
 }
 
 type ImageCache struct {

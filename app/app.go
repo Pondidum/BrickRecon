@@ -20,7 +20,7 @@ type AppStore struct {
 	bus *distributor.Distributor
 }
 
-func NewAppStore() (*AppStore, error) {
+func NewAppStore(ctx context.Context) (*AppStore, error) {
 	if err := os.MkdirAll("_store", os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -32,10 +32,10 @@ func NewAppStore() (*AppStore, error) {
 
 	es := eventstore.NewEventStore(backend)
 
-	lego.ProjectEvents(es.RegisterEvent)
-	background.ImageCacheEvents(es.RegisterEvent)
+	lego.ProjectEvents(ctx, es.RegisterEvent)
+	background.ImageCacheEvents(ctx, es.RegisterEvent)
 
-	es.RegisterProjection("projects", lego.ProjectsInitialState, lego.ProjectsProjector)
+	es.RegisterProjection(ctx, "projects", lego.ProjectsInitialState, lego.ProjectsProjector)
 
 	bus := distributor.NewDistributor()
 
@@ -46,23 +46,23 @@ func NewAppStore() (*AppStore, error) {
 	return &AppStore{es: es, bus: bus}, nil
 }
 
-func (a *AppStore) Save(project *lego.Project) error {
-	return a.es.SaveAggregate(project.Aggregator)
+func (a *AppStore) Save(ctx context.Context, project *lego.Project) error {
+	return a.es.SaveAggregate(ctx, project.Aggregator)
 }
 
-func (a *AppStore) SiteModel() SiteModel {
+func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	var view lego.AllProjectsView
-	if err := a.es.ReadView("projects", &view); err != nil {
+	if err := a.es.ReadView(ctx, "projects", &view); err != nil {
 		return SiteModel{}
 	}
 
 	return SiteModel{AllModels: view.Names}
 }
 
-func (a *AppStore) Project(name string) (*lego.ProjectView, error) {
+func (a *AppStore) ReadProject(ctx context.Context, name string) (*lego.ProjectView, error) {
 
 	var view lego.AllProjectsView
-	if err := a.es.ReadView("projects", &view); err != nil {
+	if err := a.es.ReadView(ctx, "projects", &view); err != nil {
 		return nil, err
 	}
 

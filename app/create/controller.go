@@ -19,23 +19,24 @@ func (c CreateController) AuthRequired() bool {
 }
 
 func (c CreateController) Get(req *http.Request) interface{} {
-	return c.Store.SiteModel()
+	return c.Store.SiteModel(req.Context())
 }
 
 func (c CreateController) Post(req *http.Request) interface{} {
+	ctx := req.Context()
 	file, _, err := req.FormFile("modelFile")
 	modelName := req.FormValue("modelName")
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(), preen.ErrorModel(err))
+		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
 	}
 
 	defer file.Close()
 
-	_, err = CreateProject(req.Context(), c.Store, modelName, file)
+	_, err = CreateProject(ctx, c.Store, modelName, file)
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(), preen.ErrorModel(err))
+		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
 	}
 
 	return preen.Redirect{URL: "/project/" + modelName}
