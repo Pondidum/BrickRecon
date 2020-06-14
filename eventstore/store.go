@@ -10,7 +10,15 @@ type Projector func(state interface{}, event Event) interface{}
 
 // ------------
 
-type EventStore struct {
+type EventStore interface {
+	RegisterEvent(creator Initialiser)
+	RegisterProjection(name string, initialiseState Initialiser, project Projector)
+	ReadView(name string, view interface{}) error
+	LoadAggregate(id uuid.UUID, a Aggregate) error
+	SaveAggregate(a Aggregate) error
+}
+
+type eventStore struct {
 	registry    map[string]Initialiser
 	projections map[string]projection
 
@@ -19,8 +27,8 @@ type EventStore struct {
 
 type Initialiser func() interface{}
 
-func NewEventStore(backend Backend) *EventStore {
-	return &EventStore{
+func NewEventStore(backend Backend) EventStore {
+	return &eventStore{
 		registry:    map[string]Initialiser{},
 		projections: map[string]projection{},
 		backend:     backend,
@@ -33,11 +41,11 @@ type projection struct {
 	projector       Projector
 }
 
-func (es *EventStore) RegisterEvent(creator Initialiser) {
+func (es *eventStore) RegisterEvent(creator Initialiser) {
 	es.registry[EventName(creator())] = creator
 }
 
-func (es *EventStore) RegisterProjection(name string, initialiseState Initialiser, project Projector) {
+func (es *eventStore) RegisterProjection(name string, initialiseState Initialiser, project Projector) {
 	es.projections[name] = projection{
 		name:            name,
 		initialiseState: initialiseState,
@@ -45,13 +53,13 @@ func (es *EventStore) RegisterProjection(name string, initialiseState Initialise
 	}
 }
 
-func (es *EventStore) ReadView(name string, view interface{}) error {
+func (es *eventStore) ReadView(name string, view interface{}) error {
 	v := es.backend.NewView(name)
 
 	return v.ReadView(view)
 }
 
-func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
+func (es *eventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 
 	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
@@ -82,7 +90,7 @@ func (es *EventStore) LoadAggregate(id uuid.UUID, a Aggregate) error {
 	return nil
 }
 
-func (es *EventStore) SaveAggregate(a Aggregate) error {
+func (es *eventStore) SaveAggregate(a Aggregate) error {
 
 	writer := es.backend.NewEventWriter()
 	aggregate := a.aggregator()
@@ -99,7 +107,7 @@ func (es *EventStore) SaveAggregate(a Aggregate) error {
 	return es.runProjections()
 }
 
-func (es *EventStore) runProjections() error {
+func (es *eventStore) runProjections() error {
 
 	views := es.allViews()
 	lowestIndex, err := findUnprocessedEvents(views)
@@ -142,7 +150,7 @@ func (es *EventStore) runProjections() error {
 	return nil
 }
 
-func (es *EventStore) allViews() map[string]View {
+func (es *eventStore) allViews() map[string]View {
 	views := make(map[string]View, len(es.projections))
 
 	for name := range es.projections {
@@ -168,7 +176,7 @@ func findUnprocessedEvents(views map[string]View) (int, error) {
 	return lowestIndex, nil
 }
 
-func (es *EventStore) loadEvents(lowestIndex int) ([]Event, error) {
+func (es *eventStore) loadEvents(lowestIndex int) ([]Event, error) {
 	er, err := es.backend.NewEventReader(es.registry)
 	if err != nil {
 		return nil, err

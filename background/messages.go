@@ -16,7 +16,7 @@ type PartsAddedMessage struct {
 	Parts []lego.Part
 }
 
-func AttachImageCacheListener(bus *distributor.Distributor, es *eventstore.EventStore) error {
+func AttachImageCacheListener(bus *distributor.Distributor, es eventstore.EventStore) error {
 
 	ic, err := loadCache(es)
 	if err != nil {
@@ -40,7 +40,7 @@ func AttachImageCacheListener(bus *distributor.Distributor, es *eventstore.Event
 
 var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
 
-func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
+func loadCache(es eventstore.EventStore) (*ImageCache, error) {
 
 	ic := blankImageCache("./app/static/img/parts")
 
@@ -63,7 +63,7 @@ func loadCache(es *eventstore.EventStore) (*ImageCache, error) {
 	return ic, nil
 }
 
-func handler(es *eventstore.EventStore, ctx context.Context, message distributor.Message) {
+func handler(es eventstore.EventStore, ctx context.Context, message distributor.Message) {
 
 	m, ok := message.(*PartsAddedMessage)
 

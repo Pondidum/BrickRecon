@@ -16,7 +16,7 @@ type SiteModel struct {
 }
 
 type AppStore struct {
-	es  *eventstore.EventStore
+	es  eventstore.EventStore
 	bus *distributor.Distributor
 }
 
