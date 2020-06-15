@@ -1,11 +1,13 @@
 package eventstore
 
 import (
+	"context"
+
 	uuid "github.com/satori/go.uuid"
 )
 
 type Backend interface {
-	NewEventReader(map[string]Initialiser) (EventReader, error)
+	NewEventReader(registry map[string]Initialiser, ctx context.Context) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
 }
@@ -19,11 +21,11 @@ type EventReader interface {
 }
 
 type EventWriter interface {
-	WriteEvents(aggregateID uuid.UUID, currentVersion int, changes []Event) (int, error)
+	WriteEvents(ctx context.Context, aggregateID uuid.UUID, currentVersion int, changes []Event) (int, error)
 }
 
 type View interface {
-	LastEventIndex() (int, error)
-	ReadView(view interface{}) error
-	WriteView(view interface{}, lastIndex int) error
+	LastEventIndex(ctx context.Context) (int, error)
+	ReadView(ctx context.Context, view interface{}) error
+	WriteView(ctx context.Context, view interface{}, lastIndex int) error
 }

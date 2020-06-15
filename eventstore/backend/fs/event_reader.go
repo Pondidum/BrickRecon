@@ -3,6 +3,7 @@ package fs
 import (
 	"brickrecon/eventstore"
 	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,10 +15,11 @@ type FsEventReader struct {
 	registry     map[string]eventstore.Initialiser
 	file         *os.File
 	scanner      *bufio.Scanner
+	ctx          context.Context
 	currentIndex int
 }
 
-func NewEventReader(registry map[string]eventstore.Initialiser, filename string) (*FsEventReader, error) {
+func NewEventReader(registry map[string]eventstore.Initialiser, filename string, ctx context.Context) (*FsEventReader, error) {
 	file, err := os.Open(filename)
 
 	if err != nil && !os.IsNotExist(err) {
@@ -26,7 +28,7 @@ func NewEventReader(registry map[string]eventstore.Initialiser, filename string)
 
 	scanner := bufio.NewScanner(file)
 
-	return &FsEventReader{registry, file, scanner, 0}, nil
+	return &FsEventReader{registry, file, scanner, ctx, 0}, nil
 }
 
 func (er *FsEventReader) Close() error {

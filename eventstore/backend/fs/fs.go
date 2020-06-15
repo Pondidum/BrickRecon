@@ -2,6 +2,7 @@ package fs
 
 import (
 	"brickrecon/eventstore"
+	"context"
 	"os"
 	"path"
 )
@@ -21,8 +22,8 @@ func NewFileSystemBackend(root string) (eventstore.Backend, error) {
 	}, nil
 }
 
-func (be *FsBackend) NewEventReader(registry map[string]eventstore.Initialiser) (eventstore.EventReader, error) {
-	return NewEventReader(registry, path.Join(be.root, "events"))
+func (be *FsBackend) NewEventReader(registry map[string]eventstore.Initialiser, ctx context.Context) (eventstore.EventReader, error) {
+	return NewEventReader(registry, path.Join(be.root, "events"), ctx)
 }
 
 func (be *FsBackend) NewEventWriter() eventstore.EventWriter {

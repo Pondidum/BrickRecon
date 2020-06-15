@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"os"
@@ -10,11 +11,11 @@ type FsView struct {
 	filename string
 }
 
-func (v *FsView) LastEventIndex() (int, error) {
+func (v *FsView) LastEventIndex(ctx context.Context) (int, error) {
 	return readCheckIndex(v.filename)
 }
 
-func (v *FsView) ReadView(view interface{}) error {
+func (v *FsView) ReadView(ctx context.Context, view interface{}) error {
 
 	content, err := ioutil.ReadFile(v.filename)
 
@@ -30,7 +31,7 @@ func (v *FsView) ReadView(view interface{}) error {
 	return json.Unmarshal(content, view)
 }
 
-func (v *FsView) WriteView(view interface{}, lastIndex int) error {
+func (v *FsView) WriteView(ctx context.Context, view interface{}, lastIndex int) error {
 	viewBytes, err := json.Marshal(view)
 
 	if err != nil {

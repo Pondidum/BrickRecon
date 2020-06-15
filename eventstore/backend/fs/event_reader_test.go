@@ -2,6 +2,7 @@ package fs
 
 import (
 	"brickrecon/eventstore"
+	"context"
 	"io/ioutil"
 	"os"
 	"path"
@@ -69,7 +70,6 @@ func TestReadingAllEvents(t *testing.T) {
 }
 
 func TestReadingAggregateEvents(t *testing.T) {
-
 	aggregateID := uuid.FromStringOrNil("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6")
 
 	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
@@ -88,7 +88,6 @@ func TestReadingAggregateEvents(t *testing.T) {
 }
 
 func TestReadingFromOffset(t *testing.T) {
-
 	offset := 2
 
 	seenEvents, err := readEvents(func(reader *FsEventReader) bool {
@@ -126,6 +125,7 @@ func TestReadingAllEventsFromOffsetZero(t *testing.T) {
 }
 
 func createTestReader(temp string) (*FsEventReader, error) {
+	ctx := context.Background()
 	eventsFile := path.Join(temp, "events")
 	ioutil.WriteFile(eventsFile, []byte(testEvents), 0666)
 
@@ -134,6 +134,7 @@ func createTestReader(temp string) (*FsEventReader, error) {
 			"TestEvent": func() interface{} { return &TestEvent{} },
 		},
 		eventsFile,
+		ctx,
 	)
 
 	return reader, err

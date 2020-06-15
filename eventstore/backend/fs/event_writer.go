@@ -3,6 +3,7 @@ package fs
 import (
 	"brickrecon/eventstore"
 	"bytes"
+	"context"
 	"encoding/json"
 	"os"
 	"time"
@@ -20,7 +21,7 @@ func NewEventWriter(filename string) *FsEventWriter {
 	return &FsEventWriter{filename}
 }
 
-func (ew *FsEventWriter) WriteEvents(aggregateID uuid.UUID, currentVersion int, changes []eventstore.Event) (int, error) {
+func (ew *FsEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID, currentVersion int, changes []eventstore.Event) (int, error) {
 	file, err := os.OpenFile(ew.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 
 	if err != nil {
