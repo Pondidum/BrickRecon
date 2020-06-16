@@ -58,7 +58,7 @@ func (es *eventStore) RegisterProjection(ctx context.Context, name string, initi
 
 func (es *eventStore) ReadView(ctx context.Context, name string, view interface{}) error {
 	var err error
-	ctx, fn := buildSpan(ctx)
+	ctx, fn := buildSpan(ctx, "read_view")
 	defer func() {
 		fn(err)
 	}()
@@ -71,7 +71,7 @@ func (es *eventStore) ReadView(ctx context.Context, name string, view interface{
 
 func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error {
 	var err error
-	ctx, fn := buildSpan(ctx)
+	ctx, fn := buildSpan(ctx, "load_aggregate")
 	defer func() {
 		fn(err)
 	}()
@@ -112,7 +112,7 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 
 func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	var err error
-	ctx, fn := buildSpan(ctx)
+	ctx, fn := buildSpan(ctx, "save_aggregate")
 	defer func() {
 		fn(err)
 	}()
@@ -255,9 +255,9 @@ func min(a, b int) int {
 	return b
 }
 
-func buildSpan(ctx context.Context) (context.Context, func(error)) {
+func buildSpan(ctx context.Context, name string) (context.Context, func(error)) {
 	time := timer.Start()
-	c, s := beeline.StartSpan(ctx, "")
+	c, s := beeline.StartSpan(ctx, name)
 
 	fn := func(err error) {
 		duration := time.Finish()
