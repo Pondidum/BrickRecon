@@ -18,9 +18,10 @@ func TestPartReading(t *testing.T) {
 
 	part := partList[8]
 
-	assert.Equal(t, "2412b", part.BrickLinkID)
-	assert.Equal(t, 241226, part.ElementID)
-	assert.Equal(t, "2412b", part.LDrawID)
+	assert.Equal(t, "2412b", part.ID)
+	assert.Equal(t, "2412b", part.Aliases.BrickLinkID)
+	assert.Equal(t, 241226, part.Aliases.ElementID)
+	assert.Equal(t, "2412b", part.Aliases.LDrawID)
 	assert.Equal(t, "Tile, Modified 1 x 2 Grille with Bottom Groove / Lip", part.Name)
 	assert.Equal(t, 11, part.Colour.BrickLinkID)
 	assert.Equal(t, 0, part.Colour.LDrawID)

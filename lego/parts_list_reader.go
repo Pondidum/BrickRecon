@@ -76,11 +76,11 @@ func isSummaryHeader(fields []string) bool {
 func parsePart(fields []string) (Part, error) {
 
 	var err error
+
 	part := Part{
-		BrickLinkID: fields[brickLinkID],
-		ElementID:   parseElementID(fields[elementID]),
-		LDrawID:     fields[ldrawID],
-		Name:        fields[partName],
+		Name:    fields[partName],
+		Aliases: parsePartAliases(fields),
+		ID:      fields[brickLinkID],
 	}
 
 	if part.Colour, err = parseColour(fields); err != nil {
@@ -96,6 +96,15 @@ func parsePart(fields []string) (Part, error) {
 	}
 
 	return part, err
+}
+
+func parsePartAliases(fields []string) PartAliases {
+	return PartAliases{
+		BrickLinkID: fields[brickLinkID],
+		ElementID:   parseElementID(fields[elementID]),
+		LDrawID:     fields[ldrawID],
+	}
+
 }
 
 func parseElementID(value string) int {

@@ -18,7 +18,7 @@ func NewPartsList(parts []Part) *PartList {
 
 func (m *PartList) Add(part Part) {
 
-	id := part.BrickLinkID
+	id := part.ID
 	colour := part.Colour.BrickLinkID
 
 	existing, found := m.byTypeAndColour(id, colour)
@@ -35,7 +35,7 @@ func (m *PartList) byTypeAndColour(brickLinkID string, colourID int) (*Part, boo
 
 	for _, p := range m.parts {
 
-		if p.BrickLinkID == brickLinkID && p.Colour.BrickLinkID == colourID {
+		if p.ID == brickLinkID && p.Colour.BrickLinkID == colourID {
 			return p, true
 		}
 	}

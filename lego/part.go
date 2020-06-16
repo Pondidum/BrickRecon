@@ -9,13 +9,18 @@ type Colour struct {
 }
 
 type Part struct {
-	BrickLinkID string
-	ElementID   int
-	LDrawID     string
+	ID      string
+	Aliases PartAliases
 
 	Name   string
 	Colour Colour
 
 	Quantity int
 	Weight   float64
+}
+
+type PartAliases struct {
+	BrickLinkID string
+	ElementID   int
+	LDrawID     string
 }

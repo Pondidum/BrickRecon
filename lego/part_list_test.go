@@ -13,26 +13,26 @@ func TestPartListAdding(t *testing.T) {
 
 	// add a part
 	model.Add(Part{
-		BrickLinkID: "1234",
-		Colour:      Colour{BrickLinkID: 1, Name: "Black"},
-		Quantity:    1,
+		ID:       "1234",
+		Colour:   Colour{BrickLinkID: 1, Name: "Black"},
+		Quantity: 1,
 	})
 	assert.Len(t, model.parts, 1)
 
 	// duplicate part should increase quantity
 	model.Add(Part{
-		BrickLinkID: "1234",
-		Colour:      Colour{BrickLinkID: 1, Name: "Black"},
-		Quantity:    17,
+		ID:       "1234",
+		Colour:   Colour{BrickLinkID: 1, Name: "Black"},
+		Quantity: 17,
 	})
 	assert.Len(t, model.parts, 1)
 	assert.Equal(t, 18, model.parts[0].Quantity)
 
 	// duplicate part with differnt colour
 	model.Add(Part{
-		BrickLinkID: "1234",
-		Colour:      Colour{BrickLinkID: 2, Name: "Red"},
-		Quantity:    1,
+		ID:       "1234",
+		Colour:   Colour{BrickLinkID: 2, Name: "Red"},
+		Quantity: 1,
 	})
 	assert.Len(t, model.parts, 2)
 	assert.Equal(t, 18, model.parts[0].Quantity)

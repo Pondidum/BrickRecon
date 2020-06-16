@@ -1,6 +1,6 @@
 {{ if _user.Authenticated }}
 <form method="POST">
-  <input type="hidden" name="part" value="{{ .BrickLinkID }}">
+  <input type="hidden" name="part" value="{{ .ID }}">
   <input type="hidden" name="colour" value="{{ .Colour.BrickLinkID }}">
 
   <button type="submit" class="btn btn-link btn-sm p-0"  name="action" value="decrease">{{ template "icons/arrow-down-circle" }}</button>

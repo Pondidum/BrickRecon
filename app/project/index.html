@@ -55,16 +55,16 @@
 
     {{ range .Project.Parts }}
     <tr>
-      <td width="66"><img loading="lazy" src="/static/img/parts/{{ .BrickLinkID }}-{{ .Colour.BrickLinkID }}.png"
-          alt="part {{ .LDrawID }}" width="66px"></td>
-      <td>{{ .BrickLinkID }}</td>
+      <td width="66"><img loading="lazy" src="/static/img/parts/{{ .ID }}-{{ .Colour.BrickLinkID }}.png"
+          alt="part {{ .ID }}" width="66px"></td>
+      <td>{{ .ID }}</td>
       <td>{{ .Name }}</td>
       <td>{{ .Colour.Name }}</td>
       <td>{{ template "project/quantity" .}}</td>
       <td>
         <ul class="list-unstyled">
-          <li><a href="http://www.brickowl.com/search/catalog?query={{ .LDrawID }}&amp;cat=1">BrickOwl</a></li>
-          <li><a href="http://peeron.com/inv/parts/{{ .LDrawID }}">Peeron</a></li>
+          <li><a href="http://www.brickowl.com/search/catalog?query={{ .ID }}&amp;cat=1">BrickOwl</a></li>
+          <li><a href="http://peeron.com/inv/parts/{{ .ID }}">Peeron</a></li>
         </ul>
       </td>
     </tr>
