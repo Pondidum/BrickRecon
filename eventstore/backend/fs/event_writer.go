@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/honeycombio/beeline-go"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -22,13 +23,6 @@ func NewEventWriter(filename string) *FsEventWriter {
 }
 
 func (ew *FsEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID, currentVersion int, changes []eventstore.Event) (int, error) {
-	file, err := os.OpenFile(ew.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
-
-	if err != nil {
-		return 0, err
-	}
-
-	defer file.Close()
 
 	block := bytes.Buffer{}
 
@@ -47,21 +41,29 @@ func (ew *FsEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID,
 		bytes, err := json.Marshal(e)
 
 		if err != nil {
+			beeline.AddField(ctx, "es.event_serialization_err", err)
 			return 0, err
 		}
 
-		if _, err := block.Write(bytes); err != nil {
-			return 0, err
-		}
-
-		if _, err := block.Write(newline); err != nil {
-			return 0, err
-		}
+		block.Write(bytes)
+		block.Write(newline)
 	}
 
-	if _, err := file.Write(block.Bytes()); err != nil {
+	file, err := os.OpenFile(ew.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	beeline.AddField(ctx, "es.event_file", ew.filename)
+
+	if err != nil {
+		beeline.AddField(ctx, "es.event_file_open_err", err)
 		return 0, err
 	}
+	defer file.Close()
+
+	if _, err := file.Write(block.Bytes()); err != nil {
+		beeline.AddField(ctx, "es.event_file_write_err", err)
+		return 0, err
+	}
+
+	beeline.AddField(ctx, "es.events_written_count", len(changes))
 
 	return currentVersion, nil
 }

@@ -70,6 +70,13 @@ func (es *eventStore) ReadView(ctx context.Context, name string, view interface{
 }
 
 func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error {
+	var err error
+	ctx, fn := buildSpan(ctx)
+	defer func() {
+		fn(err)
+	}()
+
+	beeline.AddField(ctx, "es.aggregate_id", id.String())
 
 	er, err := es.backend.NewEventReader(es.registry, ctx)
 	if err != nil {
@@ -93,17 +100,29 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 		aggregator.version = r.Meta().Version
 	}
 
+	beeline.AddField(ctx, "es.aggregate_version", aggregator.version)
+
 	if !hasEvents {
-		return &AggregateNotFoundError{ID: id}
+		beeline.AddField(ctx, "es.aggregate_not_found", true)
+		err = &AggregateNotFoundError{ID: id}
 	}
 
-	return nil
+	return err
 }
 
 func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
+	var err error
+	ctx, fn := buildSpan(ctx)
+	defer func() {
+		fn(err)
+	}()
 
 	writer := es.backend.NewEventWriter()
 	aggregate := a.aggregator()
+
+	beeline.AddField(ctx, "es.aggregate_id", aggregate.id.String())
+	beeline.AddField(ctx, "es.aggregate_old_version", aggregate.version)
+	beeline.AddField(ctx, "es.aggregate_changes", len(aggregate.changes))
 
 	newVersion, err := writer.WriteEvents(ctx, aggregate.id, aggregate.version, aggregate.changes)
 
@@ -114,7 +133,11 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	aggregate.changes = []Event{}
 	aggregate.version = newVersion
 
-	return es.runProjections(ctx)
+	beeline.AddField(ctx, "es.aggregate_version", aggregate.version)
+
+	err = es.runProjections(ctx)
+
+	return err
 }
 
 func (es *eventStore) runProjections(ctx context.Context) error {
@@ -154,10 +177,10 @@ func (es *eventStore) runProjections(ctx context.Context) error {
 			state = projection.projector(state, e)
 		}
 
-		return view.WriteView(ctx, state, lastIndex)
+		err = view.WriteView(ctx, state, lastIndex)
 	}
 
-	return nil
+	return err
 }
 
 func (es *eventStore) allViews() map[string]View {
@@ -172,16 +195,22 @@ func (es *eventStore) allViews() map[string]View {
 
 func findUnprocessedEvents(ctx context.Context, views map[string]View) (int, error) {
 
+	beeline.AddField(ctx, "es.view_count", len(views))
+
 	lowestIndex := 0
 
-	for _, view := range views {
+	for name, view := range views {
 		index, err := view.LastEventIndex(ctx)
 		if err != nil {
 			return 0, err
 		}
 
+		beeline.AddField(ctx, "es.view_"+name+"_last_index", index)
+
 		lowestIndex = min(lowestIndex, index)
 	}
+
+	beeline.AddField(ctx, "es.view_lowest_index", lowestIndex)
 
 	return lowestIndex, nil
 }
@@ -204,6 +233,8 @@ func (es *eventStore) loadEvents(ctx context.Context, lowestIndex int) ([]Event,
 
 		events = append(events, record)
 	}
+
+	beeline.AddField(ctx, "es.events_loaded_count", len(events))
 
 	return events, nil
 }
@@ -231,7 +262,7 @@ func buildSpan(ctx context.Context) (context.Context, func(error)) {
 	fn := func(err error) {
 		duration := time.Finish()
 		if err != nil {
-			beeline.AddField(ctx, "db.error", err.Error())
+			beeline.AddField(ctx, "es.error", err.Error())
 		}
 		beeline.AddField(c, "es.duration_ms", duration)
 		s.Send()
