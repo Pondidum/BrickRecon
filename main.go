@@ -19,8 +19,8 @@ func Run(args []string) int {
 
 	beeline.Init(beeline.Config{
 		WriteKey: os.Getenv("HONEYCOMB_API_KEY"),
-		//STDOUT:  true,
-		Dataset: "BrickRecon",
+		STDOUT:   os.Getenv("HONEYCOMB_API_KEY") == "",
+		Dataset:  "BrickRecon",
 	})
 	defer beeline.Close()
 
