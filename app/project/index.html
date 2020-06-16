@@ -60,7 +60,7 @@
       <td>{{ .BrickLinkID }}</td>
       <td>{{ .Name }}</td>
       <td>{{ .Colour.Name }}</td>
-      <td>0 <span class="text-muted">/ {{ .Quantity }}</span></td>
+      <td>{{ template "project/quantity" .}}</td>
       <td>
         <ul class="list-unstyled">
           <li><a href="http://www.brickowl.com/search/catalog?query={{ .LDrawID }}&amp;cat=1">BrickOwl</a></li>

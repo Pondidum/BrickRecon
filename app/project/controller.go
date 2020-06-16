@@ -39,3 +39,19 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 		},
 	)
 }
+
+func (c ProjectController) Post(req *http.Request) interface{} {
+	vars := mux.Vars(req)
+
+	siteModel := c.Store.SiteModel(req.Context())
+	selected, _ := c.Store.ReadProject(req.Context(), vars["name"])
+	// ctx := req.Context()
+	// file, _, err := req.FormFile("modelFile")
+	// modelName := req.FormValue("modelName")
+	return preen.ComposeModels(
+		siteModel,
+		ProjectModel{
+			Project: selected,
+		},
+	)
+}
