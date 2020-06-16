@@ -89,6 +89,35 @@ type ImageCache struct {
 	listFiles func() ([]string, error)
 }
 
+var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
+
+func NewImageCache(es eventstore.EventStore, context context.Context) (*ImageCache, error) {
+
+	ic := blankImageCache("./app/static/img/parts")
+
+	err := es.LoadAggregate(context, cacheID, ic)
+
+	if err == nil {
+		return ic, nil
+	}
+
+	if !eventstore.IsAggregateNotFound(err) {
+		return nil, err
+	}
+
+	ic = createImageCache(cacheID, "./app/static/img/parts")
+
+	if err := ic.ReadFromCache(); err != nil {
+		return nil, err
+	}
+
+	if err = es.SaveAggregate(context, ic); err != nil {
+		return nil, err
+	}
+
+	return ic, nil
+}
+
 func blankImageCache(location string) *ImageCache {
 	ic := &ImageCache{
 		location: location,
@@ -121,7 +150,7 @@ func blankImageCache(location string) *ImageCache {
 	return ic
 }
 
-func NewImageCache(id uuid.UUID, location string) *ImageCache {
+func createImageCache(id uuid.UUID, location string) *ImageCache {
 	ic := blankImageCache(location)
 	ic.Apply(&ImageCacheCreated{ID: id})
 

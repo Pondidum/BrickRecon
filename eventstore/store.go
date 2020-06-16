@@ -262,7 +262,7 @@ func buildSpan(ctx context.Context) (context.Context, func(error)) {
 	fn := func(err error) {
 		duration := time.Finish()
 		if err != nil {
-			beeline.AddField(ctx, "es.error", err.Error())
+			beeline.AddField(c, "es.error", err.Error())
 		}
 		beeline.AddField(c, "es.duration_ms", duration)
 		s.Send()

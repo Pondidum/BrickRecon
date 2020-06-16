@@ -16,8 +16,8 @@ type SiteModel struct {
 }
 
 type AppStore struct {
-	es  eventstore.EventStore
-	bus *distributor.Distributor
+	EventStore eventstore.EventStore
+	bus        *distributor.Distributor
 }
 
 func NewAppStore(ctx context.Context) (*AppStore, error) {
@@ -39,20 +39,18 @@ func NewAppStore(ctx context.Context) (*AppStore, error) {
 
 	bus := distributor.NewDistributor()
 
-	if err := background.AttachImageCacheListener(bus, es); err != nil {
-		return nil, err
-	}
+	bus.RegisterFor(&background.PartsAddedMessage{}, background.ImageCacheHandler(es))
 
-	return &AppStore{es: es, bus: bus}, nil
+	return &AppStore{EventStore: es, bus: bus}, nil
 }
 
 func (a *AppStore) Save(ctx context.Context, project *lego.Project) error {
-	return a.es.SaveAggregate(ctx, project.Aggregator)
+	return a.EventStore.SaveAggregate(ctx, project.Aggregator)
 }
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	var view lego.AllProjectsView
-	if err := a.es.ReadView(ctx, "projects", &view); err != nil {
+	if err := a.EventStore.ReadView(ctx, "projects", &view); err != nil {
 		return SiteModel{}
 	}
 
@@ -62,7 +60,7 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 func (a *AppStore) ReadProject(ctx context.Context, name string) (*lego.ProjectView, error) {
 
 	var view lego.AllProjectsView
-	if err := a.es.ReadView(ctx, "projects", &view); err != nil {
+	if err := a.EventStore.ReadView(ctx, "projects", &view); err != nil {
 		return nil, err
 	}
 

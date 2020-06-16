@@ -23,7 +23,7 @@ func TestCacheCreation(t *testing.T) {
 	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(ctx, es.RegisterEvent)
 
-	ic, err := loadCache(es, ctx)
+	ic, err := NewImageCache(es, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, cacheID, ic.AggregateID())
 
@@ -43,10 +43,10 @@ func TestCacheAlreadyExists(t *testing.T) {
 	es := eventstore.NewEventStore(be)
 	ImageCacheEvents(ctx, es.RegisterEvent)
 
-	_, err := loadCache(es, ctx)
+	_, err := NewImageCache(es, ctx)
 	assert.NoError(t, err)
 
-	ic, err := loadCache(es, ctx)
+	ic, err := NewImageCache(es, ctx)
 	assert.NoError(t, err)
 	assert.Equal(t, cacheID, ic.AggregateID())
 }

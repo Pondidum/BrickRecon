@@ -20,6 +20,9 @@ func Commands(ui cli.Ui) map[string]cli.CommandFactory {
 		"project create": func() (cli.Command, error) {
 			return &ProjectCreateCommand{Meta: meta}, nil
 		},
+		"imagecache run": func() (cli.Command, error) {
+			return &ImageCacheRunCommand{Meta: meta}, nil
+		},
 	}
 
 	return all
