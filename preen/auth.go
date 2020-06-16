@@ -9,6 +9,11 @@ import (
 	"github.com/gorilla/context"
 )
 
+type UserInfo struct {
+	Name          string
+	Authenticated bool
+}
+
 type basicAuth struct {
 	realm    string
 	user     string

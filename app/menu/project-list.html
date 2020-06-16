@@ -10,7 +10,7 @@
   {{ range .AllModels }}
   <li class="nav-item">
     {{ $link := (print "/project/" .) }}
-    <a class="nav-link {{ if eq $._PagePath $link }}active{{end}}" href="{{ $link }}">
+    <a class="nav-link {{ if eq _page.Path $link }}active{{end}}" href="{{ $link }}">
       {{ template "icons/hexagon" }}
       {{ . }}
     </a>

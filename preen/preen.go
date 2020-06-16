@@ -9,7 +9,6 @@ import (
 	"path"
 	"strings"
 
-	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/mitchellh/mapstructure"
 )
@@ -86,7 +85,10 @@ func (p *Preen) loadLayoutRoot() error {
 		return err
 	}
 
-	layout, err := template.New("layout").Parse(string(content))
+	layout, err := template.
+		New("layout").
+		Funcs(TemplateFuncDefinitions()).
+		Parse(string(content))
 
 	if err != nil {
 		return err
@@ -174,8 +176,10 @@ func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
 
 	if post, ok := c.(Postable); ok {
 
+		postChain := p.auth.Wrap(render)
+
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			render(w, req, post.Post(req))
+			postChain(w, req, post.Post(req))
 		}).Methods("POST")
 
 	}
@@ -198,15 +202,9 @@ func (p *Preen) HandleStaticAssets(r *mux.Router) {
 
 func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, model interface{}) {
 
-	context, err := composeModel(req, model)
-
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
 	clone, _ := p.layout.Clone()
+
+	clone.Funcs(TemplateFuncs(req))
 
 	if tpl, found := p.templates[viewName]; viewName != "" && found {
 		clone.AddParseTree("content", tpl.Tree)
@@ -215,7 +213,7 @@ func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, 
 	}
 
 	var buffer bytes.Buffer
-	err = clone.Execute(&buffer, context)
+	err := clone.Execute(&buffer, model)
 
 	if err != nil {
 		w.WriteHeader(500)
@@ -237,31 +235,6 @@ func ComposeModels(models ...interface{}) interface{} {
 	return result
 }
 
-func composeModel(req *http.Request, model interface{}) (map[string]interface{}, error) {
-
-	user := context.Get(req, "UserInfo")
-
-	if user == nil {
-		user = UserInfo{}
-	}
-
-	site := SiteInfo{
-		URL: req.Host,
-	}
-
-	ctx := map[string]interface{}{
-		"_PagePath": req.URL.Path,
-		"_User":     user,
-		"_Site":     site,
-	}
-
-	if err := mapstructure.Decode(model, &ctx); err != nil {
-		return nil, err
-	}
-
-	return ctx, nil
-}
-
 func templateName(filepath string) string {
 	ext := path.Ext(filepath)
 	base := path.Base(filepath)
@@ -276,13 +249,4 @@ func templateName(filepath string) string {
 	filepath = strings.TrimPrefix(filepath, "_shared/")
 
 	return filepath
-}
-
-type UserInfo struct {
-	Name          string
-	Authenticated bool
-}
-
-type SiteInfo struct {
-	URL string
 }

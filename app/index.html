@@ -17,9 +17,9 @@
       <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
 
       <ul class="navbar-nav px-3">
-        {{ if ._User.Authenticated }}
+        {{ if _user.Authenticated }}
         <li class="nav-item text-nowrap">
-          <a class="nav-link" href="#">{{ template "icons/user" }} {{._User.Name}}</a>
+          <a class="nav-link" href="#">{{ template "icons/user" }} {{_user.Name}}</a>
         </li>
 
         <li class="nav-item text-nowrap">
