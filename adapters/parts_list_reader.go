@@ -1,6 +1,7 @@
-package lego
+package adapters
 
 import (
+	"brickrecon/lego"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -21,12 +22,12 @@ const (
 	weight
 )
 
-func ReadPartsList(content io.Reader) ([]Part, error) {
+func ReadPartsList(content io.Reader) ([]lego.Part, error) {
 
 	reader := csv.NewReader(content)
 	reader.Comma = '\t'
 
-	parts := []Part{}
+	parts := []lego.Part{}
 
 	// read the header
 	_, err := reader.Read()
@@ -73,33 +74,33 @@ func isSummaryHeader(fields []string) bool {
 	return len(fields) > 0 && fields[brickLinkID] == "Total qty"
 }
 
-func parsePart(fields []string) (Part, error) {
+func parsePart(fields []string) (lego.Part, error) {
 
 	var err error
 
-	part := Part{
+	part := lego.Part{
 		Name:    fields[partName],
 		Aliases: parsePartAliases(fields),
 		ID:      fields[brickLinkID],
 	}
 
 	if part.Colour, err = parseColour(fields); err != nil {
-		return Part{}, err
+		return lego.Part{}, err
 	}
 
 	if part.Quantity, err = strconv.Atoi(fields[quantity]); err != nil {
-		return Part{}, convertError("part.Quantity", fields[quantity])
+		return lego.Part{}, convertError("part.Quantity", fields[quantity])
 	}
 
 	if part.Weight, err = strconv.ParseFloat(fields[weight], 64); err != nil {
-		return Part{}, convertError("part.Weight", fields[weight])
+		return lego.Part{}, convertError("part.Weight", fields[weight])
 	}
 
 	return part, err
 }
 
-func parsePartAliases(fields []string) PartAliases {
-	return PartAliases{
+func parsePartAliases(fields []string) lego.PartAliases {
+	return lego.PartAliases{
 		BrickLinkID: fields[brickLinkID],
 		ElementID:   parseElementID(fields[elementID]),
 		LDrawID:     fields[ldrawID],
@@ -122,20 +123,20 @@ func parseElementID(value string) int {
 	return id
 }
 
-func parseColour(fields []string) (Colour, error) {
+func parseColour(fields []string) (lego.Colour, error) {
 
 	var err error
-	aliases := ColourAliases{}
+	aliases := lego.ColourAliases{}
 
 	if aliases.BrickLinkID, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
-		return Colour{}, convertError("colour.BrickLinkID", fields[brickLinkID])
+		return lego.Colour{}, convertError("colour.BrickLinkID", fields[brickLinkID])
 	}
 
 	if aliases.LDrawID, err = strconv.Atoi(fields[ldrawColour]); err != nil {
-		return Colour{}, convertError("colour.LDrawID", fields[ldrawColour])
+		return lego.Colour{}, convertError("colour.LDrawID", fields[ldrawColour])
 	}
 
-	colour := Colour{
+	colour := lego.Colour{
 		ID:       aliases.BrickLinkID,
 		Aliases:  aliases,
 		Name:     fields[colourName],

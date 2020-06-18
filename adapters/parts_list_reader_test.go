@@ -1,4 +1,4 @@
-package lego
+package adapters
 
 import (
 	"os"

@@ -1,6 +1,7 @@
 package create
 
 import (
+	"brickrecon/adapters"
 	"brickrecon/app"
 	"brickrecon/background"
 	"brickrecon/lego"
@@ -14,7 +15,7 @@ func CreateProject(ctx context.Context, store *app.AppStore, modelName string, p
 
 	beeline.AddField(ctx, "model_name", modelName)
 
-	parts, err := lego.ReadPartsList(partsFile)
+	parts, err := adapters.ReadPartsList(partsFile)
 	if err != nil {
 		beeline.AddField(ctx, "read_parts_error", err)
 		return nil, err
