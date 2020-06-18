@@ -15,7 +15,27 @@ type ProjectView struct {
 	ID   uuid.UUID
 	Name string
 
-	Parts []Part
+	Parts []*PartView
+}
+
+type PartView struct {
+	ID         string
+	Name       string
+	ColourID   int
+	ColourName string
+
+	Quantity  int
+	Inventory int
+}
+
+func toPartView(part Part) *PartView {
+	return &PartView{
+		ID:         part.ID,
+		Name:       part.Name,
+		ColourID:   part.Colour.BrickLinkID,
+		ColourName: part.Colour.Name,
+		Quantity:   part.Quantity,
+	}
 }
 
 func ProjectsInitialState() interface{} {
@@ -36,7 +56,19 @@ func ProjectsProjector(state interface{}, event eventstore.Event) interface{} {
 
 	case *ProjectPartsAdded:
 		project := projectByID(view.Projects, e.AggregateID())
-		project.Parts = append(project.Parts, e.Parts...)
+		for _, part := range e.Parts {
+			project.Parts = append(project.Parts, toPartView(part))
+		}
+
+	case *ProjectInventoryAdded:
+		project := projectByID(view.Projects, e.AggregateID())
+		part := findPart(project.Parts, e.PartID, e.ColourID)
+		part.Inventory += e.Quantity
+
+	case *ProjectInventoryRemoved:
+		project := projectByID(view.Projects, e.AggregateID())
+		part := findPart(project.Parts, e.PartID, e.ColourID)
+		part.Inventory -= e.Quantity
 
 	}
 
@@ -49,5 +81,16 @@ func projectByID(all map[string]*ProjectView, id uuid.UUID) *ProjectView {
 			return p
 		}
 	}
+	return nil
+}
+
+func findPart(parts []*PartView, partID string, colourID int) *PartView {
+
+	for _, part := range parts {
+		if part.ID == partID && part.ColourID == colourID {
+			return part
+		}
+	}
+
 	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 )
 
 type ProjectModel struct {
@@ -41,17 +42,57 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 }
 
 func (c ProjectController) Post(req *http.Request) interface{} {
-	vars := mux.Vars(req)
+	ctx := req.Context()
+	siteModel := c.Store.SiteModel(ctx)
 
-	siteModel := c.Store.SiteModel(req.Context())
-	selected, _ := c.Store.ReadProject(req.Context(), vars["name"])
-	// ctx := req.Context()
-	// file, _, err := req.FormFile("modelFile")
-	// modelName := req.FormValue("modelName")
+	if err := req.ParseForm(); err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+	}
+
+	decoder := schema.NewDecoder()
+
+	var pm postModel
+	if err := decoder.Decode(&pm, req.PostForm); err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+	}
+
+	vars := mux.Vars(req)
+	selected, _ := c.Store.ReadProject(ctx, vars["name"])
+
+	project := lego.BlankProject()
+	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+	}
+
+	if pm.Action == "increase" {
+		if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+			return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		}
+	}
+
+	if pm.Action == "decrease" {
+		if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+			return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		}
+	}
+
+	if err := c.Store.Save(ctx, project); err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+	}
+
+	selected, _ = c.Store.ReadProject(ctx, vars["name"])
+
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
 			Project: selected,
 		},
 	)
+}
+
+type postModel struct {
+	Part     string
+	Colour   int
+	Quantity int
+	Action   string
 }

@@ -55,11 +55,11 @@
 
     {{ range .Project.Parts }}
     <tr>
-      <td width="66"><img loading="lazy" src="/static/img/parts/{{ .ID }}-{{ .Colour.BrickLinkID }}.png"
+      <td width="66"><img loading="lazy" src="/static/img/parts/{{ .ID }}-{{ .ColourID }}.png"
           alt="part {{ .ID }}" width="66px"></td>
       <td>{{ .ID }}</td>
       <td>{{ .Name }}</td>
-      <td>{{ .Colour.Name }}</td>
+      <td>{{ .ColourName }}</td>
       <td>{{ template "project/quantity" .}}</td>
       <td>
         <ul class="list-unstyled">

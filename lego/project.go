@@ -16,17 +16,22 @@ type Project struct {
 	parts *ProjectPartList
 }
 
-func NewProject(name string, parts []Part) *Project {
-
+func BlankProject() *Project {
 	project := Project{
 		parts: &ProjectPartList{},
 	}
 	project.Aggregator = eventstore.NewAggregator(project.on)
 
+	return &project
+}
+
+func NewProject(name string, parts []Part) *Project {
+
+	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
 	project.Apply(&ProjectPartsAdded{Parts: parts})
 
-	return &project
+	return project
 }
 
 func (prj *Project) FindPart(partID string, colourID int) (*ProjectPart, bool) {

@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
+	github.com/gorilla/schema v1.1.0
 	github.com/honeycombio/beeline-go v0.5.1
 	github.com/honeycombio/libhoney-go v1.12.4
 	github.com/mattn/go-colorable v0.1.6
