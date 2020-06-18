@@ -213,7 +213,7 @@ func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, 
 	}
 
 	var buffer bytes.Buffer
-	err := clone.Execute(&buffer, model)
+	err := clone.Execute(&buffer, ComposeModels(model))
 
 	if err != nil {
 		w.WriteHeader(500)
