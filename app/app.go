@@ -1,14 +1,11 @@
 package app
 
 import (
-	"brickrecon/background"
 	"brickrecon/distributor"
 	"brickrecon/eventstore"
-	"brickrecon/eventstore/backend/fs"
 	"brickrecon/lego"
 	"context"
 	"fmt"
-	"os"
 )
 
 type SiteModel struct {
@@ -18,30 +15,6 @@ type SiteModel struct {
 type AppStore struct {
 	EventStore eventstore.EventStore
 	bus        *distributor.Distributor
-}
-
-func NewAppStore(ctx context.Context) (*AppStore, error) {
-	if err := os.MkdirAll("_store", os.ModePerm); err != nil {
-		return nil, err
-	}
-
-	backend, err := fs.NewFileSystemBackend("_store")
-	if err != nil {
-		return nil, err
-	}
-
-	es := eventstore.NewEventStore(backend)
-
-	lego.ProjectEvents(ctx, es.RegisterEvent)
-	background.ImageCacheEvents(ctx, es.RegisterEvent)
-
-	es.RegisterProjection(ctx, "projects", lego.ProjectsInitialState, lego.ProjectsProjector)
-
-	bus := distributor.NewDistributor()
-
-	bus.RegisterFor(&background.PartsAddedMessage{}, background.ImageCacheHandler(es))
-
-	return &AppStore{EventStore: es, bus: bus}, nil
 }
 
 func (a *AppStore) Save(ctx context.Context, project *lego.Project) error {
