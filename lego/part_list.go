@@ -1,37 +1,66 @@
 package lego
 
-type PartList struct {
-	parts []*Part
+import "fmt"
+
+type ProjectPartList struct {
+	parts []*ProjectPart
 }
 
-func NewPartsList(parts []Part) *PartList {
-	list := PartList{
-		parts: make([]*Part, len(parts)),
+type ProjectPart struct {
+	Part
+
+	Inventory int
+}
+
+func (p *ProjectPart) HasSpares() bool {
+	return p.Inventory > p.Quantity
+}
+
+func NewPartsList(parts []Part) *ProjectPartList {
+	list := ProjectPartList{
+		parts: make([]*ProjectPart, len(parts)),
 	}
 
 	for i, p := range parts {
-		list.parts[i] = &p
+		list.parts[i] = &ProjectPart{Part: p, Inventory: 0}
 	}
 
 	return &list
 }
 
-func (m *PartList) Add(part Part) {
+func (m *ProjectPartList) Add(part Part) {
 
 	id := part.ID
 	colour := part.Colour.BrickLinkID
 
-	existing, found := m.byTypeAndColour(id, colour)
+	existing, found := m.FindPart(id, colour)
 
 	if found {
 		existing.Quantity += part.Quantity
 		return
 	}
 
-	m.parts = append(m.parts, &part)
+	m.parts = append(m.parts, &ProjectPart{Part: part, Inventory: 0})
 }
 
-func (m *PartList) byTypeAndColour(brickLinkID string, colourID int) (*Part, bool) {
+func (m *ProjectPartList) AddInventory(partID string, colourID int, quantity int) error {
+
+	part, found := m.FindPart(partID, colourID)
+
+	if !found {
+		return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
+	}
+
+	part.Inventory += quantity
+
+	if part.Inventory < 0 {
+		part.Inventory = 0
+	}
+
+	return nil
+}
+
+func (m *ProjectPartList) FindPart(brickLinkID string, colourID int) (*ProjectPart, bool) {
 
 	for _, p := range m.parts {
 
