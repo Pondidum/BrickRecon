@@ -11,15 +11,15 @@ type FsBackend struct {
 	root string
 }
 
-func NewFileSystemBackend(root string) (eventstore.Backend, error) {
+func NewFileSystemBackend(root string) (*FsBackend, error) {
 
-	if err := os.MkdirAll(path.Join(root, "views"), os.ModePerm); err != nil {
+	be := &FsBackend{root: root}
+
+	if err := be.createRoot(); err != nil {
 		return nil, err
 	}
 
-	return &FsBackend{
-		root: root,
-	}, nil
+	return be, nil
 }
 
 func (be *FsBackend) NewEventReader(registry map[string]eventstore.Initialiser, ctx context.Context) (eventstore.EventReader, error) {
@@ -34,4 +34,17 @@ func (be *FsBackend) NewView(name string) eventstore.View {
 	return &FsView{
 		filename: path.Join(be.root, "views", name+".json"),
 	}
+}
+
+func (be *FsBackend) DestroyViews() error {
+
+	if err := os.RemoveAll(path.Join(be.root, "views")); err != nil {
+		return err
+	}
+
+	return be.createRoot()
+}
+
+func (be *FsBackend) createRoot() error {
+	return os.MkdirAll(path.Join(be.root, "views"), os.ModePerm)
 }

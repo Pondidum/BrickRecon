@@ -18,7 +18,7 @@ func NewAppStoreBuilder(ctx context.Context) *AppStoreBuilder {
 	return &AppStoreBuilder{ctx: ctx}
 }
 
-func (b *AppStoreBuilder) CreateBackend() (eventstore.Backend, error) {
+func (b *AppStoreBuilder) CreateBackend() (*fs.FsBackend, error) {
 	if err := os.MkdirAll("_store", os.ModePerm); err != nil {
 		return nil, err
 	}

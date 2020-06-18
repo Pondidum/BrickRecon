@@ -19,6 +19,7 @@ type EventStore interface {
 	ReadView(ctx context.Context, name string, view interface{}) error
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
+	RunProjections(ctx context.Context) error
 }
 
 type eventStore struct {
@@ -135,12 +136,12 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 	beeline.AddField(ctx, "es.aggregate_version", aggregate.version)
 
-	err = es.runProjections(ctx)
+	err = es.RunProjections(ctx)
 
 	return err
 }
 
-func (es *eventStore) runProjections(ctx context.Context) error {
+func (es *eventStore) RunProjections(ctx context.Context) error {
 
 	views := es.allViews()
 	lowestIndex, err := findUnprocessedEvents(ctx, views)
