@@ -12,7 +12,7 @@ func TestAddingInventory(t *testing.T) {
 	colourID := 5678
 
 	project := NewProject("Test Project", []Part{
-		{ID: partID, Name: "Test Part", Colour: Colour{BrickLinkID: colourID}, Quantity: 5},
+		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
 	thePart, _ := project.FindPart(partID, colourID)
@@ -45,7 +45,7 @@ func TestRemovingInventory(t *testing.T) {
 	colourID := 5678
 
 	project := NewProject("Test Project", []Part{
-		{ID: partID, Name: "Test Part", Colour: Colour{BrickLinkID: colourID}, Quantity: 5},
+		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
 	project.AddInventory(partID, colourID, 4)

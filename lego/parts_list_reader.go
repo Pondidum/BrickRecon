@@ -125,17 +125,21 @@ func parseElementID(value string) int {
 func parseColour(fields []string) (Colour, error) {
 
 	var err error
-	colour := Colour{
-		Name:     fields[colourName],
-		Category: fields[colourCategory],
-	}
+	aliases := ColourAliases{}
 
-	if colour.BrickLinkID, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
+	if aliases.BrickLinkID, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
 		return Colour{}, convertError("colour.BrickLinkID", fields[brickLinkID])
 	}
 
-	if colour.LDrawID, err = strconv.Atoi(fields[ldrawColour]); err != nil {
+	if aliases.LDrawID, err = strconv.Atoi(fields[ldrawColour]); err != nil {
 		return Colour{}, convertError("colour.LDrawID", fields[ldrawColour])
+	}
+
+	colour := Colour{
+		ID:       aliases.BrickLinkID,
+		Aliases:  aliases,
+		Name:     fields[colourName],
+		Category: fields[colourCategory],
 	}
 
 	return colour, err

@@ -187,7 +187,7 @@ func (ic *ImageCache) ReadFromCache() error {
 
 func (ic *ImageCache) AddPart(part lego.Part) {
 
-	key := key(part.ID, part.Colour.BrickLinkID)
+	key := key(part.ID, part.Colour.ID)
 
 	if ic.containsPart(key) {
 		return
@@ -212,7 +212,7 @@ func (ic *ImageCache) containsPart(key string) bool {
 func (ic *ImageCache) Run(ctx context.Context) {
 
 	for key, part := range ic.pending {
-		fsm := ic.newImageFsm(part.ID, part.Colour.BrickLinkID)
+		fsm := ic.newImageFsm(part.ID, part.Colour.ID)
 		fsm.attempts = ic.attempts[key]
 
 		fsm.Run(ctx)
@@ -235,7 +235,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 		ic.onFinished(e.PartID, e.ColourID)
 
 	case *PartImageRequested:
-		key := key(e.Part.ID, e.Part.Colour.BrickLinkID)
+		key := key(e.Part.ID, e.Part.Colour.ID)
 		ic.pending[key] = e.Part
 
 	case *PartAttempted:

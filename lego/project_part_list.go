@@ -31,7 +31,7 @@ func NewPartsList(parts []Part) *ProjectPartList {
 func (m *ProjectPartList) Add(part Part) {
 
 	id := part.ID
-	colour := part.Colour.BrickLinkID
+	colour := part.Colour.ID
 
 	existing, found := m.FindPart(id, colour)
 
@@ -60,11 +60,11 @@ func (m *ProjectPartList) AddInventory(partID string, colourID int, quantity int
 	return nil
 }
 
-func (m *ProjectPartList) FindPart(brickLinkID string, colourID int) (*ProjectPart, bool) {
+func (m *ProjectPartList) FindPart(partID string, colourID int) (*ProjectPart, bool) {
 
 	for _, p := range m.parts {
 
-		if p.ID == brickLinkID && p.Colour.BrickLinkID == colourID {
+		if p.ID == partID && p.Colour.ID == colourID {
 			return p, true
 		}
 	}

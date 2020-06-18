@@ -32,7 +32,7 @@ func toPartView(part Part) *PartView {
 	return &PartView{
 		ID:         part.ID,
 		Name:       part.Name,
-		ColourID:   part.Colour.BrickLinkID,
+		ColourID:   part.Colour.ID,
 		ColourName: part.Colour.Name,
 		Quantity:   part.Quantity,
 	}

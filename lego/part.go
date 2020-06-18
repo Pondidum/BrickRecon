@@ -1,9 +1,14 @@
 package lego
 
 type Colour struct {
+	ID      int
+	Aliases ColourAliases
+
 	Name     string
 	Category string
+}
 
+type ColourAliases struct {
 	BrickLinkID int
 	LDrawID     int
 }
