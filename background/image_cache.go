@@ -91,9 +91,9 @@ type ImageCache struct {
 
 var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
 
-func NewImageCache(es eventstore.EventStore, context context.Context) (*ImageCache, error) {
+func NewImageCache(es eventstore.EventStore, location string, context context.Context) (*ImageCache, error) {
 
-	ic := blankImageCache("./app/static/img/parts")
+	ic := blankImageCache(location)
 
 	err := es.LoadAggregate(context, cacheID, ic)
 
@@ -105,7 +105,7 @@ func NewImageCache(es eventstore.EventStore, context context.Context) (*ImageCac
 		return nil, err
 	}
 
-	ic = createImageCache(cacheID, "./app/static/img/parts")
+	ic = createImageCache(cacheID, location)
 
 	if err := ic.ReadFromCache(); err != nil {
 		return nil, err

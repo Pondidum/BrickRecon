@@ -29,7 +29,7 @@ func handler(es eventstore.EventStore, ctx context.Context, message distributor.
 		return
 	}
 
-	ic, err := NewImageCache(es, ctx)
+	ic, err := NewImageCache(es, "./app/static/img/parts", ctx)
 
 	if err != nil {
 		beeline.AddField(ctx, "error_loading_cache", err)

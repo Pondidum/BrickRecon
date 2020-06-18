@@ -32,7 +32,7 @@ func (c *ImageCacheRunCommand) Run(args []string) int {
 		return 1
 	}
 
-	ic, err := background.NewImageCache(store.EventStore, ctx)
+	ic, err := background.NewImageCache(store.EventStore, "./app/static/img/parts", ctx)
 
 	if err != nil {
 		c.UI.Error(err.Error())
