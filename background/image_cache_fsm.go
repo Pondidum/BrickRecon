@@ -2,6 +2,7 @@ package background
 
 import (
 	"brickrecon/eventstore"
+	"brickrecon/lego"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 )
 
 type fsm struct {
-	partID      string
+	partID      lego.PartID
 	colourID    int
 	attempts    int
 	maxAttempts int
@@ -30,7 +31,7 @@ type state func(s *fsm) (next state)
 
 func (s *fsm) Run(ctx context.Context) {
 
-	ctx, span := beeline.StartSpan(ctx, "part-"+s.partID)
+	ctx, span := beeline.StartSpan(ctx, fmt.Sprintf("part-%s", s.partID))
 	defer span.Send()
 
 	state := processPart

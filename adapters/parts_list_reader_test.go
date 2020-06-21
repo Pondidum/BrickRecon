@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"brickrecon/lego"
 	"os"
 	"testing"
 
@@ -18,7 +19,7 @@ func TestPartReading(t *testing.T) {
 
 	part := partList[8]
 
-	assert.Equal(t, "2412b", part.ID)
+	assert.Equal(t, lego.NewPartID("2412b"), part.ID)
 	assert.Equal(t, "2412b", part.Aliases.BrickLinkID)
 	assert.Equal(t, 241226, part.Aliases.ElementID)
 	assert.Equal(t, "2412b", part.Aliases.LDrawID)

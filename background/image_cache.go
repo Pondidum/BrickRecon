@@ -33,14 +33,14 @@ type PartImageRequested struct {
 type PartFetchAttemptsExceeded struct {
 	eventstore.EventMeta
 
-	PartID   string
+	PartID   lego.PartID
 	ColourID int
 }
 
 type PartAttempted struct {
 	eventstore.EventMeta
 
-	PartID   string
+	PartID   lego.PartID
 	ColourID int
 	Error    string
 }
@@ -48,21 +48,21 @@ type PartAttempted struct {
 type PartImageNotFound struct {
 	eventstore.EventMeta
 
-	PartID   string
+	PartID   lego.PartID
 	ColourID int
 }
 
 type PartImageStored struct {
 	eventstore.EventMeta
 
-	PartID   string
+	PartID   lego.PartID
 	ColourID int
 }
 
 type PartAddedFromCache struct {
 	eventstore.EventMeta
 
-	PartID   string
+	PartID   lego.PartID
 	ColourID int
 }
 
@@ -168,7 +168,7 @@ func (ic *ImageCache) ReadFromCache() error {
 		name := strings.TrimSuffix(file, path.Ext(file))
 		parts := strings.Split(name, "-")
 
-		partID := parts[0]
+		partID := lego.NewPartID(parts[0])
 		colourID, err := strconv.Atoi(parts[1])
 
 		if err != nil {
@@ -254,7 +254,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 	}
 }
 
-func (ic *ImageCache) onFinished(partID string, colourID int) {
+func (ic *ImageCache) onFinished(partID lego.PartID, colourID int) {
 	key := key(partID, colourID)
 
 	ic.done[key] = true
@@ -262,7 +262,7 @@ func (ic *ImageCache) onFinished(partID string, colourID int) {
 	delete(ic.pending, key)
 }
 
-func (ic *ImageCache) newImageFsm(partID string, colourID int) *fsm {
+func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID int) *fsm {
 	return &fsm{
 		partID:      partID,
 		colourID:    colourID,
@@ -275,6 +275,6 @@ func (ic *ImageCache) newImageFsm(partID string, colourID int) *fsm {
 	}
 }
 
-func key(id string, colourID int) string {
+func key(id lego.PartID, colourID int) string {
 	return fmt.Sprintf("%s-%v", id, colourID)
 }

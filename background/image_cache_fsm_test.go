@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"brickrecon/lego"
 	"brickrecon/testutil"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func createState() *fsm {
 		attempts:    0,
 		maxAttempts: 5,
 
-		partID:   "567b",
+		partID:   lego.NewPartID("567b"),
 		colourID: 85,
 	}
 

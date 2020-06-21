@@ -19,7 +19,7 @@ type ProjectView struct {
 }
 
 type PartView struct {
-	ID         string
+	ID         PartID
 	Name       string
 	ColourID   int
 	ColourName string
@@ -84,7 +84,7 @@ func projectByID(all map[string]*ProjectView, id uuid.UUID) *ProjectView {
 	return nil
 }
 
-func findPart(parts []*PartView, partID string, colourID int) *PartView {
+func findPart(parts []*PartView, partID PartID, colourID int) *PartView {
 
 	for _, part := range parts {
 		if part.ID == partID && part.ColourID == colourID {
