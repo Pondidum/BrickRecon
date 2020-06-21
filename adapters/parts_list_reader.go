@@ -81,7 +81,7 @@ func parsePart(fields []string) (lego.Part, error) {
 	part := lego.Part{
 		Name:    fields[partName],
 		Aliases: parsePartAliases(fields),
-		ID:      lego.NewPartID(fields[brickLinkID]),
+		ID:      lego.NewPartID(fields[ldrawID]),
 	}
 
 	if part.Colour, err = parseColour(fields); err != nil {
