@@ -8,10 +8,6 @@ type RootController struct {
 	Store *AppStore
 }
 
-func (c RootController) IsRoot() bool {
-	return true
-}
-
 func (c RootController) Views() []string {
 	return []string{
 		"root_index.html",

@@ -80,7 +80,7 @@ func (p *Preen) Apply(r *mux.Router) {
 }
 
 func (p *Preen) loadViews() error {
-	for _, c := range p.controllers {
+	for i, c := range p.controllers {
 
 		ctl, isController := c.(Controller)
 
@@ -90,9 +90,7 @@ func (p *Preen) loadViews() error {
 
 		views := ctl.Views()
 
-		rootCtl, isRootCtl := c.(RootController)
-
-		if isRootCtl && rootCtl.IsRoot() {
+		if i == 0 {
 			viewPath := views[0]
 			content, err := ioutil.ReadFile(path.Join(p.viewRoot, viewPath))
 

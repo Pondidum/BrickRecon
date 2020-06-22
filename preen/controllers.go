@@ -7,10 +7,6 @@ type Controller interface {
 	Views() []string
 }
 
-type RootController interface {
-	IsRoot() bool
-}
-
 type Getable interface {
 	Get(req *http.Request) interface{}
 }
