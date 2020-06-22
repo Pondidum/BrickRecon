@@ -24,23 +24,11 @@ func TestPartReading(t *testing.T) {
 	assert.Equal(t, 241226, part.Aliases.ElementID)
 	assert.Equal(t, "2412b", part.Aliases.LDrawID)
 	assert.Equal(t, "Tile, Modified 1 x 2 Grille with Bottom Groove / Lip", part.Name)
-	assert.Equal(t, 11, part.Colour.ID)
+	assert.Equal(t, 0, part.Colour.ID)
 	assert.Equal(t, 11, part.Colour.Aliases.BrickLinkID)
 	assert.Equal(t, 0, part.Colour.Aliases.LDrawID)
 	assert.Equal(t, "Black", part.Colour.Name)
 	assert.Equal(t, "Solid Colors", part.Colour.Category)
 	assert.Equal(t, 4, part.Quantity)
 	assert.Equal(t, 0.23, part.Weight)
-}
-
-func TestPartListStructure(t *testing.T) {
-
-	reader, err := os.Open("test-partlist.csv")
-	assert.NoError(t, err)
-
-	partList, err := ReadPartsList(reader)
-
-	for _, part := range partList {
-		assert.Equal(t, part.Colour.Aliases.BrickLinkID, part.Colour.Aliases.LDrawID)
-	}
 }
