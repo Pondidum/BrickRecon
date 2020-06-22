@@ -1,7 +1,6 @@
-package project
+package app
 
 import (
-	"brickrecon/app"
 	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
@@ -15,7 +14,14 @@ type ProjectModel struct {
 }
 
 type ProjectController struct {
-	Store *app.AppStore
+	Store *AppStore
+}
+
+func (c ProjectController) Views() []string {
+	return []string{
+		"project_index.html",
+		"project_quantity.html",
+	}
 }
 
 func (c ProjectController) Path() string {

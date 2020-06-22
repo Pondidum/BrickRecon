@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path"
+	"reflect"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -55,11 +56,11 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		p.templateTypes[ext] = true
 	}
 
-	if err := p.loadLayoutRoot(); err != nil {
+	if err := p.loadViews(); err != nil {
 		return p, err
 	}
 
-	if err := p.loadTemplates(pc.ApplicationRoot); err != nil {
+	if err := p.loadKnownTemplates(path.Join(pc.ApplicationRoot, "_shared")); err != nil {
 		return p, err
 	}
 
@@ -74,32 +75,68 @@ func (p *Preen) Apply(r *mux.Router) {
 	r.Use(p.auth.UserContext)
 
 	for _, ctl := range p.controllers {
-		p.RegisterController(r, ctl)
+		p.registerController(r, ctl)
 	}
 }
 
-func (p *Preen) loadLayoutRoot() error {
-	content, err := ioutil.ReadFile(path.Join(p.viewRoot, "index.html"))
+func (p *Preen) loadViews() error {
+	for _, c := range p.controllers {
 
-	if err != nil {
-		return err
+		ctl, isController := c.(Controller)
+
+		if !isController {
+			return fmt.Errorf("%T is not a valid Controller", c)
+		}
+
+		views := ctl.Views()
+
+		rootCtl, isRootCtl := c.(RootController)
+
+		if isRootCtl && rootCtl.IsRoot() {
+			viewPath := views[0]
+			content, err := ioutil.ReadFile(path.Join(p.viewRoot, viewPath))
+
+			if err != nil {
+				return err
+			}
+
+			layout, err := template.
+				New("layout").
+				Funcs(TemplateFuncDefinitions()).
+				Parse(string(content))
+
+			if err != nil {
+				return err
+			}
+
+			p.layout = layout
+
+			views = views[1:]
+		}
+
+		for _, viewPath := range views {
+
+			content, err := ioutil.ReadFile(path.Join(p.viewRoot, viewPath))
+			if err != nil {
+				return err
+			}
+
+			ctlName := controllerName(ctl)
+			name := templateName(ctlName, strings.TrimPrefix(viewPath, p.viewRoot+"/"))
+
+			tpl, err := p.layout.New(name).Parse(string(content))
+			if err != nil {
+				return err
+			}
+
+			p.templates[name] = tpl
+		}
 	}
-
-	layout, err := template.
-		New("layout").
-		Funcs(TemplateFuncDefinitions()).
-		Parse(string(content))
-
-	if err != nil {
-		return err
-	}
-
-	p.layout = layout
 
 	return nil
 }
 
-func (p *Preen) loadTemplates(dir string) error {
+func (p *Preen) loadKnownTemplates(dir string) error {
 
 	entries, err := ioutil.ReadDir(dir)
 
@@ -124,7 +161,7 @@ func (p *Preen) loadTemplates(dir string) error {
 				return err
 			}
 
-			name := templateName(strings.TrimPrefix(currentPath, p.viewRoot+"/"))
+			name := templateName("_shared", strings.TrimPrefix(currentPath, p.viewRoot+"/"))
 			tpl, err := p.layout.New(name).Parse(string(content))
 
 			if err != nil {
@@ -133,7 +170,7 @@ func (p *Preen) loadTemplates(dir string) error {
 
 			p.templates[name] = tpl
 		} else {
-			err := p.loadTemplates(currentPath)
+			err := p.loadKnownTemplates(currentPath)
 
 			if err != nil {
 				return err
@@ -144,7 +181,7 @@ func (p *Preen) loadTemplates(dir string) error {
 	return nil
 }
 
-func (p *Preen) RegisterController(r *mux.Router, c interface{}) error {
+func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 	ctl, isController := c.(Controller)
 
@@ -235,7 +272,12 @@ func ComposeModels(models ...interface{}) interface{} {
 	return result
 }
 
-func templateName(filepath string) string {
+func templateName(controller string, filepath string) string {
+
+	if strings.HasPrefix(filepath, controller+"_") {
+		filepath = strings.Replace(filepath, controller+"_", controller+"/", 1)
+	}
+
 	ext := path.Ext(filepath)
 	base := path.Base(filepath)
 
@@ -249,4 +291,13 @@ func templateName(filepath string) string {
 	filepath = strings.TrimPrefix(filepath, "_shared/")
 
 	return filepath
+}
+
+func controllerName(c Controller) string {
+	typeName := reflect.TypeOf(c).Elem().Name()
+
+	name := strings.ToLower(typeName)
+	name = strings.TrimSuffix(name, "controller")
+
+	return name
 }

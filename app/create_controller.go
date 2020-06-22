@@ -1,13 +1,19 @@
-package create
+package app
 
 import (
-	"brickrecon/app"
 	"brickrecon/preen"
 	"net/http"
 )
 
 type CreateController struct {
-	Store *app.AppStore
+	Store *AppStore
+}
+
+func (c CreateController) Views() []string {
+	return []string{
+		"create_index.html",
+		"create_form.html",
+	}
 }
 
 func (c CreateController) Path() string {

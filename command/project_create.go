@@ -2,7 +2,6 @@ package command
 
 import (
 	"brickrecon/app"
-	"brickrecon/app/create"
 	"fmt"
 	"os"
 
@@ -61,7 +60,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	waiter, err := create.CreateProject(ctx, store, modelName, file)
+	waiter, err := app.CreateProject(ctx, store, modelName, file)
 
 	if err != nil {
 		c.UI.Error(err.Error())

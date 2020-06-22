@@ -4,6 +4,11 @@ import "net/http"
 
 type Controller interface {
 	Path() string
+	Views() []string
+}
+
+type RootController interface {
+	IsRoot() bool
 }
 
 type Getable interface {

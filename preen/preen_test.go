@@ -1,51 +1,29 @@
 package preen
 
 import (
-	"io/ioutil"
-	"os"
-	"path"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var testCases map[string]string = map[string]string{
-	"_shared/link.html":        "link",
-	"_shared/image/circle.svg": "image/circle",
-	"menu/index.html":          "menu",
-	"menu/list.html":           "menu/list",
-	"menu/child/index.html":    "menu/child",
-	"menu/child/item.html":     "menu/child/item",
-}
-
 func TestTemplateNaming(t *testing.T) {
 	t.Parallel()
 
+	testCases := map[string]string{
+		"_shared/link.html":        "link",
+		"_shared/image/circle.svg": "image/circle",
+	}
+
 	for path, name := range testCases {
-		assert.Equal(t, name, templateName(path))
-	}
-}
-
-func TestAreaLoading(t *testing.T) {
-
-	temp, _ := ioutil.TempDir(".", "app")
-
-	defer func() {
-		os.RemoveAll(temp)
-	}()
-
-	for p, v := range testCases {
-		os.MkdirAll(path.Join(temp, path.Dir(p)), os.ModePerm)
-		ioutil.WriteFile(path.Join(temp, p), []byte(v), 0644)
+		assert.Equal(t, name, templateName("_shared", path))
 	}
 
-	ioutil.WriteFile(path.Join(temp, "index.html"), []byte("root"), 0644)
+	controllerCases := map[string]string{
+		"create_index.html":    "create",
+		"create_quantity.html": "create/quantity",
+	}
 
-	p, err := NewPreen(PreenConfig{ApplicationRoot: temp})
-
-	assert.NoError(t, err)
-
-	for _, v := range testCases {
-		assert.Contains(t, p.templates, v)
+	for path, name := range controllerCases {
+		assert.Equal(t, name, templateName("create", path))
 	}
 }

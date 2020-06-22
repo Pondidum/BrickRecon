@@ -1,8 +1,7 @@
-package create
+package app
 
 import (
 	"brickrecon/adapters"
-	"brickrecon/app"
 	"brickrecon/background"
 	"brickrecon/lego"
 	"context"
@@ -11,7 +10,7 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func CreateProject(ctx context.Context, store *app.AppStore, modelName string, partsFile io.Reader) (func(), error) {
+func CreateProject(ctx context.Context, store *AppStore, modelName string, partsFile io.Reader) (func(), error) {
 
 	beeline.AddField(ctx, "model_name", modelName)
 

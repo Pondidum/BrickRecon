@@ -2,9 +2,6 @@ package command
 
 import (
 	"brickrecon/app"
-	"brickrecon/app/create"
-	"brickrecon/app/login"
-	"brickrecon/app/project"
 	"brickrecon/preen"
 	"fmt"
 
@@ -46,10 +43,10 @@ func (c *ServeCommand) Run(_ []string) int {
 	p, err := preen.NewPreen(preen.PreenConfig{
 		ApplicationRoot: "app",
 		Controllers: []preen.Controller{
-			&app.AppController{Store: store},
-			&create.CreateController{Store: store},
-			&project.ProjectController{Store: store},
-			&login.LoginController{},
+			&app.RootController{Store: store},
+			&app.CreateController{Store: store},
+			&app.ProjectController{Store: store},
+			&app.LoginController{},
 		},
 	})
 

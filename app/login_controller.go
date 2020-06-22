@@ -1,4 +1,4 @@
-package login
+package app
 
 import (
 	"brickrecon/preen"
@@ -6,6 +6,10 @@ import (
 )
 
 type LoginController struct {
+}
+
+func (c LoginController) Views() []string {
+	return []string{}
 }
 
 func (c LoginController) AuthRequired() bool {
