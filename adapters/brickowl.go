@@ -19,47 +19,6 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	return &BrickOwlApi{key}
 }
 
-func (bo *BrickOwlApi) getSetBoid(setNumber string) (string, error) {
-
-	req, err := http.NewRequest("GET", "https://api.brickowl.com/v1/catalog/id_lookup", nil)
-
-	if err != nil {
-		return "", err
-	}
-
-	q := req.URL.Query()
-	q.Add("key", bo.key)
-	q.Add("type", "Set")
-	q.Add("id_type", "set_number")
-	q.Add("id", setNumber)
-	req.URL.RawQuery = q.Encode()
-
-	client := http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return "", fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
-	}
-
-	content, err := ioutil.ReadAll(res.Body)
-
-	var dto idlookupResponse
-	if err := json.Unmarshal(content, &dto); err != nil {
-		return "", err
-	}
-
-	if len(dto.Boids) == 0 {
-		return "", errors.New("No Boids found")
-	}
-
-	return dto.Boids[0], err
-}
-
 func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
@@ -106,16 +65,118 @@ func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
 	return parts, nil
 }
 
-func createPart(colours map[FlexInt]colourItem, item inventoryItem, additional lookupItem) lego.Part {
+func (bo *BrickOwlApi) makeRequest(url string, args map[string]string, dto interface{}) error {
+	req, err := http.NewRequest("GET", url, nil)
+
+	if err != nil {
+		return err
+	}
+
+	q := req.URL.Query()
+	q.Add("key", bo.key)
+	for name, value := range args {
+		q.Add(name, value)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	client := http.Client{}
+	res, err := client.Do(req)
+
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode < 200 || res.StatusCode > 299 {
+		return fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
+	}
+
+	content, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal(content, &dto)
+}
+
+func (bo *BrickOwlApi) getSetBoid(setNumber string) (string, error) {
+
+	args := map[string]string{
+		"type":    "Set",
+		"id_type": "set_number",
+		"id":      setNumber,
+	}
+
+	var dto idlookupResponse
+
+	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/id_lookup", args, &dto); err != nil {
+		return "", err
+	}
+
+	if len(dto.Boids) == 0 {
+		return "", errors.New("No Boids found")
+	}
+
+	return dto.Boids[0], nil
+}
+
+func (bo *BrickOwlApi) getInventory(boid string) ([]inventoryItem, error) {
+
+	args := map[string]string{
+		"boid": boid,
+	}
+
+	var dto inventoryResponse
+
+	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/inventory", args, &dto); err != nil {
+		return nil, err
+	}
+
+	return dto.Inventory, nil
+}
+
+func (bo *BrickOwlApi) lookupParts(boids []string) (map[string]lookupItem, error) {
+	if len(boids) > 100 {
+		return nil, errors.New("Max 100 ids")
+	}
+
+	args := map[string]string{
+		"boids": strings.Join(boids, ","),
+	}
+
+	var dto bulkLookupResponse
+
+	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/bulk_lookup", args, &dto); err != nil {
+		return nil, err
+	}
+
+	return dto.Items, nil
+}
+
+func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
+	args := map[string]string{}
+
+	var dto map[flexInt]colourItem
+
+	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/color_list", args, &dto); err != nil {
+		return nil, err
+	}
+
+	return dto, nil
+}
+
+func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) lego.Part {
 	ldrawID := getID(additional.IDs, "ldraw")
+	colourID := ignore(strconv.Atoi(colours[additional.ColourID].LDrawIDs[0]))
 
 	return lego.Part{
 		ID:       lego.NewPartID(ldrawID),
 		Name:     additional.Name,
 		Quantity: ignore(strconv.Atoi(item.Quantity)),
 		Colour: lego.Colour{
-			ID:   ignore(strconv.Atoi(colours[additional.ColourID].LDrawIDs[0])),
-			Name: colours[additional.ColourID].Name,
+			ID:      colourID,
+			Name:    colours[additional.ColourID].Name,
+			Aliases: lego.ColourAliases{LDrawID: colourID, Boid: int(additional.ColourID)},
 		},
 		Aliases: lego.PartAliases{
 			LDrawID: ldrawID,
@@ -151,114 +212,6 @@ func split(buf []inventoryItem, lim int) [][]inventoryItem {
 	return chunks
 }
 
-func (bo *BrickOwlApi) getInventory(boid string) ([]inventoryItem, error) {
-
-	req, err := http.NewRequest("GET", "https://api.brickowl.com/v1/catalog/inventory", nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	q.Add("key", bo.key)
-	q.Add("boid", boid)
-	req.URL.RawQuery = q.Encode()
-
-	client := http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
-	}
-
-	content, err := ioutil.ReadAll(res.Body)
-
-	var dto inventoryResponse
-	if err := json.Unmarshal(content, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto.Inventory, nil
-}
-
-func (bo *BrickOwlApi) lookupParts(boids []string) (map[string]lookupItem, error) {
-	if len(boids) > 100 {
-		return nil, errors.New("Max 100 ids")
-	}
-
-	req, err := http.NewRequest("GET", "https://api.brickowl.com/v1/catalog/bulk_lookup", nil)
-
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	q.Add("key", bo.key)
-	q.Add("boids", strings.Join(boids, ","))
-	req.URL.RawQuery = q.Encode()
-
-	ioutil.WriteFile("url", []byte(req.URL.String()), 0666)
-
-	client := http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
-	}
-
-	content, err := ioutil.ReadAll(res.Body)
-
-	var dto bulkLookupResponse
-	if err := json.Unmarshal(content, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto.Items, nil
-}
-
-func (bo *BrickOwlApi) loadColours() (map[FlexInt]colourItem, error) {
-
-	req, err := http.NewRequest("GET", "https://api.brickowl.com/v1/catalog/color_list", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := req.URL.Query()
-	q.Add("key", bo.key)
-	req.URL.RawQuery = q.Encode()
-
-	client := http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return nil, fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
-	}
-
-	content, err := ioutil.ReadAll(res.Body)
-
-	var dto map[FlexInt]colourItem
-	if err := json.Unmarshal(content, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto, nil
-}
-
 type bulkLookupResponse struct {
 	Items map[string]lookupItem
 }
@@ -266,7 +219,7 @@ type bulkLookupResponse struct {
 type lookupItem struct {
 	Boid     string
 	Name     string
-	ColourID FlexInt `json:"color_id"`
+	ColourID flexInt `json:"color_id"`
 	IDs      []lookupID
 }
 
@@ -296,9 +249,9 @@ type colourItem struct {
 	BrickLinkIDs []string `json:"bl_ids"`
 }
 
-type FlexInt int
+type flexInt int
 
-func (fi *FlexInt) UnmarshalJSON(b []byte) error {
+func (fi *flexInt) UnmarshalJSON(b []byte) error {
 	if b[0] != '"' {
 		return json.Unmarshal(b, (*int)(fi))
 	}
@@ -310,6 +263,6 @@ func (fi *FlexInt) UnmarshalJSON(b []byte) error {
 	if err != nil {
 		return err
 	}
-	*fi = FlexInt(i)
+	*fi = flexInt(i)
 	return nil
 }

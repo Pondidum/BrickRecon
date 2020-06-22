@@ -13,6 +13,7 @@ type Colour struct {
 type ColourAliases struct {
 	BrickLinkID int
 	LDrawID     int
+	Boid        int
 }
 
 type PartID struct {
