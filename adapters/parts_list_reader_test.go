@@ -32,3 +32,15 @@ func TestPartReading(t *testing.T) {
 	assert.Equal(t, 4, part.Quantity)
 	assert.Equal(t, 0.23, part.Weight)
 }
+
+func TestPartListStructure(t *testing.T) {
+
+	reader, err := os.Open("test-partlist.csv")
+	assert.NoError(t, err)
+
+	partList, err := ReadPartsList(reader)
+
+	for _, part := range partList {
+		assert.Equal(t, part.Colour.Aliases.BrickLinkID, part.Colour.Aliases.LDrawID)
+	}
+}

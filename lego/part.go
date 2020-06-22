@@ -55,4 +55,5 @@ type PartAliases struct {
 	BrickLinkID string
 	ElementID   int
 	LDrawID     string
+	Boid        string
 }
