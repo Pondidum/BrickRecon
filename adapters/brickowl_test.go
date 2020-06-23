@@ -47,5 +47,5 @@ func TestGetInventory(t *testing.T) {
 	parts, err := owl.GetParts("75193-1")
 
 	assert.NoError(t, err)
-	assert.Len(t, parts, 49)
+	assert.Len(t, parts, 48)
 }

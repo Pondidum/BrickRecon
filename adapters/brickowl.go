@@ -71,9 +71,11 @@ func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
 
 		for _, item := range items {
 			itemData := partData[item.Boid]
-			part := createPart(colours, item, itemData)
 
-			parts = append(parts, part)
+			if itemData.Type == "Part" {
+				part := createPart(colours, item, itemData)
+				parts = append(parts, part)
+			}
 		}
 	}
 
@@ -199,8 +201,9 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	colourInfo := colours[additional.ColourID]
 
 	colourAliases := lego.ColourAliases{
-		LDrawID: lego.LDrawColour(colourInfo.LDrawIDs[0]),
-		Boid:    lego.BrickOwlColour(colourInfo.BrickLinkIDs[0]),
+		BrickLinkID: lego.BrickLinkColour(colourInfo.BrickLinkIDs[0]),
+		LDrawID:     lego.LDrawColour(colourInfo.LDrawIDs[0]),
+		Boid:        lego.BrickOwlColour(additional.ColourID),
 	}
 
 	return lego.Part{
@@ -249,6 +252,7 @@ type bulkLookupResponse struct {
 type lookupItem struct {
 	Boid     string
 	Name     string
+	Type     string
 	ColourID flexInt `json:"color_id"`
 	IDs      []lookupID
 }
