@@ -21,7 +21,7 @@ type KitView struct {
 type PartView struct {
 	ID         PartID
 	Name       string
-	ColourID   int
+	ColourID   BrickLinkColour
 	ColourName string
 
 	Quantity int

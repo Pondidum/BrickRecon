@@ -3,17 +3,21 @@ package lego
 import "encoding/json"
 
 type Colour struct {
-	ID      int
+	ID      BrickLinkColour
 	Aliases ColourAliases
 
 	Name     string
 	Category string
 }
 
+type BrickLinkColour int
+type LDrawColour int
+type BrickOwlColour int
+
 type ColourAliases struct {
-	BrickLinkID int
-	LDrawID     int
-	Boid        int
+	BrickLinkID BrickLinkColour
+	LDrawID     LDrawColour
+	Boid        BrickOwlColour
 }
 
 type PartID struct {

@@ -196,26 +196,27 @@ func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
 
 func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) lego.Part {
 	ldrawID := getID(additional.IDs, "ldraw")
-	colourID := ignore(strconv.Atoi(colours[additional.ColourID].LDrawIDs[0]))
+	colourInfo := colours[additional.ColourID]
+
+	colourAliases := lego.ColourAliases{
+		LDrawID: lego.LDrawColour(colourInfo.LDrawIDs[0]),
+		Boid:    lego.BrickOwlColour(colourInfo.BrickLinkIDs[0]),
+	}
 
 	return lego.Part{
 		ID:       lego.NewPartID(ldrawID),
 		Name:     additional.Name,
-		Quantity: ignore(strconv.Atoi(item.Quantity)),
+		Quantity: int(item.Quantity),
 		Colour: lego.Colour{
-			ID:      colourID,
+			ID:      colourAliases.BrickLinkID,
 			Name:    colours[additional.ColourID].Name,
-			Aliases: lego.ColourAliases{LDrawID: colourID, Boid: int(additional.ColourID)},
+			Aliases: colourAliases,
 		},
 		Aliases: lego.PartAliases{
 			LDrawID: ldrawID,
 			Boid:    item.Boid,
 		},
 	}
-}
-
-func ignore(value int, err error) int {
-	return value
 }
 
 func getID(ids []lookupID, t string) string {
@@ -267,15 +268,15 @@ type inventoryResponse struct {
 
 type inventoryItem struct {
 	Boid     string
-	Quantity string
+	Quantity flexInt
 }
 
 type colourItem struct {
 	ID   string
 	Name string
 
-	LDrawIDs     []string `json:"ldraw_ids"`
-	BrickLinkIDs []string `json:"bl_ids"`
+	LDrawIDs     []flexInt `json:"ldraw_ids"`
+	BrickLinkIDs []flexInt `json:"bl_ids"`
 }
 
 type flexInt int

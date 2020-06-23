@@ -34,14 +34,14 @@ type PartFetchAttemptsExceeded struct {
 	eventstore.EventMeta
 
 	PartID   lego.PartID
-	ColourID int
+	ColourID lego.BrickLinkColour
 }
 
 type PartAttempted struct {
 	eventstore.EventMeta
 
 	PartID   lego.PartID
-	ColourID int
+	ColourID lego.BrickLinkColour
 	Error    string
 }
 
@@ -49,21 +49,21 @@ type PartImageNotFound struct {
 	eventstore.EventMeta
 
 	PartID   lego.PartID
-	ColourID int
+	ColourID lego.BrickLinkColour
 }
 
 type PartImageStored struct {
 	eventstore.EventMeta
 
 	PartID   lego.PartID
-	ColourID int
+	ColourID lego.BrickLinkColour
 }
 
 type PartAddedFromCache struct {
 	eventstore.EventMeta
 
 	PartID   lego.PartID
-	ColourID int
+	ColourID lego.BrickLinkColour
 }
 
 func ImageCacheEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
@@ -179,7 +179,10 @@ func (ic *ImageCache) ReadFromCache() error {
 			continue
 		}
 
-		ic.Apply(&PartAddedFromCache{PartID: partID, ColourID: colourID})
+		ic.Apply(&PartAddedFromCache{
+			PartID:   partID,
+			ColourID: lego.BrickLinkColour(colourID),
+		})
 	}
 
 	return nil
@@ -254,7 +257,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 	}
 }
 
-func (ic *ImageCache) onFinished(partID lego.PartID, colourID int) {
+func (ic *ImageCache) onFinished(partID lego.PartID, colourID lego.BrickLinkColour) {
 	key := key(partID, colourID)
 
 	ic.done[key] = true
@@ -262,7 +265,7 @@ func (ic *ImageCache) onFinished(partID lego.PartID, colourID int) {
 	delete(ic.pending, key)
 }
 
-func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID int) *fsm {
+func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID lego.BrickLinkColour) *fsm {
 	return &fsm{
 		partID:      partID,
 		colourID:    colourID,
@@ -275,6 +278,6 @@ func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID int) *fsm {
 	}
 }
 
-func key(id lego.PartID, colourID int) string {
+func key(id lego.PartID, colourID lego.BrickLinkColour) string {
 	return fmt.Sprintf("%s-%v", id, colourID)
 }
