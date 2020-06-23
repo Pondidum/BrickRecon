@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -80,7 +81,9 @@ func (p *Preen) Apply(r *mux.Router) {
 }
 
 func (p *Preen) loadViews() error {
-	for i, c := range p.controllers {
+	p.layout = template.New("layout").Funcs(TemplateFuncDefinitions())
+
+	for _, c := range p.controllers {
 
 		ctl, isController := c.(Controller)
 
@@ -88,50 +91,49 @@ func (p *Preen) loadViews() error {
 			return fmt.Errorf("%T is not a valid Controller", c)
 		}
 
-		views := ctl.Views()
-
-		if i == 0 {
-			viewPath := views[0]
-			content, err := ioutil.ReadFile(path.Join(p.viewRoot, viewPath))
-
-			if err != nil {
-				return err
-			}
-
-			layout, err := template.
-				New("layout").
-				Funcs(TemplateFuncDefinitions()).
-				Parse(string(content))
-
-			if err != nil {
-				return err
-			}
-
-			p.layout = layout
-
-			views = views[1:]
+		templates, err := parseController(p.viewRoot, p.layout, ctl)
+		if err != nil {
+			return err
 		}
 
-		for _, viewPath := range views {
-
-			content, err := ioutil.ReadFile(path.Join(p.viewRoot, viewPath))
-			if err != nil {
-				return err
-			}
-
-			ctlName := controllerName(ctl)
-			name := templateName(ctlName, strings.TrimPrefix(viewPath, p.viewRoot+"/"))
-
-			tpl, err := p.layout.New(name).Parse(string(content))
-			if err != nil {
-				return err
-			}
-
+		for name, tpl := range templates {
 			p.templates[name] = tpl
 		}
 	}
 
 	return nil
+}
+
+func parseController(viewRoot string, parentTemplate *template.Template, c Controller) (map[string]*template.Template, error) {
+	templates := map[string]*template.Template{}
+
+	for _, viewFilename := range c.Views() {
+
+		content, err := ioutil.ReadFile(path.Join(viewRoot, viewFilename))
+		if err != nil {
+			return nil, err
+		}
+
+		viewPath := strings.TrimPrefix(viewFilename, controllerName(c)+"_")
+		viewPath = strings.TrimSuffix(viewPath, "index.html")
+		viewPath = strings.TrimSuffix(viewPath, ".html")
+		viewPath = getViewName(c) + "/" + viewPath
+		viewPath = strings.Trim(viewPath, "/")
+
+		tpl := parentTemplate
+		if viewPath != "" {
+			tpl = parentTemplate.New(viewPath)
+		}
+
+		_, err = tpl.Parse(string(content))
+		if err != nil {
+			return nil, err
+		}
+
+		templates[viewPath] = tpl
+	}
+
+	return templates, nil
 }
 
 func (p *Preen) loadKnownTemplates(dir string) error {
@@ -294,8 +296,19 @@ func templateName(controller string, filepath string) string {
 func controllerName(c Controller) string {
 	typeName := reflect.TypeOf(c).Elem().Name()
 
-	name := strings.ToLower(typeName)
-	name = strings.TrimSuffix(name, "controller")
+	name := slither(typeName)
+	name = strings.ToLower(name)
+	name = strings.TrimSuffix(name, "_controller")
 
 	return name
+}
+
+var matchFirstCap = regexp.MustCompile("(.)([A-Z][a-z]+)")
+var matchAllCap = regexp.MustCompile("([a-z0-9])([A-Z])")
+
+func slither(input string) string {
+
+	snake := matchFirstCap.ReplaceAllString(input, "${1}_${2}")
+	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
+	return strings.ToLower(snake)
 }
