@@ -19,6 +19,21 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	return &BrickOwlApi{key}
 }
 
+func (bo *BrickOwlApi) GetSetName(setNumber string) (string, error) {
+
+	setBoid, err := bo.getSetBoid(setNumber)
+	if err != nil {
+		return "", err
+	}
+
+	info, err := bo.lookup(setBoid)
+	if err != nil {
+		return "", err
+	}
+
+	return info.Name, nil
+}
+
 func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
@@ -133,6 +148,20 @@ func (bo *BrickOwlApi) getInventory(boid string) ([]inventoryItem, error) {
 	}
 
 	return dto.Inventory, nil
+}
+
+func (bo *BrickOwlApi) lookup(boid string) (*lookupItem, error) {
+	args := map[string]string{
+		"boid": boid,
+	}
+
+	var dto lookupItem
+
+	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/lookup", args, &dto); err != nil {
+		return nil, err
+	}
+
+	return &dto, nil
 }
 
 func (bo *BrickOwlApi) lookupParts(boids []string) (map[string]lookupItem, error) {

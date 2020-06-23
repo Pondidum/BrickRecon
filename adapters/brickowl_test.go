@@ -33,6 +33,14 @@ func TestBulkFetching(t *testing.T) {
 	assert.Len(t, parts, 2)
 }
 
+func TestSetLookup(t *testing.T) {
+	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	info, err := owl.lookup("849212")
+
+	assert.NoError(t, err)
+	assert.Equal(t, "LEGO Millennium Falcon Set 75192", info.Name)
+}
+
 func TestGetInventory(t *testing.T) {
 
 	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
