@@ -33,22 +33,3 @@ func (c KitImportController) Post(req *http.Request) interface{} {
 
 	return preen.Redirect{URL: "/kit/" + kitNumber}
 }
-
-// func ImportKit(ctx context.Context, store *AppStore, kitNumber string) (func(), error) {
-
-// 	beeline.AddField(ctx, "kit_number", kitNumber)
-
-// 	api := adapters.NewBrickOwlApi("")
-
-// 	parts, err := api.GetParts(kitNumber)
-
-// 	if err != nil {
-// 		beeline.AddField(ctx, "fetch_parts_error", err)
-// 		return nil, err
-// 	}
-
-// 	beeline.AddField(ctx, "parts_count", len(parts))
-
-// 	kit := lego.NewKit()
-
-// }

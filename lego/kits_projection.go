@@ -21,7 +21,7 @@ type KitView struct {
 type PartView struct {
 	ID         PartID
 	Name       string
-	ColourID   int
+	ColourID   BrickLinkColour
 	ColourName string
 
 	Quantity int
@@ -35,7 +35,7 @@ func toPartView(parts []Part) []PartView {
 		views[i] = PartView{
 			ID:         part.ID,
 			Name:       part.Name,
-			ColourID:   part.Colour.ID,
+			ColourID:   part.Colour.Aliases.BrickLinkID,
 			ColourName: part.Colour.Name,
 			Quantity:   part.Quantity,
 		}

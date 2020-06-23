@@ -31,7 +31,7 @@ func NewPartsList(parts []Part) *ProjectPartList {
 func (m *ProjectPartList) Add(part Part) {
 
 	id := part.ID
-	colour := part.Colour.ID
+	colour := part.Colour.Aliases.BrickLinkID
 
 	existing, found := m.FindPart(id, colour)
 
@@ -43,7 +43,7 @@ func (m *ProjectPartList) Add(part Part) {
 	m.parts = append(m.parts, &ProjectPart{Part: part, Inventory: 0})
 }
 
-func (m *ProjectPartList) AddInventory(partID PartID, colourID int, quantity int) error {
+func (m *ProjectPartList) AddInventory(partID PartID, colourID BrickLinkColour, quantity int) error {
 
 	part, found := m.FindPart(partID, colourID)
 
@@ -60,11 +60,11 @@ func (m *ProjectPartList) AddInventory(partID PartID, colourID int, quantity int
 	return nil
 }
 
-func (m *ProjectPartList) FindPart(partID PartID, colourID int) (*ProjectPart, bool) {
+func (m *ProjectPartList) FindPart(partID PartID, colourID BrickLinkColour) (*ProjectPart, bool) {
 
 	for _, p := range m.parts {
 
-		if p.ID == partID && p.Colour.ID == colourID {
+		if p.ID == partID && p.Colour.Aliases.BrickLinkID == colourID {
 			return p, true
 		}
 	}

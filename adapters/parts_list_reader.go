@@ -126,14 +126,19 @@ func parseElementID(value string) int {
 func parseColour(fields []string) (lego.Colour, error) {
 
 	var err error
-	aliases := lego.ColourAliases{}
+	var bricklinkID, ldrawID int
 
-	if aliases.BrickLinkID, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
+	if bricklinkID, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
 		return lego.Colour{}, convertError("colour.BrickLinkID", fields[brickLinkID])
 	}
 
-	if aliases.LDrawID, err = strconv.Atoi(fields[ldrawColour]); err != nil {
+	if ldrawID, err = strconv.Atoi(fields[ldrawColour]); err != nil {
 		return lego.Colour{}, convertError("colour.LDrawID", fields[ldrawColour])
+	}
+
+	aliases := lego.ColourAliases{
+		BrickLinkID: lego.BrickLinkColour(bricklinkID),
+		LDrawID:     lego.LDrawColour(ldrawID),
 	}
 
 	colour := lego.Colour{

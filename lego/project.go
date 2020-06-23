@@ -34,11 +34,11 @@ func NewProject(name string, parts []Part) *Project {
 	return project
 }
 
-func (prj *Project) FindPart(partID PartID, colourID int) (*ProjectPart, bool) {
+func (prj *Project) FindPart(partID PartID, colourID BrickLinkColour) (*ProjectPart, bool) {
 	return prj.parts.FindPart(partID, colourID)
 }
 
-func (prj *Project) AddInventory(partID PartID, colourID int, quantity int) error {
+func (prj *Project) AddInventory(partID PartID, colourID BrickLinkColour, quantity int) error {
 
 	if quantity <= 0 {
 		return errors.New("Quantity must be greater than 0")
@@ -53,7 +53,7 @@ func (prj *Project) AddInventory(partID PartID, colourID int, quantity int) erro
 	return nil
 }
 
-func (prj *Project) RemoveInventory(partID PartID, colourID int, quantity int) error {
+func (prj *Project) RemoveInventory(partID PartID, colourID BrickLinkColour, quantity int) error {
 
 	if quantity <= 0 {
 		return errors.New("Quantity must be greater than 0")
@@ -108,7 +108,7 @@ type ProjectInventoryAdded struct {
 	eventstore.EventMeta
 
 	PartID   PartID
-	ColourID int
+	ColourID BrickLinkColour
 	Quantity int
 }
 
@@ -116,7 +116,7 @@ type ProjectInventoryRemoved struct {
 	eventstore.EventMeta
 
 	PartID   PartID
-	ColourID int
+	ColourID BrickLinkColour
 	Quantity int
 }
 

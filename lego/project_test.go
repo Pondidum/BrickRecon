@@ -9,7 +9,7 @@ import (
 func TestAddingInventory(t *testing.T) {
 
 	partID := NewPartID("1234b")
-	colourID := 5678
+	colourID := BrickLinkColour(5678)
 
 	project := NewProject("Test Project", []Part{
 		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
