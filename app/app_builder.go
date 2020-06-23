@@ -35,9 +35,12 @@ func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstor
 	es := eventstore.NewEventStore(backend)
 
 	lego.ProjectEvents(b.ctx, es.RegisterEvent)
+	lego.KitEvents(b.ctx, es.RegisterEvent)
+
 	background.ImageCacheEvents(b.ctx, es.RegisterEvent)
 
 	es.RegisterProjection(b.ctx, "projects", lego.ProjectsInitialState, lego.ProjectsProjector)
+	es.RegisterProjection(b.ctx, "kits", lego.KitsInitialState, lego.KitsProjector)
 
 	return es
 }

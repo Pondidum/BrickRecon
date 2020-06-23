@@ -17,8 +17,8 @@ type AppStore struct {
 	bus        *distributor.Distributor
 }
 
-func (a *AppStore) Save(ctx context.Context, project *lego.Project) error {
-	return a.EventStore.SaveAggregate(ctx, project.Aggregator)
+func (a *AppStore) Save(ctx context.Context, aggregate eventstore.Aggregate) error {
+	return a.EventStore.SaveAggregate(ctx, aggregate)
 }
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
