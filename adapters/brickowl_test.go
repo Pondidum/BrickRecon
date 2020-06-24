@@ -2,14 +2,25 @@ package adapters
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFetchingBoid(t *testing.T) {
+func createApi(t *testing.T) *BrickOwlApi {
+	if testing.Short() {
+		t.Skip("Skipping integration tests in short mode")
+	}
 
-	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	return NewBrickOwlApi(os.Getenv("BRICKOWL_API_KEY"))
+}
+
+func TestFetchingBoid(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	owl := createApi(t)
 	boid, err := owl.getSetBoid("75192-1")
 
 	assert.NoError(t, err)
@@ -18,7 +29,7 @@ func TestFetchingBoid(t *testing.T) {
 
 func TestFetchingInventory(t *testing.T) {
 
-	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	owl := createApi(t)
 	parts, err := owl.getInventory("849212")
 
 	assert.NoError(t, err)
@@ -27,7 +38,7 @@ func TestFetchingInventory(t *testing.T) {
 
 func TestBulkFetching(t *testing.T) {
 
-	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	owl := createApi(t)
 	parts, err := owl.lookupParts([]string{"380995-64", "334100-64"})
 
 	assert.NoError(t, err)
@@ -35,7 +46,7 @@ func TestBulkFetching(t *testing.T) {
 }
 
 func TestSetLookup(t *testing.T) {
-	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	owl := createApi(t)
 	info, err := owl.lookup("849212")
 
 	assert.NoError(t, err)
@@ -44,7 +55,7 @@ func TestSetLookup(t *testing.T) {
 
 func TestGetInventory(t *testing.T) {
 
-	owl := NewBrickOwlApi("46ee1ad3d0cf66d4d41be4b92c2923c99c84d85ced698b553a955a896e851124")
+	owl := createApi(t)
 	parts, err := owl.GetParts("75193-1")
 
 	assert.NoError(t, err)
