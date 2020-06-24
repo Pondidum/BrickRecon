@@ -205,9 +205,14 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 
 	colour := partColour(colours, additional.ColourID)
 
+	name := strings.TrimPrefix(additional.Name, "LEGO ")
+	name = strings.TrimPrefix(name, colour.Name)
+	name = strings.TrimSuffix(name, "("+ldrawID+")")
+	name = strings.TrimSpace(name)
+
 	return lego.Part{
 		ID:       lego.NewPartID(ldrawID),
-		Name:     additional.Name,
+		Name:     name,
 		Quantity: int(item.Quantity),
 		Colour:   colour,
 		Aliases: lego.PartAliases{
