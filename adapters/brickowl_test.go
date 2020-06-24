@@ -132,6 +132,26 @@ func TestCreateColour(t *testing.T) {
 
 }
 
+func TestSanitiseName(t *testing.T) {
+	t.Parallel()
+
+	colour := lego.Colour{
+		ID:   lego.BrickLinkColour(86),
+		Name: "Medium Stone Gray",
+	}
+
+	cases := map[string]string{
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b)":          "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b / 123132)": "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403)":           "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Slope 1 x 1 (31°) (50746 / 54200)":          "Slope 1 x 1 (31°)",
+	}
+
+	for input, expected := range cases {
+		assert.Equal(t, expected, sanitiseName(input, "15403b", colour))
+	}
+}
+
 var partJson string = `
 {
   "boid": "103095-64",
