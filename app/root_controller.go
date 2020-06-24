@@ -13,7 +13,7 @@ func (c RootController) Views() []string {
 		"root_index.html",
 		"menu/index.html",
 		"menu/project-list.html",
-		"menu/sets-list.html",
+		"menu/kit-list.html",
 	}
 }
 

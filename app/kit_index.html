@@ -1,0 +1,74 @@
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">{{ .Kit.Name }}</h1>
+  </div>
+
+  <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+    <h3>Parts</h3>
+    <div class="btn-toolbar mb-2 mb-md-0">
+
+      <div class="input-group input-group-sm mr-2">
+        <input type="text" class="form-control" placeholder="filter...">
+      </div>
+
+      <div class="btn-group btn-group-toggle mr-2" data-toggle="buttons">
+        <label class="btn btn-sm btn-outline-secondary active">
+          <input type="radio" name="options" id="option1"> All
+        </label>
+        <label class="btn btn-sm btn-outline-secondary">
+          <input type="radio" name="options" id="option2"> Needed
+        </label>
+        <label class="btn btn-sm btn-outline-secondary">
+          <input type="radio" name="options" id="option3"> Owned
+        </label>
+      </div>
+
+      <div class="input-group input-group-sm mr-2">
+        <select class="custom-select">
+          <option selected>Any Colour</option>
+          <option value="1">Dark Bluish Gray</option>
+          <option value="2">Light Bluish Gray</option>
+          <option value="3">Pink</option>
+        </select>
+      </div>
+
+      <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle ml-5">
+        Export
+      </button>
+    </div>
+  </div>
+
+  <table class="table">
+
+    <thead>
+      <tr class="reactable-column-header">
+        <th tabindex="0" width="66"><strong class="name-header">Image</strong></th>
+        <th tabindex="0"><strong class="name-header">Part No</strong></th>
+        <th tabindex="0"><strong class="name-header">Name</strong></th>
+        <th tabindex="0"><strong class="name-header">Colour</strong></th>
+        <th tabindex="0"><strong class="name-header">Quantity</strong></th>
+        <th class="" tabindex="0"><strong class="name-header">Links</strong></th>
+      </tr>
+    </thead>
+
+    <tbody class="reactable-data">
+
+      {{ range .Kit.Parts }}
+      <tr>
+        <td width="66"><img loading="lazy" src="/static/img/parts/{{ .ID }}-{{ .ColourID }}.png"
+            alt="part {{ .ID }}" width="66px"></td>
+        <td>{{ .ID }}</td>
+        <td>{{ .Name }}</td>
+        <td>{{ .ColourName }}</td>
+        <td>{{ .Quantity }}</td>
+        <td>
+          <ul class="list-unstyled">
+            <li><a href="http://www.brickowl.com/search/catalog?query={{ .ID }}&amp;cat=1">BrickOwl</a></li>
+            <li><a href="http://peeron.com/inv/parts/{{ .ID }}">Peeron</a></li>
+          </ul>
+        </td>
+      </tr>
+      {{ end }}
+
+    </tbody>
+  </table>

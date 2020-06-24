@@ -6,17 +6,15 @@
   </a>
 </h6>
 
-<ul class="nav flex-column mb-2">
+<ul class="nav flex-column">
+  {{ range .AllKits }}
   <li class="nav-item">
-    <a class="nav-link" href="#" title="75192">
+    {{ $link := (print "/kit/" .Number ) }}
+    <a class="nav-link {{ if eq _page.Path $link }}active{{end}}" href="{{ $link }}">
       {{ template "icons/archive" }}
-      Millennium Falcon
+      {{ .Name }}
     </a>
   </li>
-  <li class="nav-item">
-    <a class="nav-link" href="#" title="75252">
-      {{ template "icons/archive" }}
-      Imperial Star Destroyer
-    </a>
-  </li>
+  {{ end}}
 </ul>
+

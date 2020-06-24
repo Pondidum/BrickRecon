@@ -9,6 +9,7 @@ import (
 )
 
 type SiteModel struct {
+	AllKits   map[string]*lego.KitView
 	AllModels []string
 }
 
@@ -22,12 +23,20 @@ func (a *AppStore) Save(ctx context.Context, aggregate eventstore.Aggregate) err
 }
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
-	var view lego.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, "projects", &view); err != nil {
+	var projects lego.AllProjectsView
+	if err := a.EventStore.ReadView(ctx, "projects", &projects); err != nil {
 		return SiteModel{}
 	}
 
-	return SiteModel{AllModels: view.Names}
+	var kits lego.AllKitsView
+	if err := a.EventStore.ReadView(ctx, "kits", &kits); err != nil {
+		return SiteModel{}
+	}
+
+	return SiteModel{
+		AllModels: projects.Names,
+		AllKits:   kits.Kits,
+	}
 }
 
 func (a *AppStore) ReadProject(ctx context.Context, name string) (*lego.ProjectView, error) {
@@ -45,6 +54,22 @@ func (a *AppStore) ReadProject(ctx context.Context, name string) (*lego.ProjectV
 
 	return project, nil
 
+}
+
+func (a *AppStore) ReadKit(ctx context.Context, kitNumber string) (*lego.KitView, error) {
+
+	var view lego.AllKitsView
+	if err := a.EventStore.ReadView(ctx, "kits", &view); err != nil {
+		return nil, err
+	}
+
+	kit, ok := view.Kits[kitNumber]
+
+	if !ok {
+		return nil, fmt.Errorf("No kit with kitnumber '%s' was found", kitNumber)
+	}
+
+	return kit, nil
 }
 
 func (a *AppStore) SendMessage(ctx context.Context, message distributor.Message) func() {

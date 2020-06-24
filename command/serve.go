@@ -47,6 +47,7 @@ func (c *ServeCommand) Run(_ []string) int {
 			&app.CreateController{Store: store},
 			&app.ProjectController{Store: store},
 			&app.LoginController{},
+			&app.KitController{Store: store},
 			&app.KitImportController{Store: store},
 		},
 	})
