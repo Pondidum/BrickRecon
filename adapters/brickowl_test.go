@@ -1,6 +1,7 @@
 package adapters
 
 import (
+	"brickrecon/lego"
 	"encoding/json"
 	"os"
 	"testing"
@@ -17,9 +18,8 @@ func createApi(t *testing.T) *BrickOwlApi {
 }
 
 func TestFetchingBoid(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
+	t.Parallel()
+
 	owl := createApi(t)
 	boid, err := owl.getSetBoid("75192-1")
 
@@ -28,6 +28,7 @@ func TestFetchingBoid(t *testing.T) {
 }
 
 func TestFetchingInventory(t *testing.T) {
+	t.Parallel()
 
 	owl := createApi(t)
 	parts, err := owl.getInventory("849212")
@@ -37,6 +38,7 @@ func TestFetchingInventory(t *testing.T) {
 }
 
 func TestBulkFetching(t *testing.T) {
+	t.Parallel()
 
 	owl := createApi(t)
 	parts, err := owl.lookupParts([]string{"380995-64", "334100-64"})
@@ -46,6 +48,8 @@ func TestBulkFetching(t *testing.T) {
 }
 
 func TestSetLookup(t *testing.T) {
+	t.Parallel()
+
 	owl := createApi(t)
 	info, err := owl.lookup("849212")
 
@@ -54,6 +58,7 @@ func TestSetLookup(t *testing.T) {
 }
 
 func TestGetInventory(t *testing.T) {
+	t.Parallel()
 
 	owl := createApi(t)
 	parts, err := owl.GetParts("75193-1")
@@ -63,6 +68,8 @@ func TestGetInventory(t *testing.T) {
 }
 
 func TestIdMapUnMarshal(t *testing.T) {
+	t.Parallel()
+
 	c := container{}
 	data := `{ "ids": [ { "id": "4070", "type": "design_id" }, { "id": "531429-64", "type": "boid" } ] }`
 
@@ -76,3 +83,73 @@ func TestIdMapUnMarshal(t *testing.T) {
 type container struct {
 	IDs idMap
 }
+
+func TestCreatePart(t *testing.T) {
+	t.Parallel()
+
+	colours := map[flexInt]colourItem{
+		flexInt(64): {
+			Name:         "Medium Stone Gray",
+			ID:           "64",
+			LDrawIDs:     []flexInt{flexInt(71)},
+			BrickLinkIDs: []flexInt{flexInt(86)},
+		},
+	}
+
+	entry := inventoryItem{Boid: "103095-64", Quantity: 5}
+	var additional lookupItem
+	json.Unmarshal([]byte(partJson), &additional)
+
+	part := createPart(colours, entry, additional)
+
+	assert.Equal(t, lego.NewPartID("15403"), part.ID)
+	assert.Equal(t, "LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403)", part.Name)
+	assert.Equal(t, 5, part.Quantity)
+	assert.Equal(t, lego.BrickLinkColour(86), part.Colour.ID)
+
+}
+
+func TestCreateColour(t *testing.T) {
+	t.Parallel()
+
+	colours := map[flexInt]colourItem{
+		flexInt(64): {
+			Name:         "Medium Stone Gray",
+			ID:           "64",
+			LDrawIDs:     []flexInt{flexInt(71)},
+			BrickLinkIDs: []flexInt{flexInt(86)},
+		},
+	}
+
+	colour := partColour(colours, flexInt(64))
+
+	assert.Equal(t, lego.BrickLinkColour(86), colour.ID)
+	assert.Equal(t, "Medium Stone Gray", colour.Name)
+	assert.Equal(t, "", colour.Category)
+	assert.Equal(t, lego.BrickOwlColour(64), colour.Aliases.Boid)
+	assert.Equal(t, lego.BrickLinkColour(86), colour.Aliases.BrickLinkID)
+	assert.Equal(t, lego.LDrawColour(71), colour.Aliases.LDrawID)
+
+}
+
+var partJson string = `
+{
+  "boid": "103095-64",
+  "type": "Part",
+  "ids": [
+    { "id": "15403", "type": "design_id" },
+    { "id": "103095-64", "type": "boid" },
+    { "id": "6167514", "type": "item_no" },
+    { "id": "6167514", "type": "item_no" }
+  ],
+  "name": "LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403)",
+  "url": "https:\/\/www.brickowl.com\/catalog\/lego-medium-stone-gray-plate-1-x-2-with-shooter-15403",
+  "permalink": "https:\/\/www.brickowl.com\/boid\/103095-64",
+  "cheapest_gbp": "0.01",
+  "color_name": "Medium Stone Gray",
+  "color_id": "64",
+  "color_hex": "afb5c7",
+  "cat_name_path": "Parts \/ Plate \/ Non-Standard",
+  "missing_data": "41"
+}
+`
