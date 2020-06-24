@@ -197,24 +197,19 @@ func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
 }
 
 func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) lego.Part {
-	ldrawID := getID(additional.IDs, "ldraw")
-	colourInfo := colours[additional.ColourID]
+	ldrawID, found := additional.IDs["ldraw"]
 
-	colourAliases := lego.ColourAliases{
-		BrickLinkID: lego.BrickLinkColour(colourInfo.BrickLinkIDs[0]),
-		LDrawID:     lego.LDrawColour(colourInfo.LDrawIDs[0]),
-		Boid:        lego.BrickOwlColour(additional.ColourID),
+	if !found {
+		ldrawID, found = additional.IDs["design_id"]
 	}
+
+	colour := partColour(colours, additional.ColourID)
 
 	return lego.Part{
 		ID:       lego.NewPartID(ldrawID),
 		Name:     additional.Name,
 		Quantity: int(item.Quantity),
-		Colour: lego.Colour{
-			ID:      colourAliases.BrickLinkID,
-			Name:    colours[additional.ColourID].Name,
-			Aliases: colourAliases,
-		},
+		Colour:   colour,
 		Aliases: lego.PartAliases{
 			LDrawID: ldrawID,
 			Boid:    item.Boid,
@@ -222,14 +217,20 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	}
 }
 
-func getID(ids []lookupID, t string) string {
-	for _, value := range ids {
-		if value.Type == t {
-			return value.ID
-		}
+func partColour(colours map[flexInt]colourItem, colourID flexInt) lego.Colour {
+	colourInfo := colours[colourID]
+
+	colourAliases := lego.ColourAliases{
+		BrickLinkID: lego.BrickLinkColour(colourInfo.BrickLinkIDs[0]),
+		LDrawID:     lego.LDrawColour(colourInfo.LDrawIDs[0]),
+		Boid:        lego.BrickOwlColour(colourID),
 	}
 
-	return ""
+	return lego.Colour{
+		ID:      colourAliases.BrickLinkID,
+		Aliases: colourAliases,
+		Name:    colourInfo.Name,
+	}
 }
 
 func split(buf []inventoryItem, lim int) [][]inventoryItem {
@@ -254,12 +255,7 @@ type lookupItem struct {
 	Name     string
 	Type     string
 	ColourID flexInt `json:"color_id"`
-	IDs      []lookupID
-}
-
-type lookupID struct {
-	ID   string
-	Type string
+	IDs      idMap
 }
 
 type idlookupResponse struct {
@@ -298,5 +294,29 @@ func (fi *flexInt) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	*fi = flexInt(i)
+	return nil
+}
+
+type idMap map[string]string
+
+func (idmap *idMap) UnmarshalJSON(b []byte) error {
+
+	var ids []struct {
+		ID   string
+		Type string
+	}
+
+	if err := json.Unmarshal(b, &ids); err != nil {
+		return err
+	}
+
+	m := idMap{}
+
+	for _, pair := range ids {
+		m[pair.Type] = pair.ID
+	}
+
+	*idmap = m
+
 	return nil
 }
