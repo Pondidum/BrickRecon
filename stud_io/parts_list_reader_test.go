@@ -1,4 +1,4 @@
-package adapters
+package stud_io
 
 import (
 	"brickrecon/lego"

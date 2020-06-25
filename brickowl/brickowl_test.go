@@ -1,4 +1,4 @@
-package adapters
+package brickowl
 
 import (
 	"brickrecon/lego"

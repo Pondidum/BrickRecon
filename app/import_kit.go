@@ -1,8 +1,8 @@
 package app
 
 import (
-	"brickrecon/adapters"
 	"brickrecon/background"
+	"brickrecon/brickowl"
 	"brickrecon/lego"
 	"context"
 	"os"
@@ -14,7 +14,7 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber string) (func(), 
 
 	beeline.AddField(ctx, "kit_number", kitNumber)
 
-	api := adapters.NewBrickOwlApi(os.Getenv("BRICKOWL_API_KEY"))
+	api := brickowl.NewBrickOwlApi(os.Getenv("BRICKOWL_API_KEY"))
 
 	parts, err := api.GetParts(kitNumber)
 	if err != nil {
