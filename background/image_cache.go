@@ -271,8 +271,6 @@ func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID lego.BrickLinkCol
 		colourID:    colourID,
 		maxAttempts: 5,
 
-		invalidImage: []byte{}, //read a png into this
-
 		httpClient: &http.Client{},
 		writeFile:  ic.writeFile,
 	}

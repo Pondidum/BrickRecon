@@ -20,8 +20,6 @@ func createState() *fsm {
 			return errors.New("File write failed")
 		},
 
-		invalidImage: []byte("invalid image placeholder"),
-
 		attempts:    0,
 		maxAttempts: 5,
 
@@ -43,6 +41,7 @@ func TestWhenPartFetchingFails(t *testing.T) {
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
 	assert.Equal(t, "No network path available", event.Error)
+	assert.Equal(t, 1, state.attempts)
 }
 
 func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
@@ -57,6 +56,7 @@ func TestWhenPartFetchingFailsBecauseServerErrors(t *testing.T) {
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
 	assert.Equal(t, "Unexpected statusCode: 500", event.Error)
+	assert.Equal(t, 1, state.attempts)
 }
 
 func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
@@ -74,6 +74,7 @@ func TestWhenPartFetchingFailsBecauseBodyIsUnreadable(t *testing.T) {
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
 	assert.Equal(t, "Error reading stream", event.Error)
+	assert.Equal(t, 1, state.attempts)
 }
 
 func TestWhenPartSavingFails(t *testing.T) {
@@ -88,31 +89,29 @@ func TestWhenPartSavingFails(t *testing.T) {
 	assert.Equal(t, state.partID, event.PartID)
 	assert.Equal(t, state.colourID, event.ColourID)
 	assert.Equal(t, "File write failed", event.Error)
+	assert.Equal(t, 1, state.attempts)
 }
 
 func TestWhenPartImageDoesntExist(t *testing.T) {
 
-	var fileWritten string
-	var contentWritten []byte
-
+	fileWritten := false
 	state := createState()
 
 	state.httpClient = testutil.HttpNotFoundClient()
 	state.writeFile = func(filename string, content []byte) error {
-		fileWritten = filename
-		contentWritten = content
+		fileWritten = true
 		return nil
 	}
 	state.Run(context.Background())
 
 	attempt := state.events[0].(*PartImageNotFound)
 
-	assert.Len(t, state.events, 2, print(state))
+	assert.Len(t, state.events, 1, print(state))
 	assert.Equal(t, state.partID, attempt.PartID)
 	assert.Equal(t, state.colourID, attempt.ColourID)
+	assert.Equal(t, 0, state.attempts)
 
-	assert.Equal(t, "567b-85.png", fileWritten)
-	assert.Equal(t, "invalid image placeholder", string(contentWritten))
+	assert.False(t, fileWritten)
 }
 
 func TestWhenPartSavingWorks(t *testing.T) {
@@ -143,14 +142,12 @@ func TestWhenPartSavingWorks(t *testing.T) {
 
 func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
-	var fileWritten string
-	var contentWritten []byte
+	fileWritten := false
 
 	state := createState()
 	state.attempts = state.maxAttempts
 	state.writeFile = func(filename string, content []byte) error {
-		fileWritten = filename
-		contentWritten = content
+		fileWritten = true
 		return nil
 	}
 
@@ -158,12 +155,11 @@ func TestWhenPartFetchingExceedsMaxAttempts(t *testing.T) {
 
 	exceed := state.events[0].(*PartFetchAttemptsExceeded)
 
-	assert.Len(t, state.events, 2, print(state))
+	assert.Len(t, state.events, 1, print(state))
 	assert.Equal(t, state.partID, exceed.PartID)
 	assert.Equal(t, state.colourID, exceed.ColourID)
 
-	assert.Equal(t, "567b-85.png", fileWritten)
-	assert.Equal(t, "invalid image placeholder", string(contentWritten))
+	assert.False(t, fileWritten)
 }
 
 func print(state *fsm) string {

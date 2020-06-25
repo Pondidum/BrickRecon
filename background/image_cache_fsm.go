@@ -21,8 +21,6 @@ type fsm struct {
 	writeFile  func(filename string, content []byte) error
 	events     []eventstore.Event
 
-	invalidImage []byte
-
 	ctx         context.Context
 	transitions []string
 }
@@ -94,7 +92,7 @@ func partFailed(s *fsm) state {
 		ColourID: s.colourID,
 	})
 
-	return storePart(s.invalidImage)
+	return nil
 }
 
 func fetchPart(s *fsm) state {
@@ -139,6 +137,8 @@ func fetchFailed(err error) state {
 		_, finish := s.enter("fetch_failed")
 		defer finish()
 
+		s.attempts++
+
 		s.event(&PartAttempted{
 			PartID:   s.partID,
 			ColourID: s.colourID,
@@ -158,7 +158,7 @@ func invalidPart(s *fsm) state {
 		ColourID: s.colourID,
 	})
 
-	return storePart(s.invalidImage)
+	return nil
 }
 
 func storePart(content []byte) state {
@@ -186,6 +186,8 @@ func storeFailed(err error) state {
 	return func(s *fsm) state {
 		_, finish := s.enter("store_failed")
 		defer finish()
+
+		s.attempts++
 
 		s.event(&PartAttempted{
 			PartID:   s.partID,
