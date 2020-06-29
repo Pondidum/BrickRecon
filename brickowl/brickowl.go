@@ -222,7 +222,7 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 func sanitiseName(name string, id string, colour lego.Colour) string {
 
 	name = strings.TrimPrefix(name, "LEGO ")
-	name = strings.TrimPrefix(name, colour.Name)
+	name = strings.TrimPrefix(name, string(colour.Name))
 	name = name[0:strings.LastIndex(name, "(")]
 	name = strings.TrimSpace(name)
 
@@ -285,7 +285,7 @@ type inventoryItem struct {
 
 type colourItem struct {
 	ID   string
-	Name string
+	Name lego.ColourName
 
 	LDrawIDs     []flexInt `json:"ldraw_ids"`
 	BrickLinkIDs []flexInt `json:"bl_ids"`

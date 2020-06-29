@@ -145,7 +145,7 @@ func parseColour(fields []string) (lego.Colour, error) {
 	colour := lego.Colour{
 		ID:       aliases.BrickLinkID,
 		Aliases:  aliases,
-		Name:     fields[colourName],
+		Name:     lego.ColourName(fields[colourName]),
 		Category: fields[colourCategory],
 	}
 

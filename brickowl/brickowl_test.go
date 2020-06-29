@@ -124,7 +124,7 @@ func TestCreateColour(t *testing.T) {
 	colour := partColour(colours, flexInt(64))
 
 	assert.Equal(t, lego.BrickLinkColour(86), colour.ID)
-	assert.Equal(t, "Medium Stone Gray", colour.Name)
+	assert.Equal(t, lego.ColourName("Medium Stone Gray"), colour.Name)
 	assert.Equal(t, "", colour.Category)
 	assert.Equal(t, lego.BrickOwlColour(64), colour.Aliases.Boid)
 	assert.Equal(t, lego.BrickLinkColour(86), colour.Aliases.BrickLinkID)

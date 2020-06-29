@@ -27,7 +27,7 @@ func TestPartReading(t *testing.T) {
 	assert.Equal(t, lego.BrickLinkColour(11), part.Colour.ID)
 	assert.Equal(t, lego.BrickLinkColour(11), part.Colour.Aliases.BrickLinkID)
 	assert.Equal(t, lego.LDrawColour(0), part.Colour.Aliases.LDrawID)
-	assert.Equal(t, "Black", part.Colour.Name)
+	assert.Equal(t, lego.ColourName("Black"), part.Colour.Name)
 	assert.Equal(t, "Solid Colors", part.Colour.Category)
 	assert.Equal(t, 4, part.Quantity)
 	assert.Equal(t, 0.23, part.Weight)
