@@ -10,7 +10,7 @@ import (
 
 func TestPartIdMarshaling(t *testing.T) {
 
-	part := NewPartID("1234b")
+	part := PartID("1234b")
 
 	bytes, err := json.Marshal(part)
 	assert.NoError(t, err)
@@ -27,19 +27,19 @@ func TestPartIdUnmarshaling(t *testing.T) {
 
 	err := json.Unmarshal([]byte(`"1234b"`), &part)
 	assert.NoError(t, err)
-	assert.Equal(t, `1234b`, part.id)
+	assert.Equal(t, PartID(`1234b`), part)
 
 	var container container
 	err = json.Unmarshal([]byte(`{"PartID":"1234b"}`), &container)
 	assert.NoError(t, err)
-	assert.Equal(t, "1234b", container.PartID.id)
+	assert.Equal(t, PartID("1234b"), container.PartID)
 }
 
 func TestPartIdEquality(t *testing.T) {
 
-	one := NewPartID("1234")
-	two := NewPartID("1234")
-	bad := NewPartID("9876")
+	one := PartID("1234")
+	two := PartID("1234")
+	bad := PartID("9876")
 
 	assert.True(t, one == two)
 	assert.False(t, one == bad)
@@ -49,7 +49,7 @@ func TestPartIdEquality(t *testing.T) {
 
 func TestPartStringy(t *testing.T) {
 
-	part := NewPartID("233b")
+	part := PartID("233b")
 	assert.Equal(t, "233b", fmt.Sprintf("%s", part))
 }
 

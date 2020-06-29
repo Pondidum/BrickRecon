@@ -23,7 +23,7 @@ func createState() *fsm {
 		attempts:    0,
 		maxAttempts: 5,
 
-		partID:   lego.NewPartID("567b"),
+		partID:   lego.PartID("567b"),
 		colourID: 85,
 	}
 

@@ -168,7 +168,7 @@ func (ic *ImageCache) ReadFromCache() error {
 		name := strings.TrimSuffix(file, path.Ext(file))
 		parts := strings.Split(name, "-")
 
-		partID := lego.NewPartID(parts[0])
+		partID := lego.PartID(parts[0])
 		colourID, err := strconv.Atoi(parts[1])
 
 		if err != nil {

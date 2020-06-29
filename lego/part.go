@@ -1,7 +1,5 @@
 package lego
 
-import "encoding/json"
-
 type Colour struct {
 	ID      BrickLinkColour
 	Aliases ColourAliases
@@ -20,30 +18,7 @@ type ColourAliases struct {
 	Boid        BrickOwlColour
 }
 
-type PartID struct {
-	id string
-}
-
-func NewPartID(value string) PartID {
-	return PartID{id: value}
-}
-
-func (p PartID) String() string {
-	return p.id
-}
-
-func (p *PartID) UnmarshalJSON(s []byte) (err error) {
-	return json.Unmarshal(s, &p.id)
-}
-
-func (p PartID) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.id)
-}
-
-func (p *PartID) UnmarshalText(text []byte) (err error) {
-	p.id = string(text)
-	return nil
-}
+type PartID string
 
 type Part struct {
 	ID      PartID
