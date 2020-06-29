@@ -13,7 +13,7 @@ func TestPartListAdding(t *testing.T) {
 
 	// add a part
 	model.Add(Part{
-		ID:       PartID("1234"),
+		ID:       LDrawPart("1234"),
 		Colour:   Colour{ID: 1, Name: "Black"},
 		Quantity: 1,
 	})
@@ -21,7 +21,7 @@ func TestPartListAdding(t *testing.T) {
 
 	// duplicate part should increase quantity
 	model.Add(Part{
-		ID:       PartID("1234"),
+		ID:       LDrawPart("1234"),
 		Colour:   Colour{ID: 1, Name: "Black"},
 		Quantity: 17,
 	})
@@ -30,7 +30,7 @@ func TestPartListAdding(t *testing.T) {
 
 	// duplicate part with differnt colour
 	model.Add(Part{
-		ID:       PartID("1234"),
+		ID:       LDrawPart("1234"),
 		Colour:   Colour{ID: 2, Name: "Red"},
 		Quantity: 1,
 	})

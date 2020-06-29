@@ -97,7 +97,7 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 }
 
 type postModel struct {
-	Part     lego.PartID
+	Part     lego.LDrawPart
 	Colour   lego.BrickLinkColour
 	Quantity int
 	Action   string

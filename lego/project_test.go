@@ -8,7 +8,7 @@ import (
 
 func TestAddingInventory(t *testing.T) {
 
-	partID := PartID("1234b")
+	partID := LDrawPart("1234b")
 	colourID := BrickLinkColour(5678)
 
 	project := NewProject("Test Project", []Part{
@@ -18,7 +18,7 @@ func TestAddingInventory(t *testing.T) {
 	thePart, _ := project.FindPart(partID, colourID)
 
 	// add to non-existing part
-	assert.Error(t, project.AddInventory(PartID("99999"), colourID, 5))
+	assert.Error(t, project.AddInventory(LDrawPart("99999"), colourID, 5))
 
 	// add to non-existing colour
 	assert.Error(t, project.AddInventory(partID, 99999, 5))
@@ -41,7 +41,7 @@ func TestAddingInventory(t *testing.T) {
 
 func TestRemovingInventory(t *testing.T) {
 
-	partID := PartID("1234b")
+	partID := LDrawPart("1234b")
 	colourID := BrickLinkColour(5678)
 
 	project := NewProject("Test Project", []Part{
@@ -53,7 +53,7 @@ func TestRemovingInventory(t *testing.T) {
 	thePart, _ := project.FindPart(partID, colourID)
 
 	// remove from non-existing part
-	assert.Error(t, project.RemoveInventory(PartID("99999"), colourID, 5))
+	assert.Error(t, project.RemoveInventory(LDrawPart("99999"), colourID, 5))
 
 	// remove from non-existing colour
 	assert.Error(t, project.RemoveInventory(partID, 99999, 5))

@@ -10,7 +10,7 @@ import (
 
 func TestPartIdMarshaling(t *testing.T) {
 
-	part := PartID("1234b")
+	part := LDrawPart("1234b")
 
 	bytes, err := json.Marshal(part)
 	assert.NoError(t, err)
@@ -23,23 +23,23 @@ func TestPartIdMarshaling(t *testing.T) {
 
 func TestPartIdUnmarshaling(t *testing.T) {
 
-	var part PartID
+	var part LDrawPart
 
 	err := json.Unmarshal([]byte(`"1234b"`), &part)
 	assert.NoError(t, err)
-	assert.Equal(t, PartID(`1234b`), part)
+	assert.Equal(t, LDrawPart(`1234b`), part)
 
 	var container container
 	err = json.Unmarshal([]byte(`{"PartID":"1234b"}`), &container)
 	assert.NoError(t, err)
-	assert.Equal(t, PartID("1234b"), container.PartID)
+	assert.Equal(t, LDrawPart("1234b"), container.PartID)
 }
 
 func TestPartIdEquality(t *testing.T) {
 
-	one := PartID("1234")
-	two := PartID("1234")
-	bad := PartID("9876")
+	one := LDrawPart("1234")
+	two := LDrawPart("1234")
+	bad := LDrawPart("9876")
 
 	assert.True(t, one == two)
 	assert.False(t, one == bad)
@@ -49,10 +49,10 @@ func TestPartIdEquality(t *testing.T) {
 
 func TestPartStringy(t *testing.T) {
 
-	part := PartID("233b")
+	part := LDrawPart("233b")
 	assert.Equal(t, "233b", fmt.Sprintf("%s", part))
 }
 
 type container struct {
-	PartID PartID
+	PartID LDrawPart
 }

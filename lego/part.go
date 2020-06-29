@@ -20,11 +20,11 @@ type ColourAliases struct {
 	Boid        BrickOwlColour
 }
 
-type PartID string
+type LDrawPart string
 type PartName string
 
 type Part struct {
-	ID      PartID
+	ID      LDrawPart
 	Aliases PartAliases
 
 	Name   PartName
@@ -35,11 +35,10 @@ type Part struct {
 }
 
 type BrickLinkPart string
-type LDrawPart string
 type BrickOwlPart string
 
 type PartAliases struct {
 	BrickLinkID BrickLinkPart
-	LDrawID     string
+	LDrawID     LDrawPart
 	Boid        BrickOwlPart
 }

@@ -224,12 +224,12 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	name := sanitiseName(additional.Name, ldrawID, colour)
 
 	return lego.Part{
-		ID:       lego.PartID(ldrawID),
+		ID:       lego.LDrawPart(ldrawID),
 		Name:     lego.PartName(name),
 		Quantity: int(item.Quantity),
 		Colour:   colour,
 		Aliases: lego.PartAliases{
-			LDrawID: ldrawID,
+			LDrawID: lego.LDrawPart(ldrawID),
 			Boid:    item.Boid,
 		},
 	}

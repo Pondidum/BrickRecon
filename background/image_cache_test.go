@@ -40,8 +40,8 @@ func TestReadingDiskCacheDoesntEmitEventsForAlreadyProcessedParts(t *testing.T) 
 	assert.NoError(t, ic.writeFile("3024-85.png", []byte("image one")))
 	assert.NoError(t, ic.writeFile("3024-11.png", []byte("image two")))
 
-	ic.onFinished(lego.PartID("3024"), 85)
-	ic.onFinished(lego.PartID("3024"), 11)
+	ic.onFinished(lego.LDrawPart("3024"), 85)
+	ic.onFinished(lego.LDrawPart("3024"), 11)
 
 	ic.ReadFromCache()
 

@@ -33,14 +33,14 @@ type PartImageRequested struct {
 type PartFetchAttemptsExceeded struct {
 	eventstore.EventMeta
 
-	PartID   lego.PartID
+	PartID   lego.LDrawPart
 	ColourID lego.BrickLinkColour
 }
 
 type PartAttempted struct {
 	eventstore.EventMeta
 
-	PartID   lego.PartID
+	PartID   lego.LDrawPart
 	ColourID lego.BrickLinkColour
 	Error    string
 }
@@ -48,21 +48,21 @@ type PartAttempted struct {
 type PartImageNotFound struct {
 	eventstore.EventMeta
 
-	PartID   lego.PartID
+	PartID   lego.LDrawPart
 	ColourID lego.BrickLinkColour
 }
 
 type PartImageStored struct {
 	eventstore.EventMeta
 
-	PartID   lego.PartID
+	PartID   lego.LDrawPart
 	ColourID lego.BrickLinkColour
 }
 
 type PartAddedFromCache struct {
 	eventstore.EventMeta
 
-	PartID   lego.PartID
+	PartID   lego.LDrawPart
 	ColourID lego.BrickLinkColour
 }
 
@@ -168,7 +168,7 @@ func (ic *ImageCache) ReadFromCache() error {
 		name := strings.TrimSuffix(file, path.Ext(file))
 		parts := strings.Split(name, "-")
 
-		partID := lego.PartID(parts[0])
+		partID := lego.LDrawPart(parts[0])
 		colourID, err := strconv.Atoi(parts[1])
 
 		if err != nil {
@@ -257,7 +257,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 	}
 }
 
-func (ic *ImageCache) onFinished(partID lego.PartID, colourID lego.BrickLinkColour) {
+func (ic *ImageCache) onFinished(partID lego.LDrawPart, colourID lego.BrickLinkColour) {
 	key := key(partID, colourID)
 
 	ic.done[key] = true
@@ -265,7 +265,7 @@ func (ic *ImageCache) onFinished(partID lego.PartID, colourID lego.BrickLinkColo
 	delete(ic.pending, key)
 }
 
-func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID lego.BrickLinkColour) *fsm {
+func (ic *ImageCache) newImageFsm(partID lego.LDrawPart, colourID lego.BrickLinkColour) *fsm {
 	return &fsm{
 		partID:      partID,
 		colourID:    colourID,
@@ -276,6 +276,6 @@ func (ic *ImageCache) newImageFsm(partID lego.PartID, colourID lego.BrickLinkCol
 	}
 }
 
-func key(id lego.PartID, colourID lego.BrickLinkColour) string {
+func key(id lego.LDrawPart, colourID lego.BrickLinkColour) string {
 	return fmt.Sprintf("%s-%v", id, colourID)
 }

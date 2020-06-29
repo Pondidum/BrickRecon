@@ -12,7 +12,7 @@ import (
 )
 
 type fsm struct {
-	partID      lego.PartID
+	partID      lego.LDrawPart
 	colourID    lego.BrickLinkColour
 	attempts    int
 	maxAttempts int
