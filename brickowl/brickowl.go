@@ -19,7 +19,7 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	return &BrickOwlApi{key}
 }
 
-func (bo *BrickOwlApi) GetSetName(setNumber string) (string, error) {
+func (bo *BrickOwlApi) GetSetName(setNumber lego.KitNumber) (lego.KitName, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
 	if err != nil {
@@ -31,10 +31,10 @@ func (bo *BrickOwlApi) GetSetName(setNumber string) (string, error) {
 		return "", err
 	}
 
-	return info.Name, nil
+	return lego.KitName(info.Name), nil
 }
 
-func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
+func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]lego.Part, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
 	if err != nil {
@@ -116,12 +116,12 @@ func (bo *BrickOwlApi) makeRequest(url string, args map[string]string, dto inter
 	return json.Unmarshal(content, &dto)
 }
 
-func (bo *BrickOwlApi) getSetBoid(setNumber string) (string, error) {
+func (bo *BrickOwlApi) getSetBoid(setNumber lego.KitNumber) (string, error) {
 
 	args := map[string]string{
 		"type":    "Set",
 		"id_type": "set_number",
-		"id":      setNumber,
+		"id":      string(setNumber),
 	}
 
 	var dto idlookupResponse

@@ -10,7 +10,7 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func ImportKit(ctx context.Context, store *AppStore, kitNumber string) (func(), error) {
+func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (func(), error) {
 
 	beeline.AddField(ctx, "kit_number", kitNumber)
 

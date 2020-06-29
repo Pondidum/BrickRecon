@@ -7,10 +7,13 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type KitNumber string
+type KitName string
+
 type Kit struct {
 	*eventstore.Aggregator
 
-	KitNumber string
+	KitNumber KitNumber
 	Name      string
 
 	parts []Part
@@ -23,12 +26,12 @@ func BlankKit() *Kit {
 	return &kit
 }
 
-func ImportKit(kitNumber string, kitName string, parts []Part) *Kit {
+func ImportKit(number KitNumber, name KitName, parts []Part) *Kit {
 	kit := BlankKit()
 	kit.Apply(&KitCreated{
 		ID:        uuid.NewV4(),
-		KitNumber: kitNumber,
-		KitName:   kitName,
+		KitNumber: number,
+		KitName:   name,
 		Parts:     parts,
 	})
 
@@ -50,8 +53,8 @@ type KitCreated struct {
 	eventstore.EventMeta
 
 	ID        uuid.UUID
-	KitNumber string
-	KitName   string
+	KitNumber KitNumber
+	KitName   KitName
 	Parts     []Part
 }
 

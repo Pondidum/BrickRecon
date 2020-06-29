@@ -35,7 +35,7 @@ func (c KitController) Get(req *http.Request) interface{} {
 	vars := mux.Vars(req)
 
 	siteModel := c.Store.SiteModel(req.Context())
-	selected, _ := c.Store.ReadKit(req.Context(), vars["kitnumber"])
+	selected, _ := c.Store.ReadKit(req.Context(), lego.KitNumber(vars["kitnumber"]))
 
 	return preen.ComposeModels(
 		siteModel,

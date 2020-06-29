@@ -7,13 +7,13 @@ import (
 )
 
 type AllKitsView struct {
-	Kits map[string]*KitView
+	Kits map[KitNumber]*KitView
 }
 
 type KitView struct {
 	ID     uuid.UUID
-	Name   string
-	Number string
+	Name   KitName
+	Number KitNumber
 
 	Parts []PartView
 }
@@ -46,7 +46,7 @@ func toPartView(parts []Part) []PartView {
 
 func KitsInitialState() interface{} {
 	return &AllKitsView{
-		Kits: map[string]*KitView{},
+		Kits: map[KitNumber]*KitView{},
 	}
 }
 

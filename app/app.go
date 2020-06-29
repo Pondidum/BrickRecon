@@ -9,7 +9,7 @@ import (
 )
 
 type SiteModel struct {
-	AllKits   map[string]*lego.KitView
+	AllKits   map[lego.KitNumber]*lego.KitView
 	AllModels []lego.ProjectName
 }
 
@@ -56,7 +56,7 @@ func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*leg
 
 }
 
-func (a *AppStore) ReadKit(ctx context.Context, kitNumber string) (*lego.KitView, error) {
+func (a *AppStore) ReadKit(ctx context.Context, kitNumber lego.KitNumber) (*lego.KitView, error) {
 
 	var view lego.AllKitsView
 	if err := a.EventStore.ReadView(ctx, "kits", &view); err != nil {

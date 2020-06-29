@@ -2,6 +2,7 @@ package command
 
 import (
 	"brickrecon/app"
+	"brickrecon/lego"
 	"fmt"
 
 	"github.com/honeycombio/beeline-go"
@@ -40,7 +41,7 @@ func (c *KitImportCommand) Run(args []string) int {
 		return 1
 	}
 
-	kitNumber := flags.Arg(0)
+	kitNumber := lego.KitNumber(flags.Arg(0))
 
 	c.UI.Info(fmt.Sprintf("Importing kit number %s", kitNumber))
 
