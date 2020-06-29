@@ -10,7 +10,7 @@ import (
 
 type SiteModel struct {
 	AllKits   map[string]*lego.KitView
-	AllModels []string
+	AllModels []lego.ProjectName
 }
 
 type AppStore struct {
@@ -39,7 +39,7 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	}
 }
 
-func (a *AppStore) ReadProject(ctx context.Context, name string) (*lego.ProjectView, error) {
+func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*lego.ProjectView, error) {
 
 	var view lego.AllProjectsView
 	if err := a.EventStore.ReadView(ctx, "projects", &view); err != nil {

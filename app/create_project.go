@@ -10,9 +10,9 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func CreateProject(ctx context.Context, store *AppStore, modelName string, partsFile io.Reader) (func(), error) {
+func CreateProject(ctx context.Context, store *AppStore, projectName lego.ProjectName, partsFile io.Reader) (func(), error) {
 
-	beeline.AddField(ctx, "model_name", modelName)
+	beeline.AddField(ctx, "project_name", projectName)
 
 	parts, err := stud_io.ReadPartsList(partsFile)
 	if err != nil {
@@ -22,7 +22,7 @@ func CreateProject(ctx context.Context, store *AppStore, modelName string, parts
 
 	beeline.AddField(ctx, "parts_count", len(parts))
 
-	project := lego.NewProject(modelName, parts)
+	project := lego.NewProject(projectName, parts)
 
 	if err := store.Save(ctx, project); err != nil {
 		beeline.AddField(ctx, "save_project_error", err)

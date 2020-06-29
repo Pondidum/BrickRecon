@@ -9,10 +9,12 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type ProjectName string
+
 type Project struct {
 	*eventstore.Aggregator
 
-	Name  string
+	Name  ProjectName
 	parts *ProjectPartList
 }
 
@@ -25,7 +27,7 @@ func BlankProject() *Project {
 	return &project
 }
 
-func NewProject(name string, parts []Part) *Project {
+func NewProject(name ProjectName, parts []Part) *Project {
 
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
@@ -95,7 +97,7 @@ type ProjectCreated struct {
 	eventstore.EventMeta
 
 	ID   uuid.UUID
-	Name string
+	Name ProjectName
 }
 
 type ProjectPartsAdded struct {

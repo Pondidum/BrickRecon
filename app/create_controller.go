@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
 )
@@ -31,7 +32,7 @@ func (c CreateController) Get(req *http.Request) interface{} {
 func (c CreateController) Post(req *http.Request) interface{} {
 	ctx := req.Context()
 	file, _, err := req.FormFile("modelFile")
-	modelName := req.FormValue("modelName")
+	modelName := lego.ProjectName(req.FormValue("modelName"))
 
 	if err != nil {
 		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
@@ -45,5 +46,5 @@ func (c CreateController) Post(req *http.Request) interface{} {
 		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
 	}
 
-	return preen.Redirect{URL: "/project/" + modelName}
+	return preen.Redirect{URL: "/project/" + string(modelName)}
 }

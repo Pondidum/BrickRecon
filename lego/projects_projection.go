@@ -7,13 +7,13 @@ import (
 )
 
 type AllProjectsView struct {
-	Names    []string
-	Projects map[string]*ProjectView
+	Names    []ProjectName
+	Projects map[ProjectName]*ProjectView
 }
 
 type ProjectView struct {
 	ID   uuid.UUID
-	Name string
+	Name ProjectName
 
 	Parts []*ProjectPartView
 }
@@ -40,8 +40,8 @@ func toProjectPartView(part Part) *ProjectPartView {
 
 func ProjectsInitialState() interface{} {
 	return &AllProjectsView{
-		Names:    []string{},
-		Projects: map[string]*ProjectView{},
+		Names:    []ProjectName{},
+		Projects: map[ProjectName]*ProjectView{},
 	}
 }
 
@@ -75,7 +75,7 @@ func ProjectsProjector(state interface{}, event eventstore.Event) interface{} {
 	return view
 }
 
-func projectByID(all map[string]*ProjectView, id uuid.UUID) *ProjectView {
+func projectByID(all map[ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
 	for _, p := range all {
 		if p.ID == id {
 			return p

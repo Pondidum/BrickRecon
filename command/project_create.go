@@ -2,6 +2,7 @@ package command
 
 import (
 	"brickrecon/app"
+	"brickrecon/lego"
 	"fmt"
 	"os"
 
@@ -41,7 +42,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	modelName := flags.Arg(0)
+	modelName := lego.ProjectName(flags.Arg(0))
 	filepath := flags.Arg(1)
 
 	c.UI.Info(fmt.Sprintf("Creating project %s from %s", modelName, filepath))

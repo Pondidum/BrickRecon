@@ -37,7 +37,7 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 	vars := mux.Vars(req)
 
 	siteModel := c.Store.SiteModel(req.Context())
-	selected, _ := c.Store.ReadProject(req.Context(), vars["name"])
+	selected, _ := c.Store.ReadProject(req.Context(), lego.ProjectName(vars["name"]))
 
 	return preen.ComposeModels(
 		siteModel,
@@ -63,7 +63,8 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 	}
 
 	vars := mux.Vars(req)
-	selected, _ := c.Store.ReadProject(ctx, vars["name"])
+	projectName := lego.ProjectName(vars["name"])
+	selected, _ := c.Store.ReadProject(ctx, projectName)
 
 	project := lego.BlankProject()
 	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
@@ -86,7 +87,7 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
-	selected, _ = c.Store.ReadProject(ctx, vars["name"])
+	selected, _ = c.Store.ReadProject(ctx, projectName)
 
 	return preen.ComposeModels(
 		siteModel,
