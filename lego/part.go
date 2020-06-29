@@ -39,7 +39,7 @@ type LDrawPart string
 type BrickOwlPart string
 
 type PartAliases struct {
-	BrickLinkID string
+	BrickLinkID BrickLinkPart
 	LDrawID     string
 	Boid        BrickOwlPart
 }

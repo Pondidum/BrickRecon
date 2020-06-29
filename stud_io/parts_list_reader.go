@@ -101,7 +101,7 @@ func parsePart(fields []string) (lego.Part, error) {
 
 func parsePartAliases(fields []string) lego.PartAliases {
 	return lego.PartAliases{
-		BrickLinkID: fields[brickLinkID],
+		BrickLinkID: lego.BrickLinkPart(fields[brickLinkID]),
 		LDrawID:     fields[ldrawID],
 	}
 
