@@ -103,7 +103,7 @@ func TestCreatePart(t *testing.T) {
 	part := createPart(colours, entry, additional)
 
 	assert.Equal(t, lego.PartID("15403"), part.ID)
-	assert.Equal(t, "Plate 1 x 2 with Shooter", part.Name)
+	assert.Equal(t, lego.PartName("Plate 1 x 2 with Shooter"), part.Name)
 	assert.Equal(t, 5, part.Quantity)
 	assert.Equal(t, lego.BrickLinkColour(86), part.Colour.ID)
 

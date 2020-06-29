@@ -79,7 +79,7 @@ func parsePart(fields []string) (lego.Part, error) {
 	var err error
 
 	part := lego.Part{
-		Name:    fields[partName],
+		Name:    lego.PartName(fields[partName]),
 		Aliases: parsePartAliases(fields),
 		ID:      lego.PartID(fields[ldrawID]),
 	}

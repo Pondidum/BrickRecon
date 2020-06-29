@@ -23,7 +23,7 @@ func TestPartReading(t *testing.T) {
 	assert.Equal(t, "2412b", part.Aliases.BrickLinkID)
 	assert.Equal(t, 241226, part.Aliases.ElementID)
 	assert.Equal(t, "2412b", part.Aliases.LDrawID)
-	assert.Equal(t, "Tile, Modified 1 x 2 Grille with Bottom Groove / Lip", part.Name)
+	assert.Equal(t, lego.PartName("Tile, Modified 1 x 2 Grille with Bottom Groove / Lip"), part.Name)
 	assert.Equal(t, lego.BrickLinkColour(11), part.Colour.ID)
 	assert.Equal(t, lego.BrickLinkColour(11), part.Colour.Aliases.BrickLinkID)
 	assert.Equal(t, lego.LDrawColour(0), part.Colour.Aliases.LDrawID)

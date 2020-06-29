@@ -19,12 +19,13 @@ type ColourAliases struct {
 }
 
 type PartID string
+type PartName string
 
 type Part struct {
 	ID      PartID
 	Aliases PartAliases
 
-	Name   string
+	Name   PartName
 	Colour Colour
 
 	Quantity int

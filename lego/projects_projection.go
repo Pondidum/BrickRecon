@@ -20,7 +20,7 @@ type ProjectView struct {
 
 type ProjectPartView struct {
 	ID         PartID
-	Name       string
+	Name       PartName
 	ColourID   BrickLinkColour
 	ColourName string
 
