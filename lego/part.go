@@ -34,9 +34,12 @@ type Part struct {
 	Weight   float64
 }
 
+type BrickLinkPart string
+type LDrawPart string
+type BrickOwlPart string
+
 type PartAliases struct {
 	BrickLinkID string
-	ElementID   int
 	LDrawID     string
-	Boid        string
+	Boid        BrickOwlPart
 }

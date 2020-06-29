@@ -41,7 +41,7 @@ func TestBulkFetching(t *testing.T) {
 	t.Parallel()
 
 	owl := createApi(t)
-	parts, err := owl.lookupParts([]string{"380995-64", "334100-64"})
+	parts, err := owl.lookupParts([]lego.BrickOwlPart{"380995-64", "334100-64"})
 
 	assert.NoError(t, err)
 	assert.Len(t, parts, 2)
@@ -150,6 +150,11 @@ func TestSanitiseName(t *testing.T) {
 	for input, expected := range cases {
 		assert.Equal(t, expected, sanitiseName(input, "15403b", colour))
 	}
+}
+
+func TestBoidCsv(t *testing.T) {
+	csv := boidCsv([]lego.BrickOwlPart{lego.BrickOwlPart("123"), lego.BrickOwlPart("456")})
+	assert.Equal(t, "123,456", csv)
 }
 
 var partJson string = `

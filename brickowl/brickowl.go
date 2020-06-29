@@ -57,7 +57,7 @@ func (bo *BrickOwlApi) GetParts(setNumber string) ([]lego.Part, error) {
 
 	for _, items := range chunks {
 
-		partBoids := make([]string, len(items))
+		partBoids := make([]lego.BrickOwlPart, len(items))
 
 		for i, item := range items {
 			partBoids[i] = item.Boid
@@ -166,13 +166,29 @@ func (bo *BrickOwlApi) lookup(boid string) (*lookupItem, error) {
 	return &dto, nil
 }
 
-func (bo *BrickOwlApi) lookupParts(boids []string) (map[string]lookupItem, error) {
+func boidCsv(boids []lego.BrickOwlPart) string {
+	if len(boids) == 0 {
+		return ""
+	}
+	var (
+		sep = []byte(",")
+		// preallocate for len(sep) + assume at least 1 character
+		out = make([]byte, 0, (1+len(sep))*len(boids))
+	)
+	for _, s := range boids {
+		out = append(out, s...)
+		out = append(out, sep...)
+	}
+	return string(out[:len(out)-len(sep)])
+}
+
+func (bo *BrickOwlApi) lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error) {
 	if len(boids) > 100 {
 		return nil, errors.New("Max 100 ids")
 	}
 
 	args := map[string]string{
-		"boids": strings.Join(boids, ","),
+		"boids": boidCsv(boids),
 	}
 
 	var dto bulkLookupResponse
@@ -259,7 +275,7 @@ func split(buf []inventoryItem, lim int) [][]inventoryItem {
 }
 
 type bulkLookupResponse struct {
-	Items map[string]lookupItem
+	Items map[lego.BrickOwlPart]lookupItem
 }
 
 type lookupItem struct {
@@ -279,7 +295,7 @@ type inventoryResponse struct {
 }
 
 type inventoryItem struct {
-	Boid     string
+	Boid     lego.BrickOwlPart
 	Quantity flexInt
 }
 

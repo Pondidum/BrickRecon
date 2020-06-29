@@ -102,25 +102,9 @@ func parsePart(fields []string) (lego.Part, error) {
 func parsePartAliases(fields []string) lego.PartAliases {
 	return lego.PartAliases{
 		BrickLinkID: fields[brickLinkID],
-		ElementID:   parseElementID(fields[elementID]),
 		LDrawID:     fields[ldrawID],
 	}
 
-}
-
-func parseElementID(value string) int {
-
-	if value == "" {
-		return 0
-	}
-
-	id, err := strconv.Atoi(value)
-
-	if err != nil {
-		return 0
-	}
-
-	return id
 }
 
 func parseColour(fields []string) (lego.Colour, error) {
