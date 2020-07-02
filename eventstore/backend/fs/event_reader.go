@@ -50,7 +50,7 @@ func (er *FsEventReader) ReadFor(uuid uuid.UUID) bool {
 			return false
 		}
 
-		if record.AggregateID() == uuid {
+		if record.Meta().AggregateRootID == uuid {
 			return true
 		}
 	}

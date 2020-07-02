@@ -60,21 +60,21 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 
 	case *ProjectCreated:
 		view.Names = append(view.Names, e.Name)
-		view.Projects[e.Name] = &ProjectView{ID: e.AggregateID(), Name: e.Name}
+		view.Projects[e.Name] = &ProjectView{ID: e.AggregateRootID, Name: e.Name}
 
 	case *ProjectPartsAdded:
-		project := projectByID(view.Projects, e.AggregateID())
+		project := projectByID(view.Projects, e.AggregateRootID)
 		for _, part := range e.Parts {
 			project.Parts = append(project.Parts, toProjectPartView(part))
 		}
 
 	case *ProjectInventoryAdded:
-		project := projectByID(view.Projects, e.AggregateID())
+		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
 	case *ProjectInventoryRemoved:
-		project := projectByID(view.Projects, e.AggregateID())
+		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 

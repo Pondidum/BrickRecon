@@ -14,10 +14,8 @@ type EventMeta struct {
 	Type            string    `json:"meta_type"`
 }
 
-func (e *EventMeta) Meta() *EventMeta       { return e }
-func (e *EventMeta) AggregateID() uuid.UUID { return e.AggregateRootID }
+func (e *EventMeta) Meta() *EventMeta { return e }
 
 type Event interface {
 	Meta() *EventMeta
-	AggregateID() uuid.UUID
 }

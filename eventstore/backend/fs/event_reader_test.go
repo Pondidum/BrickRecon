@@ -42,7 +42,7 @@ func TestDeserialization(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, expectedAggregateID, event.AggregateID())
+	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
 	assert.Equal(t, expectedEventID, event.Meta().ID)
 	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
 	assert.Equal(t, "TestEvent", event.Meta().Type)

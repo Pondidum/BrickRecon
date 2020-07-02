@@ -48,7 +48,7 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 
 	case *KitCreated:
 		view.Kits[e.KitNumber] = &KitView{
-			ID:     e.AggregateID(),
+			ID:     e.AggregateRootID,
 			Name:   e.KitName,
 			Number: e.KitNumber,
 			Parts:  toPartView(e.Parts),

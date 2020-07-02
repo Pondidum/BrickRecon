@@ -56,7 +56,7 @@ func (p *ProjectKitsProjection) Project(state interface{}, event eventstore.Even
 			Kits:  map[KitNumber]map[PartKey]int{},
 		}
 
-		view.Projects[e.AggregateID()] = project
+		view.Projects[e.AggregateRootID] = project
 
 		for kn, kit := range view.Kits {
 			fill(project, kn, kit)
