@@ -24,12 +24,12 @@ func (a *AppStore) Save(ctx context.Context, aggregate eventstore.Aggregate) err
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	var projects lego.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, "projects", &projects); err != nil {
+	if err := a.EventStore.ReadView(ctx, lego.ProjectsProjectionName, &projects); err != nil {
 		return SiteModel{}
 	}
 
 	var kits lego.AllKitsView
-	if err := a.EventStore.ReadView(ctx, "kits", &kits); err != nil {
+	if err := a.EventStore.ReadView(ctx, lego.KitsProjectionName, &kits); err != nil {
 		return SiteModel{}
 	}
 
@@ -42,7 +42,7 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*lego.ProjectView, error) {
 
 	var view lego.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, "projects", &view); err != nil {
+	if err := a.EventStore.ReadView(ctx, lego.ProjectsProjectionName, &view); err != nil {
 		return nil, err
 	}
 

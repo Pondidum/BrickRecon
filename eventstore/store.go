@@ -15,7 +15,7 @@ type Projector func(state interface{}, event Event) interface{}
 
 type EventStore interface {
 	RegisterEvent(ctx context.Context, creator Initialiser)
-	RegisterProjection(ctx context.Context, name string, initialiseState Initialiser, project Projector)
+	RegisterProjection(ctx context.Context, projection Projection)
 	ReadView(ctx context.Context, name string, view interface{}) error
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
@@ -24,7 +24,7 @@ type EventStore interface {
 
 type eventStore struct {
 	registry    map[string]Initialiser
-	projections map[string]projection
+	projections map[string]Projection
 
 	backend Backend
 }
@@ -34,27 +34,23 @@ type Initialiser func() interface{}
 func NewEventStore(backend Backend) EventStore {
 	return &eventStore{
 		registry:    map[string]Initialiser{},
-		projections: map[string]projection{},
+		projections: map[string]Projection{},
 		backend:     backend,
 	}
 }
 
-type projection struct {
-	name            string
-	initialiseState Initialiser
-	projector       Projector
+type Projection interface {
+	Name() string
+	CreateState() interface{}
+	Project(state interface{}, event Event) interface{}
 }
 
 func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) {
 	es.registry[EventName(creator())] = creator
 }
 
-func (es *eventStore) RegisterProjection(ctx context.Context, name string, initialiseState Initialiser, project Projector) {
-	es.projections[name] = projection{
-		name:            name,
-		initialiseState: initialiseState,
-		projector:       project,
-	}
+func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {
+	es.projections[projection.Name()] = projection
 }
 
 func (es *eventStore) ReadView(ctx context.Context, name string, view interface{}) error {
@@ -169,13 +165,13 @@ func (es *eventStore) RunProjections(ctx context.Context) error {
 			continue
 		}
 
-		state := projection.initialiseState()
+		state := projection.CreateState()
 		if err := view.ReadView(ctx, state); err != nil {
 			return err
 		}
 
 		for _, e := range projectionEvents {
-			state = projection.projector(state, e)
+			state = projection.Project(state, e)
 		}
 
 		err = view.WriteView(ctx, state, lastIndex)

@@ -32,15 +32,17 @@ func TestProjections(t *testing.T) {
 
 	es.RegisterProjection(
 		context.Background(),
-		"names",
-		func() interface{} { return &TestProjectionState{map[string]bool{}} },
-		func(state interface{}, event eventstore.Event) interface{} {
-			m := state.(*TestProjectionState)
-			e := event.(*TestEvent)
+		&testProjection{
+			name: "names",
+			init: func() interface{} { return &TestProjectionState{map[string]bool{}} },
+			project: func(state interface{}, event eventstore.Event) interface{} {
+				m := state.(*TestProjectionState)
+				e := event.(*TestEvent)
 
-			m.Names[e.Name] = true
+				m.Names[e.Name] = true
 
-			return m
+				return m
+			},
 		})
 
 	a := eventstore.NewAggregator(func(e eventstore.Event) {})
@@ -57,10 +59,6 @@ func TestProjections(t *testing.T) {
 
 	assert.Contains(t, view.Names, "One")
 	assert.Contains(t, view.Names, "Two")
-}
-
-type TestProjectionState struct {
-	Names map[string]bool
 }
 
 func TestProjectionCatchup(t *testing.T) {
@@ -81,17 +79,19 @@ func TestProjectionCatchup(t *testing.T) {
 	// register a new projection
 	es.RegisterProjection(
 		context.Background(),
-		"logs",
-		func() interface{} {
-			return &OrderedEvents{}
-		},
-		func(state interface{}, event eventstore.Event) interface{} {
-			m := state.(*OrderedEvents)
-			e := event.(*TestEvent)
+		&testProjection{
+			name: "logs",
+			init: func() interface{} {
+				return &OrderedEvents{}
+			},
+			project: func(state interface{}, event eventstore.Event) interface{} {
+				m := state.(*OrderedEvents)
+				e := event.(*TestEvent)
 
-			m.Names = append(m.Names, e.Name)
+				m.Names = append(m.Names, e.Name)
 
-			return state
+				return state
+			},
 		})
 
 	// write a new event

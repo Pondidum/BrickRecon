@@ -38,14 +38,22 @@ func toProjectPartView(part Part) *ProjectPartView {
 	}
 }
 
-func ProjectsInitialState() interface{} {
+var ProjectsProjectionName string = "projects"
+
+type ProjectsProjection struct{}
+
+func (p *ProjectsProjection) Name() string {
+	return ProjectsProjectionName
+}
+
+func (p *ProjectsProjection) CreateState() interface{} {
 	return &AllProjectsView{
 		Names:    []ProjectName{},
 		Projects: map[ProjectName]*ProjectView{},
 	}
 }
 
-func ProjectsProjector(state interface{}, event eventstore.Event) interface{} {
+func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
 	switch e := event.(type) {

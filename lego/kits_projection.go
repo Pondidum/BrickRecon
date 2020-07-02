@@ -27,6 +27,37 @@ type PartView struct {
 	Quantity int
 }
 
+var KitsProjectionName string = "kits"
+
+type KitsProjection struct{}
+
+func (p *KitsProjection) Name() string {
+	return KitsProjectionName
+}
+
+func (p *KitsProjection) CreateState() interface{} {
+	return &AllKitsView{
+		Kits: map[KitNumber]*KitView{},
+	}
+}
+
+func (p *KitsProjection) Project(state interface{}, event eventstore.Event) interface{} {
+	view := state.(*AllKitsView)
+
+	switch e := event.(type) {
+
+	case *KitCreated:
+		view.Kits[e.KitNumber] = &KitView{
+			ID:     e.AggregateID(),
+			Name:   e.KitName,
+			Number: e.KitNumber,
+			Parts:  toPartView(e.Parts),
+		}
+	}
+
+	return view
+}
+
 func toPartView(parts []Part) []PartView {
 
 	views := make([]PartView, len(parts))
@@ -42,27 +73,4 @@ func toPartView(parts []Part) []PartView {
 	}
 
 	return views
-}
-
-func KitsInitialState() interface{} {
-	return &AllKitsView{
-		Kits: map[KitNumber]*KitView{},
-	}
-}
-
-func KitsProjector(state interface{}, event eventstore.Event) interface{} {
-	view := state.(*AllKitsView)
-
-	switch e := event.(type) {
-
-	case *KitCreated:
-		view.Kits[e.KitNumber] = &KitView{
-			ID:     e.AggregateID(),
-			Name:   e.KitName,
-			Number: e.KitNumber,
-			Parts:  toPartView(e.Parts),
-		}
-	}
-
-	return view
 }

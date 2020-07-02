@@ -82,10 +82,11 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 func apply(events ...eventstore.Event) *ProjectKitsView {
 
-	state := ProjectKitsInitialState()
+	p := &ProjectKitsProjection{}
+	state := p.CreateState()
 
 	for _, e := range events {
-		state = ProjectKitsProjector(state, e)
+		state = p.Project(state, e)
 	}
 
 	view := state.(*ProjectKitsView)

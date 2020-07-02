@@ -39,8 +39,8 @@ func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstor
 
 	background.ImageCacheEvents(b.ctx, es.RegisterEvent)
 
-	es.RegisterProjection(b.ctx, "projects", lego.ProjectsInitialState, lego.ProjectsProjector)
-	es.RegisterProjection(b.ctx, "kits", lego.KitsInitialState, lego.KitsProjector)
+	es.RegisterProjection(b.ctx, &lego.ProjectsProjection{})
+	es.RegisterProjection(b.ctx, &lego.KitsProjection{})
 
 	return es
 }

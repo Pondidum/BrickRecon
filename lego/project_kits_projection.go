@@ -30,14 +30,22 @@ type PartRequirement struct {
 	Quantity int
 }
 
-func ProjectKitsInitialState() interface{} {
+var ProjectKitsProjectionName string = "project_kits"
+
+type ProjectKitsProjection struct{}
+
+func (p *ProjectKitsProjection) Name() string {
+	return ProjectKitsProjectionName
+}
+
+func (p *ProjectKitsProjection) CreateState() interface{} {
 	return &ProjectKitsView{
 		Kits:     map[KitNumber]map[PartKey]int{},
 		Projects: map[uuid.UUID]*ProjectKit{},
 	}
 }
 
-func ProjectKitsProjector(state interface{}, event eventstore.Event) interface{} {
+func (p *ProjectKitsProjection) Project(state interface{}, event eventstore.Event) interface{} {
 	view := state.(*ProjectKitsView)
 
 	switch e := event.(type) {
