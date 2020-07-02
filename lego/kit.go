@@ -2,7 +2,6 @@ package lego
 
 import (
 	"brickrecon/eventstore"
-	"context"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -58,6 +57,6 @@ type KitCreated struct {
 	Parts     []Part
 }
 
-func KitEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
-	register(ctx, func() interface{} { return &KitCreated{} })
+var KitEvents = []eventstore.Initialiser{
+	func() interface{} { return &KitCreated{} },
 }

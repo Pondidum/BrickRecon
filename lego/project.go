@@ -2,7 +2,6 @@ package lego
 
 import (
 	"brickrecon/eventstore"
-	"context"
 	"errors"
 	"fmt"
 
@@ -122,9 +121,9 @@ type ProjectInventoryRemoved struct {
 	Quantity int
 }
 
-func ProjectEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
-	register(ctx, func() interface{} { return &ProjectCreated{} })
-	register(ctx, func() interface{} { return &ProjectPartsAdded{} })
-	register(ctx, func() interface{} { return &ProjectInventoryAdded{} })
-	register(ctx, func() interface{} { return &ProjectInventoryRemoved{} })
+var ProjectEvents = []eventstore.Initialiser{
+	func() interface{} { return &ProjectCreated{} },
+	func() interface{} { return &ProjectPartsAdded{} },
+	func() interface{} { return &ProjectInventoryAdded{} },
+	func() interface{} { return &ProjectInventoryRemoved{} },
 }

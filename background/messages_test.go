@@ -25,7 +25,7 @@ func TestCacheCreation(t *testing.T) {
 
 	be, _ := fs.NewFileSystemBackend(path.Join(temp, "es"))
 	es := eventstore.NewEventStore(be)
-	ImageCacheEvents(ctx, es.RegisterEvent)
+	eventstore.RegisterMany(es, ctx, ImageCacheEvents)
 
 	ic, err := NewImageCache(es, storePath, ctx)
 	assert.NoError(t, err)
@@ -47,7 +47,7 @@ func TestCacheAlreadyExists(t *testing.T) {
 
 	be, _ := fs.NewFileSystemBackend(temp)
 	es := eventstore.NewEventStore(be)
-	ImageCacheEvents(ctx, es.RegisterEvent)
+	eventstore.RegisterMany(es, ctx, ImageCacheEvents)
 
 	_, err := NewImageCache(es, storePath, ctx)
 	assert.NoError(t, err)

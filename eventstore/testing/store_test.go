@@ -22,6 +22,19 @@ func createBackend() (eventstore.Backend, func()) {
 
 }
 
+func TestEventRegistration(t *testing.T) {
+
+	es := eventstore.NewEventStore(nil)
+
+	assert.NoError(t, es.RegisterEvent(context.Background(), func() interface{} {
+		return &TestEvent{}
+	}))
+
+	assert.Error(t, es.RegisterEvent(context.Background(), func() interface{} {
+		return TestEvent{}
+	}))
+}
+
 func TestProjections(t *testing.T) {
 
 	be, cleanup := createBackend()

@@ -66,14 +66,14 @@ type PartAddedFromCache struct {
 	ColourID lego.BrickLinkColour
 }
 
-func ImageCacheEvents(ctx context.Context, register func(context.Context, eventstore.Initialiser)) {
-	register(ctx, func() interface{} { return &ImageCacheCreated{} })
-	register(ctx, func() interface{} { return &PartAddedFromCache{} })
-	register(ctx, func() interface{} { return &PartImageRequested{} })
-	register(ctx, func() interface{} { return &PartFetchAttemptsExceeded{} })
-	register(ctx, func() interface{} { return &PartAttempted{} })
-	register(ctx, func() interface{} { return &PartImageNotFound{} })
-	register(ctx, func() interface{} { return &PartImageStored{} })
+var ImageCacheEvents = []eventstore.Initialiser{
+	func() interface{} { return &ImageCacheCreated{} },
+	func() interface{} { return &PartAddedFromCache{} },
+	func() interface{} { return &PartImageRequested{} },
+	func() interface{} { return &PartFetchAttemptsExceeded{} },
+	func() interface{} { return &PartAttempted{} },
+	func() interface{} { return &PartImageNotFound{} },
+	func() interface{} { return &PartImageStored{} },
 }
 
 type ImageCache struct {

@@ -34,10 +34,9 @@ func (b *AppStoreBuilder) CreateBackend() (*fs.FsBackend, error) {
 func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstore.EventStore {
 	es := eventstore.NewEventStore(backend)
 
-	lego.ProjectEvents(b.ctx, es.RegisterEvent)
-	lego.KitEvents(b.ctx, es.RegisterEvent)
-
-	background.ImageCacheEvents(b.ctx, es.RegisterEvent)
+	eventstore.RegisterMany(es, b.ctx, lego.ProjectEvents)
+	eventstore.RegisterMany(es, b.ctx, lego.KitEvents)
+	eventstore.RegisterMany(es, b.ctx, background.ImageCacheEvents)
 
 	es.RegisterProjection(b.ctx, &lego.ProjectsProjection{})
 	es.RegisterProjection(b.ctx, &lego.KitsProjection{})

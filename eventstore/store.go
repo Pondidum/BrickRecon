@@ -2,6 +2,7 @@ package eventstore
 
 import (
 	"context"
+	"errors"
 	"reflect"
 
 	"github.com/honeycombio/beeline-go"
@@ -14,7 +15,7 @@ type Projector func(state interface{}, event Event) interface{}
 // ------------
 
 type EventStore interface {
-	RegisterEvent(ctx context.Context, creator Initialiser)
+	RegisterEvent(ctx context.Context, creator Initialiser) error
 	RegisterProjection(ctx context.Context, projection Projection)
 	ReadView(ctx context.Context, name string, view interface{}) error
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
@@ -45,8 +46,17 @@ type Projection interface {
 	Project(state interface{}, event Event) interface{}
 }
 
-func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) {
-	es.registry[EventName(creator())] = creator
+func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) error {
+
+	event := creator()
+	v := reflect.ValueOf(event)
+	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
+		return errors.New("Event initialiser must return a pointer to a struct")
+	}
+
+	es.registry[EventName(event)] = creator
+
+	return nil
 }
 
 func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {
