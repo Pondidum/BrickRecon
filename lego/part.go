@@ -1,25 +1,5 @@
 package lego
 
-type ColourName string
-
-type Colour struct {
-	ID      BrickLinkColour
-	Aliases ColourAliases
-
-	Name     ColourName
-	Category string
-}
-
-type BrickLinkColour int
-type LDrawColour int
-type BrickOwlColour int
-
-type ColourAliases struct {
-	BrickLinkID BrickLinkColour
-	LDrawID     LDrawColour
-	Boid        BrickOwlColour
-}
-
 type LDrawPart string
 type PartName string
 

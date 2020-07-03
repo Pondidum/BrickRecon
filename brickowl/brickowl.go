@@ -258,6 +258,7 @@ func partColour(colours map[flexInt]colourItem, colourID flexInt) lego.Colour {
 		ID:      colourAliases.BrickLinkID,
 		Aliases: colourAliases,
 		Name:    colourInfo.Name,
+		Hex:     colourInfo.Hex,
 	}
 }
 
@@ -302,6 +303,7 @@ type inventoryItem struct {
 type colourItem struct {
 	ID   string
 	Name lego.ColourName
+	Hex  lego.HexColour
 
 	LDrawIDs     []flexInt `json:"ldraw_ids"`
 	BrickLinkIDs []flexInt `json:"bl_ids"`

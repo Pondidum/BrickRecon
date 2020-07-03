@@ -130,6 +130,7 @@ func parseColour(fields []string) (lego.Colour, error) {
 		ID:       aliases.BrickLinkID,
 		Aliases:  aliases,
 		Name:     lego.ColourName(fields[colourName]),
+		Hex:      lego.GetColourHex(aliases.BrickLinkID),
 		Category: fields[colourCategory],
 	}
 
