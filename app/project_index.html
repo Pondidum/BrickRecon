@@ -59,7 +59,7 @@
           alt="part {{ .ID }}" width="66px"></td>
       <td>{{ .ID }}</td>
       <td>{{ .Name }}</td>
-      <td>{{ .ColourName }}</td>
+      <td>{{ template "swatch" . }}</td>
       <td>{{ template "project/quantity" .}}</td>
       <td>
         <ul class="list-unstyled">

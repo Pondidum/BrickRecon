@@ -8,6 +8,12 @@ body {
     vertical-align: text-bottom;
 }
 
+.swatch {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+}
+
 /*
    * Sidebar
    */
