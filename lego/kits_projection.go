@@ -23,6 +23,7 @@ type PartView struct {
 	Name       PartName
 	ColourID   BrickLinkColour
 	ColourName ColourName
+	ColourHex  HexColour
 
 	Quantity int
 }
@@ -68,6 +69,7 @@ func toPartView(parts []Part) []PartView {
 			Name:       part.Name,
 			ColourID:   part.Colour.ID,
 			ColourName: part.Colour.Name,
+			ColourHex:  part.Colour.Hex,
 			Quantity:   part.Quantity,
 		}
 	}

@@ -23,6 +23,7 @@ type ProjectPartView struct {
 	Name       PartName
 	ColourID   BrickLinkColour
 	ColourName ColourName
+	ColourHex  HexColour
 
 	Quantity  int
 	Inventory int
@@ -34,6 +35,7 @@ func toProjectPartView(part Part) *ProjectPartView {
 		Name:       part.Name,
 		ColourID:   part.Colour.ID,
 		ColourName: part.Colour.Name,
+		ColourHex:  part.Colour.Hex,
 		Quantity:   part.Quantity,
 	}
 }
