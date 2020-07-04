@@ -23,5 +23,5 @@ type ColourAliases struct {
 }
 
 func GetColourHex(id BrickLinkColour) HexColour {
-	return HexColour(hexColours[string(id)])
+	return HexColour(hexColours[int(id)])
 }
