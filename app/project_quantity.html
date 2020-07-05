@@ -7,7 +7,7 @@
   <button type="submit" class="btn btn-link btn-sm p-0"  name="action" value="decrease">{{ template "icons/arrow-down-circle" }}</button>
 {{end}}
 
-{{ .Inventory }} <span class="text-muted">/ {{ .Quantity }}</span>
+{{ .TotalInventory }} <span class="text-muted">/ {{ .Quantity }}</span> {{ if .KitQuantity }}<span class="text-primary">(+{{ .KitQuantity }})</span>{{ end }}
 
 {{ if _user.Authenticated }}
   <button type="submit" class="btn btn-link btn-sm p-0" name="action" value="increase">{{ template "icons/arrow-up-circle" }}</button>

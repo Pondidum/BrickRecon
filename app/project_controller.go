@@ -7,10 +7,11 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	uuid "github.com/satori/go.uuid"
 )
 
 type ProjectModel struct {
-	Project *lego.ProjectView
+	Project *ProjectWithKit
 }
 
 type ProjectController struct {
@@ -36,13 +37,21 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
 
+	projectName := lego.ProjectName(vars["name"])
+	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+
+	project, _ := c.Store.ReadProject(req.Context(), projectName)
+
+	var pk lego.ProjectKitsView
+	c.Store.EventStore.ReadView(req.Context(), lego.ProjectKitsProjectionName, &pk)
+	kit := pk.Kits[kitNumber]
+
 	siteModel := c.Store.SiteModel(req.Context())
-	selected, _ := c.Store.ReadProject(req.Context(), lego.ProjectName(vars["name"]))
 
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
-			Project: selected,
+			Project: applyKit(project, kit),
 		},
 	)
 }
@@ -92,7 +101,7 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
-			Project: selected,
+			Project: applyKit(selected, map[lego.PartKey]int{}),
 		},
 	)
 }
@@ -102,4 +111,44 @@ type postModel struct {
 	Colour   lego.BrickLinkColour
 	Quantity int
 	Action   string
+}
+
+func applyKit(project *lego.ProjectView, kit map[lego.PartKey]int) *ProjectWithKit {
+
+	parts := make([]PartWithKitPart, len(project.Parts))
+
+	for i, p := range project.Parts {
+
+		part := PartWithKitPart{
+			ProjectPartView: p,
+			TotalInventory:  p.Inventory,
+		}
+
+		if quantity, found := kit[lego.CreatePartKey(p.ID, p.ColourID)]; found {
+			part.KitQuantity = quantity
+			part.TotalInventory += quantity
+		}
+
+		parts[i] = part
+	}
+
+	return &ProjectWithKit{
+		ID:    project.ID,
+		Name:  project.Name,
+		Parts: parts,
+	}
+}
+
+type ProjectWithKit struct {
+	ID   uuid.UUID
+	Name lego.ProjectName
+
+	Parts []PartWithKitPart
+}
+
+type PartWithKitPart struct {
+	*lego.ProjectPartView
+
+	KitQuantity    int
+	TotalInventory int
 }
