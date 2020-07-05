@@ -9,7 +9,7 @@ import (
 
 type PartKey string
 
-func createKey(part LDrawPart, colour BrickLinkColour) PartKey {
+func CreatePartKey(part LDrawPart, colour BrickLinkColour) PartKey {
 	return PartKey(fmt.Sprintf("%v|%v", part, colour))
 }
 
@@ -100,7 +100,7 @@ func parseRequirements(parts []Part) []PartRequirement {
 		req[i] = PartRequirement{
 			PartID:   p.ID,
 			Colour:   p.Colour.ID,
-			Key:      createKey(p.ID, p.Colour.ID),
+			Key:      CreatePartKey(p.ID, p.Colour.ID),
 			Quantity: p.Quantity,
 		}
 	}
@@ -113,7 +113,7 @@ func parseKitParts(parts []Part) map[PartKey]int {
 	kp := make(map[PartKey]int, len(parts))
 
 	for _, p := range parts {
-		kp[createKey(p.ID, p.Colour.ID)] = p.Quantity
+		kp[CreatePartKey(p.ID, p.Colour.ID)] = p.Quantity
 	}
 
 	return kp

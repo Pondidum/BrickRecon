@@ -40,6 +40,7 @@ func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstor
 
 	es.RegisterProjection(b.ctx, &lego.ProjectsProjection{})
 	es.RegisterProjection(b.ctx, &lego.KitsProjection{})
+	es.RegisterProjection(b.ctx, &lego.ProjectKitsProjection{})
 
 	return es
 }
