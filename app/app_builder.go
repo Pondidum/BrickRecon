@@ -87,8 +87,8 @@ func (b *AppBuilder) CreateWebUI() (http.Handler, error) {
 			&CreateController{Store: store},
 			&ProjectController{Store: store},
 			&LoginController{},
-			&KitController{Store: store},
 			&KitImportController{Store: store},
+			&KitController{Store: store},
 		},
 	})
 
