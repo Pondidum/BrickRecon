@@ -6,19 +6,24 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/eventstore/backend/fs"
 	"brickrecon/lego"
+	"brickrecon/preen"
 	"context"
+	"net/http"
 	"os"
+
+	"github.com/gorilla/mux"
+	"github.com/honeycombio/beeline-go/wrappers/hnynethttp"
 )
 
-type AppStoreBuilder struct {
+type AppBuilder struct {
 	ctx context.Context
 }
 
-func NewAppStoreBuilder(ctx context.Context) *AppStoreBuilder {
-	return &AppStoreBuilder{ctx: ctx}
+func NewAppBuilder(ctx context.Context) *AppBuilder {
+	return &AppBuilder{ctx: ctx}
 }
 
-func (b *AppStoreBuilder) CreateBackend() (*fs.FsBackend, error) {
+func (b *AppBuilder) CreateBackend() (*fs.FsBackend, error) {
 	if err := os.MkdirAll("_store", os.ModePerm); err != nil {
 		return nil, err
 	}
@@ -31,7 +36,7 @@ func (b *AppStoreBuilder) CreateBackend() (*fs.FsBackend, error) {
 	return backend, err
 }
 
-func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstore.EventStore {
+func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.EventStore {
 	es := eventstore.NewEventStore(backend)
 
 	eventstore.RegisterMany(es, b.ctx, lego.ProjectEvents)
@@ -45,7 +50,7 @@ func (b *AppStoreBuilder) CreateEventStore(backend eventstore.Backend) eventstor
 	return es
 }
 
-func (b *AppStoreBuilder) CreateBus(es eventstore.EventStore) *distributor.Distributor {
+func (b *AppBuilder) CreateBus(es eventstore.EventStore) *distributor.Distributor {
 
 	bus := distributor.NewDistributor()
 
@@ -54,7 +59,7 @@ func (b *AppStoreBuilder) CreateBus(es eventstore.EventStore) *distributor.Distr
 	return bus
 }
 
-func (b *AppStoreBuilder) Create() (*AppStore, error) {
+func (b *AppBuilder) CreateAppStore() (*AppStore, error) {
 
 	backend, err := b.CreateBackend()
 	if err != nil {
@@ -65,4 +70,35 @@ func (b *AppStoreBuilder) Create() (*AppStore, error) {
 	bus := b.CreateBus(es)
 
 	return &AppStore{EventStore: es, bus: bus}, nil
+}
+
+func (b *AppBuilder) CreateWebUI() (http.Handler, error) {
+
+	store, err := b.CreateAppStore()
+
+	if err != nil {
+		return nil, err
+	}
+
+	p, err := preen.NewPreen(preen.PreenConfig{
+		ApplicationRoot: "app",
+		Controllers: []preen.Controller{
+			&RootController{Store: store},
+			&CreateController{Store: store},
+			&ProjectController{Store: store},
+			&LoginController{},
+			&KitController{Store: store},
+			&KitImportController{Store: store},
+		},
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	r := mux.NewRouter()
+
+	p.Apply(r)
+
+	return hnynethttp.WrapHandler(r), nil
 }

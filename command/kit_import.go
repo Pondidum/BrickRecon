@@ -45,7 +45,7 @@ func (c *KitImportCommand) Run(args []string) int {
 
 	c.UI.Info(fmt.Sprintf("Importing kit number %s", kitNumber))
 
-	store, err := app.NewAppStoreBuilder(ctx).Create()
+	store, err := app.NewAppBuilder(ctx).CreateAppStore()
 	if err != nil {
 		c.UI.Error(err.Error())
 		return 1

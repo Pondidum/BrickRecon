@@ -25,7 +25,7 @@ func (c *ImageCacheRunCommand) Run(args []string) int {
 	ctx, send := c.NewPhase(c)
 	defer send()
 
-	store, err := app.NewAppStoreBuilder(ctx).Create()
+	store, err := app.NewAppBuilder(ctx).CreateAppStore()
 
 	if err != nil {
 		c.UI.Error(err.Error())

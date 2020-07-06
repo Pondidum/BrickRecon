@@ -54,7 +54,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 	}
 	defer file.Close()
 
-	store, err := app.NewAppStoreBuilder(ctx).Create()
+	store, err := app.NewAppBuilder(ctx).CreateAppStore()
 
 	if err != nil {
 		c.UI.Error(err.Error())

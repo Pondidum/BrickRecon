@@ -24,7 +24,7 @@ func (c *EventStoreViewsRebuildCommand) Run(args []string) int {
 	ctx, send := c.NewPhase(c)
 	defer send()
 
-	builder := app.NewAppStoreBuilder(ctx)
+	builder := app.NewAppBuilder(ctx)
 
 	backend, err := builder.CreateBackend()
 

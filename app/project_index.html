@@ -46,7 +46,6 @@
           <th tabindex="0"><strong class="name-header">Name</strong></th>
           <th tabindex="0"><strong class="name-header">Colour</strong></th>
           <th tabindex="0"><strong class="name-header">Quantity</strong></th>
-          <!-- <th class="" tabindex="0"><strong class="name-header">Links</strong></th> -->
         </tr>
       </thead>
 
@@ -68,7 +67,25 @@
   </div>
 
   <div class="col-md-3">
-    Kits
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+      <h3>Kits</h3>
+    </div>
+
+    <div class="list-group">
+
+      {{ range .AllKits }}
+      <a href="{{ _page.Path }}?kit={{ .Number }}" class="list-group-item list-group-item-action">
+        <div class="d-flex w-100 justify-content-between">
+          <h5 class="mb-1">{{ .Name }}</h5>
+          <small>{{ .Number }}</small>
+        </div>
+        <p class="mb-1">{{ len .Parts }} parts</p>
+        <small>Would add x unique parts to the model</small>
+      </a>
+      {{ end }}
+
+    </div>
+
   </div>
 
 </div>
