@@ -27,17 +27,26 @@ func TestAddingKits(t *testing.T) {
 func TestAddingProjectParts(t *testing.T) {
 
 	projectID := uuid.NewV4()
+	projectName := ProjectName("test-project")
 	projectPart := Part{ID: LDrawPart("567"), Colour: Colour{ID: BrickLinkColour(85)}, Quantity: 7}
 
 	view := apply(
+		createProject(projectID, projectName),
 		createProjectParts(projectID, projectPart),
 	)
 
-	assert.Contains(t, view.Projects, projectID)
+	assert.Contains(t, view.Projects, projectName)
 
-	assert.Equal(t, view.Projects[projectID].Parts, []PartRequirement{
-		PartRequirement{PartID: LDrawPart("567"), Colour: BrickLinkColour(85), Key: PartKey("567|85"), Quantity: 7},
-	})
+	expected := []*ProjectPartView{
+		&ProjectPartView{
+			ID:       LDrawPart("567"),
+			ColourID: BrickLinkColour(85),
+			Key:      PartKey("567|85"),
+			Quantity: 7,
+		},
+	}
+
+	assert.Equal(t, expected, view.Projects[projectName].Parts)
 }
 
 func TestWhenKitAddedAfterProject(t *testing.T) {
@@ -46,18 +55,20 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 	kitPart := Part{ID: LDrawPart("567"), Colour: Colour{ID: BrickLinkColour(85)}, Quantity: 5}
 
 	projectID := uuid.NewV4()
+	projectName := ProjectName("test-project")
 	projectPart := Part{ID: LDrawPart("567"), Colour: Colour{ID: BrickLinkColour(85)}, Quantity: 7}
 
 	view := apply(
+		createProject(projectID, projectName),
 		createProjectParts(projectID, projectPart),
 		createKit(kitNumber, kitPart),
 	)
 
-	assert.Contains(t, view.Projects, projectID)
-	assert.Contains(t, view.Projects[projectID].Kits, kitNumber)
-	assert.Contains(t, view.Projects[projectID].Kits[kitNumber], PartKey("567|85"))
+	assert.Contains(t, view.Projects, projectName)
+	assert.Contains(t, view.Projects[projectName].Kits, kitNumber)
+	assert.Contains(t, view.Projects[projectName].Kits[kitNumber], PartKey("567|85"))
 
-	assert.Equal(t, view.Projects[projectID].Kits[kitNumber][PartKey("567|85")], 5)
+	assert.Equal(t, view.Projects[projectName].Kits[kitNumber][PartKey("567|85")], 5)
 }
 
 func TestWhenProjectAddedAfterKit(t *testing.T) {
@@ -66,37 +77,51 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 	kitPart := Part{ID: LDrawPart("567"), Colour: Colour{ID: BrickLinkColour(85)}, Quantity: 5}
 
 	projectID := uuid.NewV4()
+	projectName := ProjectName("test-project")
 	projectPart := Part{ID: LDrawPart("567"), Colour: Colour{ID: BrickLinkColour(85)}, Quantity: 7}
 
 	view := apply(
 		createKit(kitNumber, kitPart),
+		createProject(projectID, projectName),
 		createProjectParts(projectID, projectPart),
 	)
 
-	assert.Contains(t, view.Projects, projectID)
-	assert.Contains(t, view.Projects[projectID].Kits, kitNumber)
-	assert.Contains(t, view.Projects[projectID].Kits[kitNumber], PartKey("567|85"))
+	assert.Contains(t, view.Projects, projectName)
+	assert.Contains(t, view.Projects[projectName].Kits, kitNumber)
+	assert.Contains(t, view.Projects[projectName].Kits[kitNumber], PartKey("567|85"))
 
-	assert.Equal(t, view.Projects[projectID].Kits[kitNumber][PartKey("567|85")], 5)
+	assert.Equal(t, view.Projects[projectName].Kits[kitNumber][PartKey("567|85")], 5)
 }
 
-func apply(events ...eventstore.Event) *ProjectKitsView {
+func apply(events ...eventstore.Event) *AllProjectsView {
 
-	p := &ProjectKitsProjection{}
+	p := &ProjectsProjection{}
 	state := p.CreateState()
 
 	for _, e := range events {
-		state = p.Project(state, e)
+		p.Project(state, e)
 	}
 
-	view := state.(*ProjectKitsView)
+	view := state.(*AllProjectsView)
+
 	return view
+}
+
+func createProject(projectID uuid.UUID, projectName ProjectName) *ProjectCreated {
+	event := &ProjectCreated{
+		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
+		ID:        projectID,
+		Name:      projectName,
+	}
+
+	return event
 }
 
 func createProjectParts(projectID uuid.UUID, parts ...Part) *ProjectPartsAdded {
 	event := &ProjectPartsAdded{
 		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
-		Parts:     parts,
+
+		Parts: parts,
 	}
 
 	return event

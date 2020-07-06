@@ -41,10 +41,7 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
 
 	project, _ := c.Store.ReadProject(req.Context(), projectName)
-
-	var pk lego.ProjectKitsView
-	c.Store.EventStore.ReadView(req.Context(), lego.ProjectKitsProjectionName, &pk)
-	kit := pk.Kits[kitNumber]
+	kit := project.Kits[kitNumber]
 
 	siteModel := c.Store.SiteModel(req.Context())
 
