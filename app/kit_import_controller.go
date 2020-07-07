@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
 )
@@ -28,27 +29,14 @@ func (c KitImportController) Get(req *http.Request) interface{} {
 }
 
 func (c KitImportController) Post(req *http.Request) interface{} {
-	// ctx := req.Context()
+	ctx := req.Context()
 	kitNumber := req.FormValue("kitNumber")
+
+	_, err := ImportKit(ctx, c.Store, lego.KitNumber(kitNumber))
+
+	if err != nil {
+		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
+	}
 
 	return preen.Redirect{URL: "/kit/" + kitNumber}
 }
-
-// func ImportKit(ctx context.Context, store *AppStore, kitNumber string) (func(), error) {
-
-// 	beeline.AddField(ctx, "kit_number", kitNumber)
-
-// 	api := adapters.NewBrickOwlApi("")
-
-// 	parts, err := api.GetParts(kitNumber)
-
-// 	if err != nil {
-// 		beeline.AddField(ctx, "fetch_parts_error", err)
-// 		return nil, err
-// 	}
-
-// 	beeline.AddField(ctx, "parts_count", len(parts))
-
-// 	kit := lego.NewKit()
-
-// }
