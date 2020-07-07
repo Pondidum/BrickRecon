@@ -16,7 +16,7 @@ func CreatePartKey(part lego.LDrawPart, colour lego.BrickLinkColour) PartKey {
 type AllProjectsView struct {
 	Names    []lego.ProjectName
 	Projects map[lego.ProjectName]*ProjectView
-	Kits     map[lego.KitNumber]map[PartKey]int
+	Kits     map[lego.KitNumber]KitView
 }
 
 type ProjectView struct {
@@ -25,7 +25,7 @@ type ProjectView struct {
 
 	Parts []*ProjectPartView
 
-	Kits map[lego.KitNumber]map[PartKey]int
+	Kits map[lego.KitNumber]KitView
 }
 
 type ProjectPartView struct {
@@ -39,4 +39,11 @@ type ProjectPartView struct {
 
 	Quantity  int
 	Inventory int
+}
+
+type KitView struct {
+	Number lego.KitNumber
+	Name   lego.KitName
+
+	Parts map[PartKey]int
 }

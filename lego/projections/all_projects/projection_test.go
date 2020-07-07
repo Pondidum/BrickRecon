@@ -22,7 +22,7 @@ func TestAddingKits(t *testing.T) {
 	)
 
 	assert.Contains(t, view.Kits, lego.KitNumber("134-1"))
-	assert.Len(t, view.Kits["134-1"], 3)
+	assert.Len(t, view.Kits["134-1"].Parts, 3)
 }
 
 func TestAddingProjectParts(t *testing.T) {
@@ -67,9 +67,9 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 
 	assert.Contains(t, view.Projects, projectName)
 	assert.Contains(t, view.Projects[projectName].Kits, kitNumber)
-	assert.Contains(t, view.Projects[projectName].Kits[kitNumber], PartKey("567|85"))
+	assert.Contains(t, view.Projects[projectName].Kits[kitNumber].Parts, PartKey("567|85"))
 
-	assert.Equal(t, view.Projects[projectName].Kits[kitNumber][PartKey("567|85")], 5)
+	assert.Equal(t, view.Projects[projectName].Kits[kitNumber].Parts[PartKey("567|85")], 5)
 }
 
 func TestWhenProjectAddedAfterKit(t *testing.T) {
@@ -89,9 +89,9 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 	assert.Contains(t, view.Projects, projectName)
 	assert.Contains(t, view.Projects[projectName].Kits, kitNumber)
-	assert.Contains(t, view.Projects[projectName].Kits[kitNumber], PartKey("567|85"))
+	assert.Contains(t, view.Projects[projectName].Kits[kitNumber].Parts, PartKey("567|85"))
 
-	assert.Equal(t, view.Projects[projectName].Kits[kitNumber][PartKey("567|85")], 5)
+	assert.Equal(t, view.Projects[projectName].Kits[kitNumber].Parts[PartKey("567|85")], 5)
 }
 
 func apply(events ...eventstore.Event) *AllProjectsView {

@@ -36,22 +36,26 @@ func (c ProjectController) View() string {
 
 func (c ProjectController) Get(req *http.Request) interface{} {
 
-	vars := mux.Vars(req)
-
-	projectName := lego.ProjectName(vars["name"])
-	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
-
-	project, _ := c.Store.ReadProject(req.Context(), projectName)
-	kit := project.Kits[kitNumber]
-
 	siteModel := c.Store.SiteModel(req.Context())
 
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
-			Project: applyKit(project, kit),
+			Project: projectWithKit(c.Store, req),
 		},
 	)
+}
+
+func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
+	vars := mux.Vars(req)
+
+	projectName := lego.ProjectName(vars["name"])
+	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+
+	project, _ := store.ReadProject(req.Context(), projectName)
+	kit := project.Kits[kitNumber]
+
+	return applyKit(project, kit)
 }
 
 func (c ProjectController) Post(req *http.Request) interface{} {
@@ -94,12 +98,10 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
-	selected, _ = c.Store.ReadProject(ctx, projectName)
-
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
-			Project: applyKit(selected, map[all_projects.PartKey]int{}),
+			Project: projectWithKit(c.Store, req),
 		},
 	)
 }
@@ -111,7 +113,7 @@ type postModel struct {
 	Action   string
 }
 
-func applyKit(project *all_projects.ProjectView, kit map[all_projects.PartKey]int) *ProjectWithKit {
+func applyKit(project *all_projects.ProjectView, kit all_projects.KitView) *ProjectWithKit {
 
 	parts := make([]PartWithKitPart, len(project.Parts))
 
@@ -122,7 +124,9 @@ func applyKit(project *all_projects.ProjectView, kit map[all_projects.PartKey]in
 			TotalInventory:  p.Inventory,
 		}
 
-		if quantity, found := kit[all_projects.CreatePartKey(p.ID, p.ColourID)]; found {
+		pk := all_projects.CreatePartKey(p.ID, p.ColourID)
+
+		if quantity, found := kit.Parts[pk]; found {
 			part.KitQuantity = quantity
 			part.TotalInventory += quantity
 		}
@@ -134,6 +138,7 @@ func applyKit(project *all_projects.ProjectView, kit map[all_projects.PartKey]in
 		ID:    project.ID,
 		Name:  project.Name,
 		Parts: parts,
+		Kits:  project.Kits,
 	}
 }
 
@@ -142,6 +147,7 @@ type ProjectWithKit struct {
 	Name lego.ProjectName
 
 	Parts []PartWithKitPart
+	Kits  map[lego.KitNumber]all_projects.KitView
 }
 
 type PartWithKitPart struct {

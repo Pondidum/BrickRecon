@@ -31,7 +31,7 @@ func (p *ProjectsProjection) CreateState() interface{} {
 	return &AllProjectsView{
 		Names:    []lego.ProjectName{},
 		Projects: map[lego.ProjectName]*ProjectView{},
-		Kits:     map[lego.KitNumber]map[PartKey]int{},
+		Kits:     map[lego.KitNumber]KitView{},
 	}
 }
 
@@ -45,7 +45,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		view.Projects[e.Name] = &ProjectView{
 			ID:   e.AggregateRootID,
 			Name: e.Name,
-			Kits: map[lego.KitNumber]map[PartKey]int{},
+			Kits: map[lego.KitNumber]KitView{},
 		}
 
 	case *lego.ProjectPartsAdded:
@@ -54,8 +54,8 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			project.Parts = append(project.Parts, toProjectPartView(part))
 		}
 
-		for kn, kit := range view.Kits {
-			calculateKitFulfillment(project, kn, kit)
+		for _, kit := range view.Kits {
+			calculateKitFulfillment(project, kit)
 		}
 
 	case *lego.ProjectInventoryAdded:
@@ -69,12 +69,12 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		part.Inventory -= e.Quantity
 
 	case *lego.KitCreated:
-		kit := parseKitParts(e.Parts)
+		kit := createKitView(e)
 
 		view.Kits[e.KitNumber] = kit
 
 		for _, project := range view.Projects {
-			calculateKitFulfillment(project, e.KitNumber, kit)
+			calculateKitFulfillment(project, kit)
 		}
 
 	}
@@ -102,30 +102,38 @@ func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.Bri
 	return nil
 }
 
-func calculateKitFulfillment(project *ProjectView, kitNumber lego.KitNumber, kitParts map[PartKey]int) {
+func calculateKitFulfillment(project *ProjectView, kit KitView) {
 	fulfilled := map[PartKey]int{}
 
 	for _, part := range project.Parts {
 
-		if quantity, found := kitParts[part.Key]; found {
+		if quantity, found := kit.Parts[part.Key]; found {
 			fulfilled[part.Key] += quantity
 		}
 	}
 
 	if len(fulfilled) > 0 {
-		project.Kits[kitNumber] = fulfilled
+		project.Kits[kit.Number] = KitView{
+			Number: kit.Number,
+			Name:   kit.Name,
+			Parts:  fulfilled,
+		}
 	} else {
-		delete(project.Kits, kitNumber)
+		delete(project.Kits, kit.Number)
 	}
 }
 
-func parseKitParts(parts []lego.Part) map[PartKey]int {
+func createKitView(event *lego.KitCreated) KitView {
 
-	kp := make(map[PartKey]int, len(parts))
+	kp := make(map[PartKey]int, len(event.Parts))
 
-	for _, p := range parts {
+	for _, p := range event.Parts {
 		kp[CreatePartKey(p.ID, p.Colour.ID)] = p.Quantity
 	}
 
-	return kp
+	return KitView{
+		Number: event.KitNumber,
+		Name:   event.KitName,
+		Parts:  kp,
+	}
 }
