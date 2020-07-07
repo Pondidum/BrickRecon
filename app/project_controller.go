@@ -2,6 +2,7 @@ package app
 
 import (
 	"brickrecon/lego"
+	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
 	"net/http"
 
@@ -98,7 +99,7 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 	return preen.ComposeModels(
 		siteModel,
 		ProjectModel{
-			Project: applyKit(selected, map[lego.PartKey]int{}),
+			Project: applyKit(selected, map[all_projects.PartKey]int{}),
 		},
 	)
 }
@@ -110,7 +111,7 @@ type postModel struct {
 	Action   string
 }
 
-func applyKit(project *lego.ProjectView, kit map[lego.PartKey]int) *ProjectWithKit {
+func applyKit(project *all_projects.ProjectView, kit map[all_projects.PartKey]int) *ProjectWithKit {
 
 	parts := make([]PartWithKitPart, len(project.Parts))
 
@@ -121,7 +122,7 @@ func applyKit(project *lego.ProjectView, kit map[lego.PartKey]int) *ProjectWithK
 			TotalInventory:  p.Inventory,
 		}
 
-		if quantity, found := kit[lego.CreatePartKey(p.ID, p.ColourID)]; found {
+		if quantity, found := kit[all_projects.CreatePartKey(p.ID, p.ColourID)]; found {
 			part.KitQuantity = quantity
 			part.TotalInventory += quantity
 		}
@@ -144,7 +145,7 @@ type ProjectWithKit struct {
 }
 
 type PartWithKitPart struct {
-	*lego.ProjectPartView
+	*all_projects.ProjectPartView
 
 	KitQuantity    int
 	TotalInventory int

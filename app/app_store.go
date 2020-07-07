@@ -4,12 +4,14 @@ import (
 	"brickrecon/distributor"
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"brickrecon/lego/projections/all_kits"
+	"brickrecon/lego/projections/all_projects"
 	"context"
 	"fmt"
 )
 
 type SiteModel struct {
-	AllKits   map[lego.KitNumber]*lego.KitView
+	AllKits   map[lego.KitNumber]*all_kits.KitView
 	AllModels []lego.ProjectName
 }
 
@@ -23,13 +25,13 @@ func (a *AppStore) Save(ctx context.Context, aggregate eventstore.Aggregate) err
 }
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
-	var projects lego.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, lego.ProjectsProjectionName, &projects); err != nil {
+	var projects all_projects.AllProjectsView
+	if err := a.EventStore.ReadView(ctx, all_projects.ProjectionName, &projects); err != nil {
 		return SiteModel{}
 	}
 
-	var kits lego.AllKitsView
-	if err := a.EventStore.ReadView(ctx, lego.KitsProjectionName, &kits); err != nil {
+	var kits all_kits.AllKitsView
+	if err := a.EventStore.ReadView(ctx, all_kits.ProjectionName, &kits); err != nil {
 		return SiteModel{}
 	}
 
@@ -39,10 +41,10 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	}
 }
 
-func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*lego.ProjectView, error) {
+func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*all_projects.ProjectView, error) {
 
-	var view lego.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, lego.ProjectsProjectionName, &view); err != nil {
+	var view all_projects.AllProjectsView
+	if err := a.EventStore.ReadView(ctx, all_projects.ProjectionName, &view); err != nil {
 		return nil, err
 	}
 
@@ -56,10 +58,10 @@ func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*leg
 
 }
 
-func (a *AppStore) ReadKit(ctx context.Context, kitNumber lego.KitNumber) (*lego.KitView, error) {
+func (a *AppStore) ReadKit(ctx context.Context, kitNumber lego.KitNumber) (*all_kits.KitView, error) {
 
-	var view lego.AllKitsView
-	if err := a.EventStore.ReadView(ctx, "kits", &view); err != nil {
+	var view all_kits.AllKitsView
+	if err := a.EventStore.ReadView(ctx, all_kits.ProjectionName, &view); err != nil {
 		return nil, err
 	}
 

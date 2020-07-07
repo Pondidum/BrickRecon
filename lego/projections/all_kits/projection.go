@@ -1,44 +1,21 @@
-package lego
+package all_kits
 
 import (
 	"brickrecon/eventstore"
-
-	uuid "github.com/satori/go.uuid"
+	"brickrecon/lego"
 )
 
-type AllKitsView struct {
-	Kits map[KitNumber]*KitView
-}
-
-type KitView struct {
-	ID     uuid.UUID
-	Name   KitName
-	Number KitNumber
-
-	Parts []PartView
-}
-
-type PartView struct {
-	ID         LDrawPart
-	Name       PartName
-	ColourID   BrickLinkColour
-	ColourName ColourName
-	ColourHex  HexColour
-
-	Quantity int
-}
-
-var KitsProjectionName string = "kits"
+var ProjectionName string = "kits"
 
 type KitsProjection struct{}
 
 func (p *KitsProjection) Name() string {
-	return KitsProjectionName
+	return ProjectionName
 }
 
 func (p *KitsProjection) CreateState() interface{} {
 	return &AllKitsView{
-		Kits: map[KitNumber]*KitView{},
+		Kits: map[lego.KitNumber]*KitView{},
 	}
 }
 
@@ -47,7 +24,7 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 
 	switch e := event.(type) {
 
-	case *KitCreated:
+	case *lego.KitCreated:
 		view.Kits[e.KitNumber] = &KitView{
 			ID:     e.AggregateRootID,
 			Name:   e.KitName,
@@ -59,7 +36,7 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 	return view
 }
 
-func toPartView(parts []Part) []PartView {
+func toPartView(parts []lego.Part) []PartView {
 
 	views := make([]PartView, len(parts))
 

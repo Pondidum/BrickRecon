@@ -1,47 +1,13 @@
-package lego
+package all_projects
 
 import (
 	"brickrecon/eventstore"
-	"fmt"
+	"brickrecon/lego"
 
 	uuid "github.com/satori/go.uuid"
 )
 
-type PartKey string
-
-func CreatePartKey(part LDrawPart, colour BrickLinkColour) PartKey {
-	return PartKey(fmt.Sprintf("%v|%v", part, colour))
-}
-
-type AllProjectsView struct {
-	Names    []ProjectName
-	Projects map[ProjectName]*ProjectView
-	Kits     map[KitNumber]map[PartKey]int
-}
-
-type ProjectView struct {
-	ID   uuid.UUID
-	Name ProjectName
-
-	Parts []*ProjectPartView
-
-	Kits map[KitNumber]map[PartKey]int
-}
-
-type ProjectPartView struct {
-	ID         LDrawPart
-	Name       PartName
-	ColourID   BrickLinkColour
-	ColourName ColourName
-	ColourHex  HexColour
-
-	Key PartKey
-
-	Quantity  int
-	Inventory int
-}
-
-func toProjectPartView(part Part) *ProjectPartView {
+func toProjectPartView(part lego.Part) *ProjectPartView {
 	return &ProjectPartView{
 		ID:         part.ID,
 		Name:       part.Name,
@@ -53,19 +19,19 @@ func toProjectPartView(part Part) *ProjectPartView {
 	}
 }
 
-var ProjectsProjectionName string = "projects"
+var ProjectionName string = "projects"
 
 type ProjectsProjection struct{}
 
 func (p *ProjectsProjection) Name() string {
-	return ProjectsProjectionName
+	return ProjectionName
 }
 
 func (p *ProjectsProjection) CreateState() interface{} {
 	return &AllProjectsView{
-		Names:    []ProjectName{},
-		Projects: map[ProjectName]*ProjectView{},
-		Kits:     map[KitNumber]map[PartKey]int{},
+		Names:    []lego.ProjectName{},
+		Projects: map[lego.ProjectName]*ProjectView{},
+		Kits:     map[lego.KitNumber]map[PartKey]int{},
 	}
 }
 
@@ -74,15 +40,15 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 
 	switch e := event.(type) {
 
-	case *ProjectCreated:
+	case *lego.ProjectCreated:
 		view.Names = append(view.Names, e.Name)
 		view.Projects[e.Name] = &ProjectView{
 			ID:   e.AggregateRootID,
 			Name: e.Name,
-			Kits: map[KitNumber]map[PartKey]int{},
+			Kits: map[lego.KitNumber]map[PartKey]int{},
 		}
 
-	case *ProjectPartsAdded:
+	case *lego.ProjectPartsAdded:
 		project := projectByID(view.Projects, e.AggregateRootID)
 		for _, part := range e.Parts {
 			project.Parts = append(project.Parts, toProjectPartView(part))
@@ -92,17 +58,17 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kn, kit)
 		}
 
-	case *ProjectInventoryAdded:
+	case *lego.ProjectInventoryAdded:
 		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
-	case *ProjectInventoryRemoved:
+	case *lego.ProjectInventoryRemoved:
 		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
-	case *KitCreated:
+	case *lego.KitCreated:
 		kit := parseKitParts(e.Parts)
 
 		view.Kits[e.KitNumber] = kit
@@ -116,7 +82,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	return view
 }
 
-func projectByID(all map[ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
+func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
 	for _, p := range all {
 		if p.ID == id {
 			return p
@@ -125,7 +91,7 @@ func projectByID(all map[ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
 	return nil
 }
 
-func findPart(parts []*ProjectPartView, partID LDrawPart, colourID BrickLinkColour) *ProjectPartView {
+func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.BrickLinkColour) *ProjectPartView {
 
 	for _, part := range parts {
 		if part.ID == partID && part.ColourID == colourID {
@@ -136,7 +102,7 @@ func findPart(parts []*ProjectPartView, partID LDrawPart, colourID BrickLinkColo
 	return nil
 }
 
-func calculateKitFulfillment(project *ProjectView, kitNumber KitNumber, kitParts map[PartKey]int) {
+func calculateKitFulfillment(project *ProjectView, kitNumber lego.KitNumber, kitParts map[PartKey]int) {
 	fulfilled := map[PartKey]int{}
 
 	for _, part := range project.Parts {
@@ -153,7 +119,7 @@ func calculateKitFulfillment(project *ProjectView, kitNumber KitNumber, kitParts
 	}
 }
 
-func parseKitParts(parts []Part) map[PartKey]int {
+func parseKitParts(parts []lego.Part) map[PartKey]int {
 
 	kp := make(map[PartKey]int, len(parts))
 

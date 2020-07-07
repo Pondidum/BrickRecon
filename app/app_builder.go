@@ -6,6 +6,8 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/eventstore/backend/fs"
 	"brickrecon/lego"
+	"brickrecon/lego/projections/all_kits"
+	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
 	"context"
 	"net/http"
@@ -43,8 +45,8 @@ func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.Eve
 	eventstore.RegisterMany(es, b.ctx, lego.KitEvents)
 	eventstore.RegisterMany(es, b.ctx, background.ImageCacheEvents)
 
-	es.RegisterProjection(b.ctx, &lego.ProjectsProjection{})
-	es.RegisterProjection(b.ctx, &lego.KitsProjection{})
+	es.RegisterProjection(b.ctx, &all_projects.ProjectsProjection{})
+	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
 
 	return es
 }
