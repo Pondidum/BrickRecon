@@ -5,6 +5,7 @@ import (
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
 	"net/http"
+	"sort"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
@@ -134,12 +135,49 @@ func applyKit(project *all_projects.ProjectView, kit all_projects.KitView) *Proj
 		parts[i] = part
 	}
 
+	if kit.Name != lego.KitName("") {
+		sortByKitAddition(parts)
+	} else {
+		sortByPartAndColour(parts)
+	}
+
 	return &ProjectWithKit{
 		ID:    project.ID,
 		Name:  project.Name,
 		Parts: parts,
 		Kits:  project.Kits,
 	}
+}
+
+func sortByKitAddition(parts []PartWithKitPart) {
+	sort.Slice(parts, func(x int, y int) bool {
+		l := parts[x]
+		r := parts[y]
+
+		if (l.KitQuantity > 0) == (r.KitQuantity > 0) {
+
+			if l.ID == r.ID {
+				return l.ColourID < r.ColourID
+			}
+
+			return l.ID < r.ID
+		}
+
+		return l.KitQuantity > 0
+	})
+}
+
+func sortByPartAndColour(parts []PartWithKitPart) {
+	sort.Slice(parts, func(x int, y int) bool {
+		l := parts[x]
+		r := parts[y]
+
+		if l.ID == r.ID {
+			return l.ColourID < r.ColourID
+		}
+
+		return l.ID < r.ID
+	})
 }
 
 type ProjectWithKit struct {
