@@ -132,7 +132,7 @@ func TestCreateColour(t *testing.T) {
 
 }
 
-func TestSanitiseName(t *testing.T) {
+func TestSanitisePartName(t *testing.T) {
 	t.Parallel()
 
 	colour := lego.Colour{
@@ -148,13 +148,22 @@ func TestSanitiseName(t *testing.T) {
 	}
 
 	for input, expected := range cases {
-		assert.Equal(t, expected, sanitiseName(input, "15403b", colour))
+		assert.Equal(t, expected, sanitisePartName(input, "15403b", colour))
 	}
 }
 
 func TestBoidCsv(t *testing.T) {
+	t.Parallel()
+
 	csv := boidCsv([]lego.BrickOwlPart{lego.BrickOwlPart("123"), lego.BrickOwlPart("456")})
 	assert.Equal(t, "123,456", csv)
+}
+
+func TestSanitiseKitName(t *testing.T) {
+	t.Parallel()
+
+	assert.Equal(t, "Darth Vader Transformation", string(sanitiseKitName("LEGO Darth Vader Transformation  Set 75183")))
+	assert.Equal(t, "Millennium Falcon Microfighter", string(sanitiseKitName("LEGO Millennium Falcon Microfighter Set 75193")))
 }
 
 var partJson string = `

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -31,7 +32,17 @@ func (bo *BrickOwlApi) GetSetName(setNumber lego.KitNumber) (lego.KitName, error
 		return "", err
 	}
 
-	return lego.KitName(info.Name), nil
+	return sanitiseKitName(info.Name), nil
+}
+
+var rx = regexp.MustCompile(`\s+(Set\s*\d+$)`)
+
+func sanitiseKitName(name string) lego.KitName {
+
+	name = strings.TrimPrefix(name, "LEGO ")
+	name = rx.ReplaceAllString(name, "")
+
+	return lego.KitName(name)
 }
 
 func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]lego.Part, error) {
@@ -221,7 +232,7 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 
 	colour := partColour(colours, additional.ColourID)
 
-	name := sanitiseName(additional.Name, ldrawID, colour)
+	name := sanitisePartName(additional.Name, ldrawID, colour)
 
 	return lego.Part{
 		ID:       lego.LDrawPart(ldrawID),
@@ -235,7 +246,7 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	}
 }
 
-func sanitiseName(name string, id string, colour lego.Colour) string {
+func sanitisePartName(name string, id string, colour lego.Colour) string {
 
 	name = strings.TrimPrefix(name, "LEGO ")
 	name = strings.TrimPrefix(name, string(colour.Name))
