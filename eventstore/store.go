@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"time"
 
 	"github.com/honeycombio/beeline-go"
 	"github.com/honeycombio/beeline-go/timer"
@@ -54,7 +55,7 @@ func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) er
 		return errors.New("Event initialiser must return a pointer to a struct")
 	}
 
-	es.registry[EventName(event)] = creator
+	es.registry[eventName(event)] = creator
 
 	return nil
 }
@@ -131,14 +132,29 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	beeline.AddField(ctx, "es.aggregate_old_version", aggregate.version)
 	beeline.AddField(ctx, "es.aggregate_changes", len(aggregate.changes))
 
-	newVersion, err := writer.WriteEvents(ctx, aggregate.id, aggregate.version, aggregate.changes)
+	currentVersion := aggregate.version
 
+	for _, e := range aggregate.changes {
+
+		currentVersion++
+
+		meta := e.Meta()
+
+		meta.Timestamp = time.Now()
+		meta.ID = uuid.NewV4()
+		meta.AggregateRootID = aggregate.id
+		meta.Version = currentVersion
+		meta.Type = eventName(e)
+
+	}
+
+	eventsWritten, err := writer.WriteEvents(ctx, aggregate.id, aggregate.changes)
 	if err != nil {
 		return err
 	}
 
 	aggregate.changes = []Event{}
-	aggregate.version = newVersion
+	aggregate.version = aggregate.version + eventsWritten
 
 	beeline.AddField(ctx, "es.aggregate_version", aggregate.version)
 
@@ -246,7 +262,7 @@ func (es *eventStore) loadEvents(ctx context.Context, lowestIndex int) ([]Event,
 	return events, nil
 }
 
-func EventName(event interface{}) string {
+func eventName(event interface{}) string {
 	t := reflect.TypeOf(event)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()

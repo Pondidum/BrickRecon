@@ -21,7 +21,7 @@ type EventReader interface {
 }
 
 type EventWriter interface {
-	WriteEvents(ctx context.Context, aggregateID uuid.UUID, currentVersion int, changes []Event) (int, error)
+	WriteEvents(ctx context.Context, aggregateID uuid.UUID, changes []Event) (int, error)
 }
 
 type View interface {
