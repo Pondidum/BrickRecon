@@ -3,7 +3,6 @@ package app
 import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_kits"
-	"brickrecon/preen"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -35,13 +34,9 @@ func (c KitController) Get(req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
 
-	siteModel := c.Store.SiteModel(req.Context())
 	selected, _ := c.Store.ReadKit(req.Context(), lego.KitNumber(vars["kitnumber"]))
 
-	return preen.ComposeModels(
-		siteModel,
-		KitModel{
-			Kit: selected,
-		},
-	)
+	return KitModel{
+		Kit: selected,
+	}
 }

@@ -26,7 +26,7 @@ func (c CreateController) AuthRequired() bool {
 }
 
 func (c CreateController) Get(req *http.Request) interface{} {
-	return c.Store.SiteModel(req.Context())
+	return nil
 }
 
 func (c CreateController) Post(req *http.Request) interface{} {
@@ -35,7 +35,7 @@ func (c CreateController) Post(req *http.Request) interface{} {
 	modelName := lego.ProjectName(req.FormValue("modelName"))
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	defer file.Close()
@@ -43,7 +43,7 @@ func (c CreateController) Post(req *http.Request) interface{} {
 	_, err = CreateProject(ctx, c.Store, modelName, file)
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	return preen.Redirect{URL: "/project/" + string(modelName)}

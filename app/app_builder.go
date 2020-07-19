@@ -83,6 +83,9 @@ func (b *AppBuilder) CreateWebUI() (http.Handler, error) {
 
 	p, err := preen.NewPreen(preen.PreenConfig{
 		ApplicationRoot: "app",
+		GetSiteModel: func(ctx context.Context) interface{} {
+			return store.SiteModel(ctx)
+		},
 		Controllers: []preen.Controller{
 			&RootController{Store: store},
 			&CreateController{Store: store},

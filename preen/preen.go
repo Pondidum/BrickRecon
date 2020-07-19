@@ -2,6 +2,7 @@ package preen
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -24,9 +25,9 @@ type Preen struct {
 	controllers   []Controller
 	templateTypes map[string]bool
 	auth          basicAuth
-
-	layout    *template.Template
-	templates map[string]*template.Template
+	getSiteModel  func(ctx context.Context) interface{}
+	layout        *template.Template
+	templates     map[string]*template.Template
 }
 
 type PreenConfig struct {
@@ -35,6 +36,8 @@ type PreenConfig struct {
 	Controllers []Controller
 
 	TemplateTypes []string
+
+	GetSiteModel func(ctx context.Context) interface{}
 }
 
 var defaultConfig PreenConfig = PreenConfig{
@@ -53,6 +56,7 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		templateTypes: map[string]bool{},
 		templates:     map[string]*template.Template{},
 		auth:          BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
+		getSiteModel:  pc.GetSiteModel,
 	}
 
 	for _, ext := range pc.TemplateTypes {
@@ -195,7 +199,11 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		if redirect, ok := model.(Redirect); ok {
 			http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
 		} else {
-			p.view(w, req, getViewName(ctl), model)
+
+			siteModel := p.getSiteModel(req.Context())
+			viewModel := ComposeModels(siteModel, model)
+
+			p.view(w, req, getViewName(ctl), viewModel)
 		}
 	}
 

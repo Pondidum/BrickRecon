@@ -25,7 +25,7 @@ func (c KitImportController) AuthRequired() bool {
 }
 
 func (c KitImportController) Get(req *http.Request) interface{} {
-	return c.Store.SiteModel(req.Context())
+	return nil
 }
 
 func (c KitImportController) Post(req *http.Request) interface{} {
@@ -35,7 +35,7 @@ func (c KitImportController) Post(req *http.Request) interface{} {
 	_, err := ImportKit(ctx, c.Store, lego.KitNumber(kitNumber))
 
 	if err != nil {
-		return preen.ComposeModels(c.Store.SiteModel(ctx), preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	return preen.Redirect{URL: "/kit/" + kitNumber}

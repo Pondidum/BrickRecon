@@ -36,14 +36,10 @@ func (c ProjectController) View() string {
 
 func (c ProjectController) Get(req *http.Request) interface{} {
 
-	siteModel := c.Store.SiteModel(req.Context())
+	return ProjectModel{
+		Project: projectWithKit(c.Store, req),
+	}
 
-	return preen.ComposeModels(
-		siteModel,
-		ProjectModel{
-			Project: projectWithKit(c.Store, req),
-		},
-	)
 }
 
 func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
@@ -94,10 +90,9 @@ func handleDecrease(project *lego.Project, req *http.Request) error {
 
 func (c ProjectController) Post(req *http.Request) interface{} {
 	ctx := req.Context()
-	siteModel := c.Store.SiteModel(ctx)
 
 	if err := req.ParseForm(); err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	vars := mux.Vars(req)
@@ -106,33 +101,31 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 
 	project := lego.BlankProject()
 	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	action, err := getAction(req)
 	if err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	handler, found := actions[action]
 	if !found {
-		return preen.ComposeModels(siteModel, preen.ErrorModelS("No handler found for action "+action))
+		return preen.ErrorModelS("No handler found for action " + action)
 	}
 
 	if err := handler(project, req); err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
+		return preen.ErrorModel(err)
 	}
 
-	return preen.ComposeModels(
-		siteModel,
-		ProjectModel{
-			Project: projectWithKit(c.Store, req),
-		},
-	)
+	return ProjectModel{
+		Project: projectWithKit(c.Store, req),
+	}
+
 }
 
 func getAction(req *http.Request) (string, error) {
