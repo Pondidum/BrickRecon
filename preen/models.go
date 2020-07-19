@@ -11,3 +11,7 @@ type Error struct {
 func ErrorModel(err error) Error {
 	return Error{ErrorMessage: err.Error()}
 }
+
+func ErrorModelS(err string) Error {
+	return Error{ErrorMessage: err}
+}

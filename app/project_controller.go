@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -59,18 +58,45 @@ func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
 	return applyKit(project, kit)
 }
 
+var actions = map[string]func(project *lego.Project, req *http.Request) error{
+	"increase": handleIncrease,
+	"decrease": handleDecrease,
+}
+
+func handleIncrease(project *lego.Project, req *http.Request) error {
+
+	var pm quantityModel
+	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+		return err
+	}
+
+	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func handleDecrease(project *lego.Project, req *http.Request) error {
+
+	var pm quantityModel
+	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+
+		return err
+	}
+
+	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c ProjectController) Post(req *http.Request) interface{} {
 	ctx := req.Context()
 	siteModel := c.Store.SiteModel(ctx)
 
 	if err := req.ParseForm(); err != nil {
-		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
-	}
-
-	decoder := schema.NewDecoder()
-
-	var pm postModel
-	if err := decoder.Decode(&pm, req.PostForm); err != nil {
 		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
@@ -83,16 +109,18 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
-	if pm.Action == "increase" {
-		if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-			return preen.ComposeModels(siteModel, preen.ErrorModel(err))
-		}
+	action, err := getAction(req)
+	if err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
-	if pm.Action == "decrease" {
-		if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-			return preen.ComposeModels(siteModel, preen.ErrorModel(err))
-		}
+	handler, found := actions[action]
+	if !found {
+		return preen.ComposeModels(siteModel, preen.ErrorModelS("No handler found for action "+action))
+	}
+
+	if err := handler(project, req); err != nil {
+		return preen.ComposeModels(siteModel, preen.ErrorModel(err))
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
@@ -107,11 +135,24 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 	)
 }
 
-type postModel struct {
+func getAction(req *http.Request) (string, error) {
+
+	var pm postActions
+	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+		return "", err
+	}
+
+	return pm.Action, nil
+}
+
+type postActions struct {
+	Action string
+}
+
+type quantityModel struct {
 	Part     lego.LDrawPart
 	Colour   lego.BrickLinkColour
 	Quantity int
-	Action   string
 }
 
 func applyKit(project *all_projects.ProjectView, kit all_projects.KitView) *ProjectWithKit {

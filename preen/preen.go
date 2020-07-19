@@ -6,12 +6,14 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/gorilla/schema"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -311,4 +313,14 @@ func slither(input string) string {
 	snake := matchFirstCap.ReplaceAllString(input, "${1}_${2}")
 	snake = matchAllCap.ReplaceAllString(snake, "${1}_${2}")
 	return strings.ToLower(snake)
+}
+
+var decoder = schema.NewDecoder()
+
+func DecodePostForm(form url.Values, model interface{}) error {
+
+	decoder.IgnoreUnknownKeys(true)
+
+	err := decoder.Decode(model, form)
+	return err
 }
