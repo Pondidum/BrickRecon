@@ -42,50 +42,10 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 }
 
-func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
-	vars := mux.Vars(req)
-
-	projectName := lego.ProjectName(vars["name"])
-	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
-
-	project, _ := store.ReadProject(req.Context(), projectName)
-	kit := project.Kits[kitNumber]
-
-	return applyKit(project, kit)
-}
-
-var actions = map[string]func(project *lego.Project, req *http.Request) error{
-	"increase": handleIncrease,
-	"decrease": handleDecrease,
-}
-
-func handleIncrease(project *lego.Project, req *http.Request) error {
-
-	var pm quantityModel
-	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return err
+func (c ProjectController) PostActions() map[string]func(req *http.Request) interface{} {
+	return map[string]func(req *http.Request) interface{}{
+		"increase": c.Post,
 	}
-
-	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func handleDecrease(project *lego.Project, req *http.Request) error {
-
-	var pm quantityModel
-	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-
-		return err
-	}
-
-	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c ProjectController) Post(req *http.Request) interface{} {
@@ -109,13 +69,21 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 		return preen.ErrorModel(err)
 	}
 
-	handler, found := actions[action]
-	if !found {
-		return preen.ErrorModelS("No handler found for action " + action)
+	var pm quantityModel
+	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+		return err
 	}
 
-	if err := handler(project, req); err != nil {
-		return preen.ErrorModel(err)
+	if action == "increase" {
+		if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+			return err
+		}
+	}
+
+	if action == "decrease" {
+		if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+			return err
+		}
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
@@ -146,6 +114,18 @@ type quantityModel struct {
 	Part     lego.LDrawPart
 	Colour   lego.BrickLinkColour
 	Quantity int
+}
+
+func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
+	vars := mux.Vars(req)
+
+	projectName := lego.ProjectName(vars["name"])
+	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+
+	project, _ := store.ReadProject(req.Context(), projectName)
+	kit := project.Kits[kitNumber]
+
+	return applyKit(project, kit)
 }
 
 func applyKit(project *all_projects.ProjectView, kit all_projects.KitView) *ProjectWithKit {
