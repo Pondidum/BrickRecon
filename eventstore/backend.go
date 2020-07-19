@@ -7,16 +7,17 @@ import (
 )
 
 type Backend interface {
-	NewEventReader(registry map[string]Initialiser, ctx context.Context) (EventReader, error)
+	NewEventReader(registry map[string]Initialiser, aggregateID uuid.UUID) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
+	DestroyViews() error
+
+	AllAggregates() ([]uuid.UUID, error)
 }
 
 type EventReader interface {
 	Close() error
-	ReadAll() bool
-	ReadFor(uuid uuid.UUID) bool
-	ReadFrom(offset int) bool
+	Read() bool
 	Event() (Event, error)
 }
 

@@ -23,7 +23,7 @@ func TestCacheCreation(t *testing.T) {
 	storePath := path.Join(temp, "img/parts")
 	os.MkdirAll(storePath, os.ModePerm)
 
-	be, _ := fs.NewFileSystemBackend(path.Join(temp, "es"))
+	be, _ := fs.NewAggregateBackend(path.Join(temp, "es"))
 	es := eventstore.NewEventStore(be)
 	eventstore.RegisterMany(es, ctx, ImageCacheEvents)
 
@@ -45,7 +45,7 @@ func TestCacheAlreadyExists(t *testing.T) {
 	storePath := path.Join(temp, "img/parts")
 	os.MkdirAll(storePath, os.ModePerm)
 
-	be, _ := fs.NewFileSystemBackend(temp)
+	be, _ := fs.NewAggregateBackend(temp)
 	es := eventstore.NewEventStore(be)
 	eventstore.RegisterMany(es, ctx, ImageCacheEvents)
 

@@ -21,7 +21,7 @@ type EventStore interface {
 	ReadView(ctx context.Context, name string, view interface{}) error
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
-	RunProjections(ctx context.Context) error
+	RebuildProjections(ctx context.Context) error
 }
 
 type eventStore struct {
@@ -86,7 +86,7 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 
 	beeline.AddField(ctx, "es.aggregate_id", id.String())
 
-	er, err := es.backend.NewEventReader(es.registry, ctx)
+	er, err := es.backend.NewEventReader(es.registry, id)
 	if err != nil {
 		return err
 	}
@@ -96,7 +96,7 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 	aggregator := a.aggregator()
 	hasEvents := false
 
-	for er.ReadFor(id) {
+	for er.Read() {
 		hasEvents = true
 
 		r, err := er.Event()
@@ -127,14 +127,15 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 	writer := es.backend.NewEventWriter()
 	aggregate := a.aggregator()
+	events := aggregate.changes
 
 	beeline.AddField(ctx, "es.aggregate_id", aggregate.id.String())
 	beeline.AddField(ctx, "es.aggregate_old_version", aggregate.version)
-	beeline.AddField(ctx, "es.aggregate_changes", len(aggregate.changes))
+	beeline.AddField(ctx, "es.aggregate_changes", len(events))
 
 	currentVersion := aggregate.version
 
-	for _, e := range aggregate.changes {
+	for _, e := range events {
 
 		currentVersion++
 
@@ -148,7 +149,7 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 	}
 
-	eventsWritten, err := writer.WriteEvents(ctx, aggregate.id, aggregate.changes)
+	eventsWritten, err := writer.WriteEvents(ctx, aggregate.id, events)
 	if err != nil {
 		return err
 	}
@@ -158,108 +159,71 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 	beeline.AddField(ctx, "es.aggregate_version", aggregate.version)
 
-	err = es.RunProjections(ctx)
+	err = es.runProjections(ctx, events)
 
 	return err
 }
 
-func (es *eventStore) RunProjections(ctx context.Context) error {
+func (es *eventStore) runProjections(ctx context.Context, events []Event) error {
 
-	views := es.allViews()
-	lowestIndex, err := findUnprocessedEvents(ctx, views)
-
-	if err != nil {
-		return err
-	}
-
-	events, err := es.loadEvents(ctx, lowestIndex)
-	if err != nil {
-		return err
-	}
-
-	lastIndex := lowestIndex + len(events)
-
+	var err error
 	for name, projection := range es.projections {
 
-		view := views[name]
-
-		// we will have already failed if this didn't work
-		viewLastIndex, _ := view.LastEventIndex(ctx)
-		projectionEvents := events[viewLastIndex-lowestIndex:]
-
-		if len(projectionEvents) == 0 {
-			continue
-		}
-
+		view := es.backend.NewView(name)
 		state := projection.CreateState()
 		if err := view.ReadView(ctx, state); err != nil {
 			return err
 		}
 
-		for _, e := range projectionEvents {
+		for _, e := range events {
 			state = projection.Project(state, e)
 		}
 
-		err = view.WriteView(ctx, state, lastIndex)
+		err = view.WriteView(ctx, state, 0)
 	}
 
 	return err
 }
 
-func (es *eventStore) allViews() map[string]View {
-	views := make(map[string]View, len(es.projections))
+func (es *eventStore) RebuildProjections(ctx context.Context) error {
 
-	for name := range es.projections {
-		views[name] = es.backend.NewView(name)
+	be := es.backend
+	if err := be.DestroyViews(); err != nil {
+		return err
 	}
 
-	return views
-}
-
-func findUnprocessedEvents(ctx context.Context, views map[string]View) (int, error) {
-
-	beeline.AddField(ctx, "es.view_count", len(views))
-
-	lowestIndex := 0
-
-	for name, view := range views {
-		index, err := view.LastEventIndex(ctx)
-		if err != nil {
-			return 0, err
-		}
-
-		beeline.AddField(ctx, "es.view_"+name+"_last_index", index)
-
-		lowestIndex = min(lowestIndex, index)
-	}
-
-	beeline.AddField(ctx, "es.view_lowest_index", lowestIndex)
-
-	return lowestIndex, nil
-}
-
-func (es *eventStore) loadEvents(ctx context.Context, lowestIndex int) ([]Event, error) {
-	er, err := es.backend.NewEventReader(es.registry, ctx)
+	aggregates, err := be.AllAggregates()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	defer er.Close()
 
-	events := []Event{}
+	for _, id := range aggregates {
 
-	for er.ReadFrom(lowestIndex) {
+		reader, err := be.NewEventReader(es.registry, id)
 
-		record, err := er.Event()
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		events = append(events, record)
+		defer reader.Close()
+
+		events := []Event{}
+
+		for reader.Read() {
+			e, err := reader.Event()
+			if err != nil {
+				return err
+			}
+
+			events = append(events, e)
+		}
+
+		if err := es.runProjections(ctx, events); err != nil {
+			return err
+		}
 	}
 
-	beeline.AddField(ctx, "es.events_loaded_count", len(events))
-
-	return events, nil
+	return nil
 }
 
 func eventName(event interface{}) string {

@@ -25,12 +25,12 @@ func NewAppBuilder(ctx context.Context) *AppBuilder {
 	return &AppBuilder{ctx: ctx}
 }
 
-func (b *AppBuilder) CreateBackend() (*fs.FsBackend, error) {
+func (b *AppBuilder) CreateBackend() (*fs.AggregateBackend, error) {
 	if err := os.MkdirAll("_store", os.ModePerm); err != nil {
 		return nil, err
 	}
 
-	backend, err := fs.NewFileSystemBackend("_store")
+	backend, err := fs.NewAggregateBackend("_store")
 	if err != nil {
 		return nil, err
 	}

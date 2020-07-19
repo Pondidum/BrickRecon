@@ -16,7 +16,7 @@ import (
 func createBackend() (eventstore.Backend, func()) {
 
 	temp, _ := ioutil.TempDir(".", "es")
-	be, _ := fs.NewFileSystemBackend(temp)
+	be, _ := fs.NewAggregateBackend(temp)
 
 	return be, func() { os.RemoveAll(temp) }
 
@@ -72,55 +72,6 @@ func TestProjections(t *testing.T) {
 
 	assert.Contains(t, view.Names, "One")
 	assert.Contains(t, view.Names, "Two")
-}
-
-func TestProjectionCatchup(t *testing.T) {
-	be, cleanup := createBackend()
-	defer cleanup()
-
-	es := eventstore.NewEventStore(be)
-	es.RegisterEvent(context.Background(), func() interface{} { return &TestEvent{} })
-
-	a := eventstore.NewAggregator(func(e eventstore.Event) {})
-	a.SetID(uuid.NewV4())
-	a.Apply(&TestEvent{Name: "Before_1", SetNumber: 1})
-	a.Apply(&TestEvent{Name: "Before_2", SetNumber: 2})
-
-	// write some events
-	assert.NoError(t, es.SaveAggregate(context.Background(), a))
-
-	// register a new projection
-	es.RegisterProjection(
-		context.Background(),
-		&testProjection{
-			name: "logs",
-			init: func() interface{} {
-				return &OrderedEvents{}
-			},
-			project: func(state interface{}, event eventstore.Event) interface{} {
-				m := state.(*OrderedEvents)
-				e := event.(*TestEvent)
-
-				m.Names = append(m.Names, e.Name)
-
-				return state
-			},
-		})
-
-	// write a new event
-	a.Apply(&TestEvent{Name: "After_1", SetNumber: 3})
-	assert.NoError(t, es.SaveAggregate(context.Background(), a))
-
-	// view should contain all 3 events in order
-	var view OrderedEvents
-	assert.NoError(t, es.ReadView(context.Background(), "logs", &view))
-
-	assert.Equal(t, []string{"Before_1", "Before_2", "After_1"}, view.Names)
-
-}
-
-type OrderedEvents struct {
-	Names []string
 }
 
 func TestAggregateSaveLoad(t *testing.T) {

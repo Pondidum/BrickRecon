@@ -6,25 +6,26 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"path"
 
 	"github.com/honeycombio/beeline-go"
 	uuid "github.com/satori/go.uuid"
 )
 
-var newline = []byte("\n")
+type DirectoryPath string
 
-type FsEventWriter struct {
-	filename string
+type AggregateEventWriter struct {
+	root DirectoryPath
 }
 
-func NewEventWriter(filename string) *FsEventWriter {
-	return &FsEventWriter{filename}
+func NewAggregateEventWriter(root DirectoryPath) *AggregateEventWriter {
+	return &AggregateEventWriter{root}
 }
 
-func (ew *FsEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID, changes []eventstore.Event) (int, error) {
+func (ew *AggregateEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID, changes []eventstore.Event) (int, error) {
 
 	block := bytes.Buffer{}
-
+	newline := []byte("\n")
 	for _, e := range changes {
 
 		bytes, err := json.Marshal(e)
@@ -38,9 +39,11 @@ func (ew *FsEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID,
 		block.Write(newline)
 	}
 
-	beeline.AddField(ctx, "es.event_file", ew.filename)
+	filepath := path.Join(string(ew.root), aggregateID.String())
 
-	file, err := os.OpenFile(ew.filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	beeline.AddField(ctx, "es.event_file", filepath)
+
+	file, err := os.OpenFile(filepath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		beeline.AddField(ctx, "es.event_file_open_err", err)
 		return 0, err

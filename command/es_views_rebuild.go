@@ -40,7 +40,7 @@ func (c *EventStoreViewsRebuildCommand) Run(args []string) int {
 		return 1
 	}
 
-	if err := store.RunProjections(ctx); err != nil {
+	if err := store.RebuildProjections(ctx); err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}
