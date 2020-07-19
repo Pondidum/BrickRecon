@@ -104,19 +104,22 @@ func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.Bri
 
 func calculateKitFulfillment(project *ProjectView, kit KitView) {
 	fulfilled := map[PartKey]int{}
+	total := 0
 
 	for _, part := range project.Parts {
 
 		if quantity, found := kit.Parts[part.Key]; found {
 			fulfilled[part.Key] += quantity
+			total += quantity
 		}
 	}
 
 	if len(fulfilled) > 0 {
 		project.Kits[kit.Number] = KitView{
-			Number: kit.Number,
-			Name:   kit.Name,
-			Parts:  fulfilled,
+			Number:     kit.Number,
+			Name:       kit.Name,
+			Parts:      fulfilled,
+			TotalParts: total,
 		}
 	} else {
 		delete(project.Kits, kit.Number)

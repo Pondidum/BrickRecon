@@ -45,5 +45,6 @@ type KitView struct {
 	Number lego.KitNumber
 	Name   lego.KitName
 
-	Parts map[PartKey]int
+	Parts      map[PartKey]int
+	TotalParts int
 }
