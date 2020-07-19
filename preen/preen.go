@@ -231,6 +231,30 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 	}
 
+	if postActions, ok := c.(PostActions); ok {
+
+		postChain := p.auth.Wrap(render)
+		allActions := postActions.PostActions()
+
+		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+			action, err := getAction(req)
+
+			if err != nil {
+				render(w, req, ErrorModel(err))
+				return
+			}
+
+			handler, found := allActions[action]
+			if !found {
+				render(w, req, ErrorModelS("No action found called "+action))
+				return
+			}
+
+			postChain(w, req, handler(req))
+		}).Methods("POST")
+
+	}
+
 	return nil
 }
 
@@ -331,4 +355,22 @@ func DecodePostForm(form url.Values, model interface{}) error {
 
 	err := decoder.Decode(model, form)
 	return err
+}
+
+func getAction(req *http.Request) (string, error) {
+
+	if err := req.ParseForm(); err != nil {
+		return "", err
+	}
+
+	var pm postActions
+	if err := DecodePostForm(req.PostForm, &pm); err != nil {
+		return "", err
+	}
+
+	return pm.Action, nil
+}
+
+type postActions struct {
+	Action string
 }

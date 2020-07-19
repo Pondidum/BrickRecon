@@ -15,6 +15,10 @@ type Postable interface {
 	Post(req *http.Request) interface{}
 }
 
+type PostActions interface {
+	PostActions() map[string]func(req *http.Request) interface{}
+}
+
 type CustomViewName interface {
 	View() string
 }

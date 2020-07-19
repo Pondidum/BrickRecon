@@ -44,11 +44,12 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 func (c ProjectController) PostActions() map[string]func(req *http.Request) interface{} {
 	return map[string]func(req *http.Request) interface{}{
-		"increase": c.Post,
+		"increase": c.increaseQuantity,
+		"decrease": c.decreaseQuantity,
 	}
 }
 
-func (c ProjectController) Post(req *http.Request) interface{} {
+func (c ProjectController) increaseQuantity(req *http.Request) interface{} {
 	ctx := req.Context()
 
 	if err := req.ParseForm(); err != nil {
@@ -64,26 +65,13 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 		return preen.ErrorModel(err)
 	}
 
-	action, err := getAction(req)
-	if err != nil {
-		return preen.ErrorModel(err)
-	}
-
 	var pm quantityModel
 	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
 		return err
 	}
 
-	if action == "increase" {
-		if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-			return err
-		}
-	}
-
-	if action == "decrease" {
-		if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-			return err
-		}
+	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+		return err
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
@@ -96,18 +84,39 @@ func (c ProjectController) Post(req *http.Request) interface{} {
 
 }
 
-func getAction(req *http.Request) (string, error) {
+func (c ProjectController) decreaseQuantity(req *http.Request) interface{} {
+	ctx := req.Context()
 
-	var pm postActions
-	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return "", err
+	if err := req.ParseForm(); err != nil {
+		return preen.ErrorModel(err)
 	}
 
-	return pm.Action, nil
-}
+	vars := mux.Vars(req)
+	projectName := lego.ProjectName(vars["name"])
+	selected, _ := c.Store.ReadProject(ctx, projectName)
 
-type postActions struct {
-	Action string
+	project := lego.BlankProject()
+	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	var pm quantityModel
+	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+		return err
+	}
+
+	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+		return err
+	}
+
+	if err := c.Store.Save(ctx, project); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	return ProjectModel{
+		Project: projectWithKit(c.Store, req),
+	}
+
 }
 
 type quantityModel struct {
