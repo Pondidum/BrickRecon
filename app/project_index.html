@@ -74,7 +74,7 @@
     <div class="list-group">
 
       {{ range .Project.Kits }}
-      <a href="{{ _page.Path }}?kit={{ .Number }}" class="list-group-item list-group-item-action {{ if activeWith _page.Path "kit" .Number }}active{{end}}">
+      <a href="{{ _page.Path }}?kit={{ .Number }}" class="list-group-item list-group-item-action {{ if active _page.Path "kit" .Number }}active{{end}}">
         <div class="d-flex w-100 justify-content-between">
           <h5 class="mb-1">{{ .Name }}</h5>
           <small>{{ .Number }}</small>
