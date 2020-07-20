@@ -1,0 +1,28 @@
+{{ $isActive := active _page.Path "kit" .Number }}
+
+{{ if $isActive }}
+<div class="list-group-item list-group-item-action callout border-primary border-top bg-primary-light">
+{{ else }}
+<a href="{{ _page.Path }}?kit={{ .Number }}" class="list-group-item list-group-item-action">
+{{ end }}
+
+  <div class="d-flex w-100 justify-content-between">
+    <h5 class="mb-1">{{ .Name }}</h5>
+    <small>{{ .Number }}</small>
+  </div>
+  <small class="mb-1">Adds {{ .TotalParts}} to the model ({{ len .Parts }} unique parts)</small>
+
+  {{ if $isActive }}
+  <div class="d-flex w-100 justify-content-between">
+    <form method="POST">
+      <button type="submit" class="btn btn-outline-primary btn-sm"  name="action" value="applykit">Apply</button>
+    </form>
+    <a href="{{ _page.Path }}">Cancel</a>
+  </div>
+  {{ end }}
+
+{{ if $isActive }}
+</div>
+{{ else }}
+</a>
+{{ end }}

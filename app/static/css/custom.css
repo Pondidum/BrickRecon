@@ -113,3 +113,12 @@ body {
     border-color: transparent;
     box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
 }
+
+.callout {
+    border-left-width: .25rem;
+    border-radius: .25rem;
+}
+
+.bg-primary-light {
+    background-color: #e5edf7 !important;
+}

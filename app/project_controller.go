@@ -23,6 +23,7 @@ func (c ProjectController) Views() []string {
 	return []string{
 		"project_index.html",
 		"project_quantity.html",
+		"project_kit_item.html",
 	}
 }
 

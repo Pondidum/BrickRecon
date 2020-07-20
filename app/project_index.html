@@ -58,7 +58,7 @@
           <td>{{ .ID }}</td>
           <td>{{ .Name }}</td>
           <td>{{ template "swatch" . }}</td>
-          <td {{ if .KitQuantity }}class="table-marker-right"{{end}}>{{ template "project/quantity" .}}</td>
+          <td {{ if .KitQuantity }}class="table-marker-right"{{end}}>{{ template "project/quantity" . }}</td>
         </tr>
         {{ end }}
 
@@ -74,14 +74,9 @@
     <div class="list-group">
 
       {{ range .Project.Kits }}
-      <a href="{{ _page.Path }}?kit={{ .Number }}" class="list-group-item list-group-item-action {{ if active _page.Path "kit" .Number }}active{{end}}">
-        <div class="d-flex w-100 justify-content-between">
-          <h5 class="mb-1">{{ .Name }}</h5>
-          <small>{{ .Number }}</small>
-        </div>
-        <p class="mb-1">{{ len .Parts }} parts</p>
-        <small>Would add x unique parts to the model</small>
-      </a>
+
+        {{ template "project/kit_item" . }}
+
       {{ end }}
 
     </div>
