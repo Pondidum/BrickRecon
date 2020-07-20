@@ -69,6 +69,15 @@ func (prj *Project) RemoveInventory(partID LDrawPart, colourID BrickLinkColour, 
 	return nil
 }
 
+func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQuantity) {
+
+	if len(parts) == 0 {
+		return
+	}
+
+	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
+}
+
 func (prj *Project) on(event eventstore.Event) {
 
 	switch e := event.(type) {
@@ -87,6 +96,11 @@ func (prj *Project) on(event eventstore.Event) {
 
 	case *ProjectInventoryRemoved:
 		prj.parts.AddInventory(e.PartID, e.ColourID, -e.Quantity)
+
+	case *KitAddedToProject:
+		for _, pq := range e.Parts {
+			prj.parts.AddInventory(pq.PartID, pq.ColourID, pq.Quantity)
+		}
 
 	}
 
@@ -121,9 +135,18 @@ type ProjectInventoryRemoved struct {
 	Quantity int
 }
 
+type KitAddedToProject struct {
+	eventstore.EventMeta
+
+	KitNumber KitNumber
+	KitName   KitName
+	Parts     []PartQuantity
+}
+
 var ProjectEvents = []eventstore.Initialiser{
 	func() interface{} { return &ProjectCreated{} },
 	func() interface{} { return &ProjectPartsAdded{} },
 	func() interface{} { return &ProjectInventoryAdded{} },
 	func() interface{} { return &ProjectInventoryRemoved{} },
+	func() interface{} { return &KitAddedToProject{} },
 }

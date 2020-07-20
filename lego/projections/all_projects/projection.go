@@ -68,6 +68,13 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
+	case *lego.KitAddedToProject:
+		project := projectByID(view.Projects, e.AggregateRootID)
+		for _, pq := range e.Parts {
+			part := findPart(project.Parts, pq.PartID, pq.ColourID)
+			part.Inventory += pq.Quantity
+		}
+
 	case *lego.KitCreated:
 		kit := createKitView(e)
 

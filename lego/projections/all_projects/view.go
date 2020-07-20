@@ -3,6 +3,8 @@ package all_projects
 import (
 	"brickrecon/lego"
 	"fmt"
+	"strconv"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -11,6 +13,13 @@ type PartKey string
 
 func CreatePartKey(part lego.LDrawPart, colour lego.BrickLinkColour) PartKey {
 	return PartKey(fmt.Sprintf("%v|%v", part, colour))
+}
+
+func ParseKey(key PartKey) (lego.LDrawPart, lego.BrickLinkColour) {
+	segments := strings.Split(string(key), "|")
+	val, _ := strconv.Atoi(segments[1])
+
+	return lego.LDrawPart(segments[0]), lego.BrickLinkColour(val)
 }
 
 type AllProjectsView struct {

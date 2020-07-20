@@ -46,32 +46,25 @@ func (c ProjectController) PostActions() map[string]func(req *http.Request) inte
 	return map[string]func(req *http.Request) interface{}{
 		"increase": c.increaseQuantity,
 		"decrease": c.decreaseQuantity,
+		"applykit": c.applyKit,
 	}
 }
 
 func (c ProjectController) increaseQuantity(req *http.Request) interface{} {
 	ctx := req.Context()
 
-	if err := req.ParseForm(); err != nil {
-		return preen.ErrorModel(err)
-	}
-
-	vars := mux.Vars(req)
-	projectName := lego.ProjectName(vars["name"])
-	selected, _ := c.Store.ReadProject(ctx, projectName)
-
-	project := lego.BlankProject()
-	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+	project, err := c.projectAggregate(req)
+	if err != nil {
 		return preen.ErrorModel(err)
 	}
 
 	var pm quantityModel
 	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return err
+		return preen.ErrorModel(err)
 	}
 
 	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return err
+		return preen.ErrorModel(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
@@ -87,26 +80,18 @@ func (c ProjectController) increaseQuantity(req *http.Request) interface{} {
 func (c ProjectController) decreaseQuantity(req *http.Request) interface{} {
 	ctx := req.Context()
 
-	if err := req.ParseForm(); err != nil {
-		return preen.ErrorModel(err)
-	}
-
-	vars := mux.Vars(req)
-	projectName := lego.ProjectName(vars["name"])
-	selected, _ := c.Store.ReadProject(ctx, projectName)
-
-	project := lego.BlankProject()
-	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+	project, err := c.projectAggregate(req)
+	if err != nil {
 		return preen.ErrorModel(err)
 	}
 
 	var pm quantityModel
 	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return err
+		return preen.ErrorModel(err)
 	}
 
 	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return err
+		return preen.ErrorModel(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
@@ -117,6 +102,65 @@ func (c ProjectController) decreaseQuantity(req *http.Request) interface{} {
 		Project: projectWithKit(c.Store, req),
 	}
 
+}
+
+func (c ProjectController) applyKit(req *http.Request) interface{} {
+	ctx := req.Context()
+
+	vars := mux.Vars(req)
+
+	projectName := lego.ProjectName(vars["name"])
+	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+
+	projectView, _ := c.Store.ReadProject(ctx, projectName)
+
+	project := lego.BlankProject()
+	if err := c.Store.EventStore.LoadAggregate(ctx, projectView.ID, project); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	kit := projectView.Kits[kitNumber]
+
+	project.AddKitContents(kit.Number, kit.Name, kitPartQuantities(kit.Parts))
+
+	if err := c.Store.Save(ctx, project); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	return ProjectModel{
+		Project: projectWithKit(c.Store, req),
+	}
+
+}
+
+func kitPartQuantities(quantities map[all_projects.PartKey]int) []lego.PartQuantity {
+
+	parts := make([]lego.PartQuantity, len(quantities))
+	i := 0
+	for key, q := range quantities {
+		part, colour := all_projects.ParseKey(key)
+
+		parts[i] = lego.PartQuantity{PartID: part, ColourID: colour, Quantity: q}
+		i++
+	}
+
+	return parts
+}
+
+func (c ProjectController) projectAggregate(req *http.Request) (*lego.Project, error) {
+
+	ctx := req.Context()
+	vars := mux.Vars(req)
+
+	projectName := lego.ProjectName(vars["name"])
+	selected, _ := c.Store.ReadProject(ctx, projectName)
+
+	project := lego.BlankProject()
+	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+		return nil, err
+	}
+
+	return project, nil
 }
 
 type quantityModel struct {
@@ -133,11 +177,6 @@ func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
 
 	project, _ := store.ReadProject(req.Context(), projectName)
 	kit := project.Kits[kitNumber]
-
-	return applyKit(project, kit)
-}
-
-func applyKit(project *all_projects.ProjectView, kit all_projects.KitView) *ProjectWithKit {
 
 	parts := make([]PartWithKitPart, len(project.Parts))
 

@@ -14,6 +14,12 @@ type Part struct {
 	Weight   float64
 }
 
+type PartQuantity struct {
+	PartID   LDrawPart
+	ColourID BrickLinkColour
+	Quantity int
+}
+
 type BrickLinkPart string
 type BrickOwlPart string
 
