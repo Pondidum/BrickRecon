@@ -194,33 +194,54 @@ func (es *eventStore) RebuildProjections(ctx context.Context) error {
 
 	aggregates, err := be.AllAggregates()
 	if err != nil {
+		beeline.AddField(ctx, "es.err_reading_aggregates", err)
 		return err
 	}
 
+	beeline.AddField(ctx, "es.aggregate_count", len(aggregates))
+
 	for _, id := range aggregates {
 
-		reader, err := be.NewEventReader(es.registry, id)
+		if err := es.processAggregateProjections(ctx, id); err != nil {
+			return err
+		}
+	}
 
+	return nil
+}
+
+func (es *eventStore) processAggregateProjections(ctx context.Context, id uuid.UUID) error {
+	var err error
+	ctx, fn := buildSpan(ctx, "process_aggregate_"+id.String())
+	defer func() {
+		fn(err)
+	}()
+
+	beeline.AddField(ctx, "es.aggregate_id", id.String())
+
+	reader, err := es.backend.NewEventReader(es.registry, id)
+
+	if err != nil {
+		return err
+	}
+
+	defer reader.Close()
+
+	events := []Event{}
+
+	for reader.Read() {
+		e, err := reader.Event()
 		if err != nil {
 			return err
 		}
 
-		defer reader.Close()
+		events = append(events, e)
+	}
 
-		events := []Event{}
+	beeline.AddField(ctx, "es.aggregate_events", len(events))
 
-		for reader.Read() {
-			e, err := reader.Event()
-			if err != nil {
-				return err
-			}
-
-			events = append(events, e)
-		}
-
-		if err := es.runProjections(ctx, events); err != nil {
-			return err
-		}
+	if err := es.runProjections(ctx, events); err != nil {
+		return err
 	}
 
 	return nil

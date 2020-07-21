@@ -35,11 +35,6 @@ func (c *EventStoreViewsRebuildCommand) Run(args []string) int {
 
 	store := builder.CreateEventStore(backend)
 
-	if err := backend.DestroyViews(); err != nil {
-		c.UI.Error(err.Error())
-		return 1
-	}
-
 	if err := store.RebuildProjections(ctx); err != nil {
 		c.UI.Error(err.Error())
 		return 1
