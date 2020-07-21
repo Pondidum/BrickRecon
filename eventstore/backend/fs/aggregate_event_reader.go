@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path"
 
@@ -17,7 +18,10 @@ type AggregateEventReader struct {
 	ctx      context.Context
 	registry map[string]eventstore.Initialiser
 	file     *os.File
-	scanner  *bufio.Scanner
+	reader   *bufio.Reader
+
+	line []byte
+	err  error
 }
 
 func NewAggregateEventReader(ctx context.Context, registry map[string]eventstore.Initialiser, root DirectoryPath, id uuid.UUID) (*AggregateEventReader, error) {
@@ -29,9 +33,15 @@ func NewAggregateEventReader(ctx context.Context, registry map[string]eventstore
 		return nil, err
 	}
 
-	scanner := bufio.NewScanner(file)
+	reader := bufio.NewReader(file)
 
-	return &AggregateEventReader{ctx, registry, file, scanner}, nil
+	er := &AggregateEventReader{
+		ctx:      ctx,
+		registry: registry,
+		file:     file,
+		reader:   reader,
+	}
+	return er, nil
 }
 
 func (er *AggregateEventReader) Close() error {
@@ -39,7 +49,27 @@ func (er *AggregateEventReader) Close() error {
 }
 
 func (er *AggregateEventReader) Read() bool {
-	return er.scanner.Scan()
+
+	line, err := er.reader.ReadBytes('\n')
+
+	if len(line) == 0 {
+		return false
+	}
+
+	er.err = nil
+	er.line = line
+
+	if err == nil {
+		return true
+	}
+
+	if err == io.EOF {
+		return true
+	}
+
+	er.err = err
+
+	return false
 }
 
 type aggregateEventType struct {
@@ -47,8 +77,13 @@ type aggregateEventType struct {
 }
 
 func (er *AggregateEventReader) Event() (eventstore.Event, error) {
+
+	if err := er.err; err != nil {
+		return nil, err
+	}
+
 	var et aggregateEventType
-	if err := json.Unmarshal(er.scanner.Bytes(), &et); err != nil {
+	if err := json.Unmarshal(er.line, &et); err != nil {
 		beeline.AddField(er.ctx, "es.event_type_unmarshal_err", err)
 		return nil, err
 	}
@@ -61,7 +96,7 @@ func (er *AggregateEventReader) Event() (eventstore.Event, error) {
 	}
 
 	event := creator()
-	if err := json.Unmarshal(er.scanner.Bytes(), event); err != nil {
+	if err := json.Unmarshal(er.line, event); err != nil {
 		beeline.AddField(er.ctx, "es.event_unmarshal_err", err)
 		return nil, err
 	}
