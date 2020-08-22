@@ -15,6 +15,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
+	"github.com/honeycombio/beeline-go"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -196,14 +197,23 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	}
 
 	render := func(w http.ResponseWriter, req *http.Request, model interface{}) {
-		if redirect, ok := model.(Redirect); ok {
+		ctx := req.Context()
+
+		redirect, isRedirect := model.(Redirect)
+		beeline.AddField(ctx, "preen.is_redirect", isRedirect)
+
+		if isRedirect {
+			beeline.AddField(ctx, "preen.redirect_url", redirect.URL)
 			http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
 		} else {
 
 			siteModel := p.getSiteModel(req.Context())
 			viewModel := ComposeModels(siteModel, model)
+			viewName := getViewName(ctl)
 
-			p.view(w, req, getViewName(ctl), viewModel)
+			beeline.AddField(ctx, "preen.view_name", viewName)
+
+			p.view(w, req, viewName, viewModel)
 		}
 	}
 
