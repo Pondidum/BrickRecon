@@ -4,6 +4,7 @@ import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
+	"brickrecon/stud_io"
 	"net/http"
 	"sort"
 
@@ -45,9 +46,10 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 func (c ProjectController) PostActions() map[string]func(req *http.Request) interface{} {
 	return map[string]func(req *http.Request) interface{}{
-		"increase": c.increaseQuantity,
-		"decrease": c.decreaseQuantity,
-		"applykit": c.applyKit,
+		"increase":     c.increaseQuantity,
+		"decrease":     c.decreaseQuantity,
+		"applykit":     c.applyKit,
+		"exportWanted": c.exportWanted,
 	}
 }
 
@@ -132,6 +134,27 @@ func (c ProjectController) applyKit(req *http.Request) interface{} {
 		Project: projectWithKit(c.Store, req),
 	}
 
+}
+
+func (c ProjectController) exportWanted(req *http.Request) interface{} {
+	ctx := req.Context()
+
+	project, err := c.projectAggregate(req)
+	if err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	exporter := &stud_io.WantedListXmlExporter{}
+
+	if _, err := project.ExportWantedList(exporter); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	if err := c.Store.Save(ctx, project); err != nil {
+		return preen.ErrorModel(err)
+	}
+
+	return preen.Redirect{URL: "/project/" + string(project.Name) + "/export"}
 }
 
 func kitPartQuantities(quantities map[all_projects.PartKey]int) []lego.PartQuantity {

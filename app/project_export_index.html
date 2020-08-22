@@ -1,0 +1,26 @@
+<div class="row">
+  <div class="col-md-6">
+
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
+      <a href="{{ .ProjectUrl }}">&lt; Return</a>
+
+      <div>
+        <a class="mr-2" href="#"  onclick="copyToClipboard()" >Copy to Clipboard</a>
+        <a href="https://www.bricklink.com/v2/wanted/upload.page">Open BrickLink Upload</a>
+      </div>
+    </div>
+
+    <textarea id="bricklink-xml" name="bricklink-xml" class="form-control" rows=10>{{ .WantedList }}</textarea>
+
+  </div>
+</div>
+
+<script>
+  function copyToClipboard() {
+    var container = document.getElementById("bricklink-xml")
+    container.select()
+    container.setSelectionRange(0, 999999)
+
+    document.execCommand("copy")
+  }
+</script>
