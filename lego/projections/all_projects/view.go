@@ -33,8 +33,9 @@ type ProjectView struct {
 	Name lego.ProjectName
 
 	Parts []*ProjectPartView
+	Kits  map[lego.KitNumber]KitView
 
-	Kits map[lego.KitNumber]KitView
+	BrickLinkXml string
 }
 
 type ProjectPartView struct {

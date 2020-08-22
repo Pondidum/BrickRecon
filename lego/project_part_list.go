@@ -16,6 +16,14 @@ func (p *ProjectPart) HasSpares() bool {
 	return p.Inventory > p.Quantity
 }
 
+func (p *ProjectPart) IsFulfilled() bool {
+	return p.Inventory >= p.Quantity
+}
+
+func (p *ProjectPart) NeededQuantity() int {
+	return p.Quantity - p.Inventory
+}
+
 func NewPartsList(parts []Part) *ProjectPartList {
 	list := ProjectPartList{
 		parts: make([]*ProjectPart, len(parts)),

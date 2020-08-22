@@ -84,6 +84,9 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kit)
 		}
 
+	case *lego.WantedListExported:
+		project := projectByID(view.Projects, e.AggregateRootID)
+		project.BrickLinkXml = e.Markup
 	}
 
 	return view

@@ -15,6 +15,9 @@ type Project struct {
 
 	Name  ProjectName
 	parts *ProjectPartList
+
+	exportedRecently bool
+	lastExportMarkup string
 }
 
 func BlankProject() *Project {
@@ -78,7 +81,42 @@ func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQ
 	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
 }
 
+func (prj *Project) ExportWantedList(exporter Exporter) (string, error) {
+
+	if prj.exportedRecently {
+		return prj.lastExportMarkup, nil
+	}
+
+	wanted := []*ProjectPart{}
+
+	for _, part := range prj.parts.parts {
+		if part.IsFulfilled() == false {
+			wanted = append(wanted, part)
+		}
+	}
+
+	markup, err := exporter.Export(wanted)
+	if err != nil {
+		return "", err
+	}
+
+	prj.Apply(&WantedListExported{
+		Type:   exporter.GetExporterType(),
+		Markup: markup,
+	})
+
+	return markup, nil
+}
+
+type Exporter interface {
+	GetExporterType() string
+
+	Export(parts []*ProjectPart) (string, error)
+}
+
 func (prj *Project) on(event eventstore.Event) {
+
+	prj.exportedRecently = false
 
 	switch e := event.(type) {
 
@@ -102,51 +140,10 @@ func (prj *Project) on(event eventstore.Event) {
 			prj.parts.AddInventory(pq.PartID, pq.ColourID, pq.Quantity)
 		}
 
+	case *WantedListExported:
+		prj.exportedRecently = true
+		prj.lastExportMarkup = e.Markup
+
 	}
 
-}
-
-type ProjectCreated struct {
-	eventstore.EventMeta
-
-	ID   uuid.UUID
-	Name ProjectName
-}
-
-type ProjectPartsAdded struct {
-	eventstore.EventMeta
-
-	Parts []Part
-}
-
-type ProjectInventoryAdded struct {
-	eventstore.EventMeta
-
-	PartID   LDrawPart
-	ColourID BrickLinkColour
-	Quantity int
-}
-
-type ProjectInventoryRemoved struct {
-	eventstore.EventMeta
-
-	PartID   LDrawPart
-	ColourID BrickLinkColour
-	Quantity int
-}
-
-type KitAddedToProject struct {
-	eventstore.EventMeta
-
-	KitNumber KitNumber
-	KitName   KitName
-	Parts     []PartQuantity
-}
-
-var ProjectEvents = []eventstore.Initialiser{
-	func() interface{} { return &ProjectCreated{} },
-	func() interface{} { return &ProjectPartsAdded{} },
-	func() interface{} { return &ProjectInventoryAdded{} },
-	func() interface{} { return &ProjectInventoryRemoved{} },
-	func() interface{} { return &KitAddedToProject{} },
 }
