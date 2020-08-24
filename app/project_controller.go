@@ -25,6 +25,7 @@ func (c ProjectController) Views() []string {
 		"project_index.html",
 		"project_quantity.html",
 		"project_kit_item.html",
+		"project_events.html",
 	}
 }
 
@@ -228,10 +229,11 @@ func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
 	}
 
 	return &ProjectWithKit{
-		ID:    project.ID,
-		Name:  project.Name,
-		Parts: parts,
-		Kits:  project.Kits,
+		ID:     project.ID,
+		Name:   project.Name,
+		Parts:  parts,
+		Kits:   project.Kits,
+		Events: project.Events,
 	}
 }
 
@@ -270,8 +272,9 @@ type ProjectWithKit struct {
 	ID   uuid.UUID
 	Name lego.ProjectName
 
-	Parts []PartWithKitPart
-	Kits  map[lego.KitNumber]all_projects.KitView
+	Parts  []PartWithKitPart
+	Kits   map[lego.KitNumber]all_projects.KitView
+	Events []all_projects.EventDescription
 }
 
 type PartWithKitPart struct {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/context"
 )
@@ -22,6 +23,9 @@ func TemplateFuncDefinitions() template.FuncMap {
 		},
 		"active": func(url string, queries ...interface{}) bool {
 			return false
+		},
+		"format": func(ts time.Time, layout string) string {
+			return ts.Format(layout)
 		},
 	}
 }
@@ -61,6 +65,9 @@ func TemplateFuncs(req *http.Request) template.FuncMap {
 			}
 
 			return true
+		},
+		"format": func(ts time.Time, layout string) string {
+			return ts.Format(layout)
 		},
 	}
 }

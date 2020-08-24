@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -36,6 +37,15 @@ type ProjectView struct {
 	Kits  map[lego.KitNumber]KitView
 
 	BrickLinkXml string
+
+	Events []EventDescription
+}
+
+type EventDescription struct {
+	Timestamp   time.Time
+	Type        string
+	Description string
+	Additional  map[string]interface{}
 }
 
 type ProjectPartView struct {

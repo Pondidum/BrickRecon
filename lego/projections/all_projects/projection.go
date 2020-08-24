@@ -3,6 +3,7 @@ package all_projects
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"fmt"
 
 	uuid "github.com/satori/go.uuid"
 )
@@ -38,18 +39,23 @@ func (p *ProjectsProjection) CreateState() interface{} {
 func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
+	project := projectByID(view.Projects, event.Meta().AggregateRootID)
+
 	switch e := event.(type) {
 
 	case *lego.ProjectCreated:
-		view.Names = append(view.Names, e.Name)
-		view.Projects[e.Name] = &ProjectView{
+		project = &ProjectView{
 			ID:   e.AggregateRootID,
 			Name: e.Name,
 			Kits: map[lego.KitNumber]KitView{},
 		}
 
+		audit(project, event, "Project created")
+
+		view.Names = append(view.Names, e.Name)
+		view.Projects[e.Name] = project
+
 	case *lego.ProjectPartsAdded:
-		project := projectByID(view.Projects, e.AggregateRootID)
 		for _, part := range e.Parts {
 			project.Parts = append(project.Parts, toProjectPartView(part))
 		}
@@ -58,22 +64,26 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kit)
 		}
 
+		audit(project, event, fmt.Sprintf("%v parts added", len(e.Parts)))
+
 	case *lego.ProjectInventoryAdded:
-		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
+		audit(project, event, fmt.Sprintf("Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID))
+
 	case *lego.ProjectInventoryRemoved:
-		project := projectByID(view.Projects, e.AggregateRootID)
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
+		audit(project, event, fmt.Sprintf("Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID))
+
 	case *lego.KitAddedToProject:
-		project := projectByID(view.Projects, e.AggregateRootID)
 		for _, pq := range e.Parts {
 			part := findPart(project.Parts, pq.PartID, pq.ColourID)
 			part.Inventory += pq.Quantity
 		}
+		audit(project, event, fmt.Sprintf("%s (Kit %s) applied", e.KitName, e.KitNumber))
 
 	case *lego.KitCreated:
 		kit := createKitView(e)
@@ -85,11 +95,21 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		}
 
 	case *lego.WantedListExported:
-		project := projectByID(view.Projects, e.AggregateRootID)
 		project.BrickLinkXml = e.Markup
+
+		audit(project, event, "WantedList XML generated")
 	}
 
 	return view
+}
+
+func audit(project *ProjectView, event eventstore.Event, message string) {
+	project.Events = append(project.Events, EventDescription{
+		Timestamp:   event.Meta().Timestamp,
+		Type:        event.Meta().Type,
+		Description: message,
+		Additional:  map[string]interface{}{},
+	})
 }
 
 func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
