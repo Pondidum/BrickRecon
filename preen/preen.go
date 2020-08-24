@@ -15,7 +15,6 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/honeycombio/beeline-go"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -29,6 +28,7 @@ type Preen struct {
 	getSiteModel  func(ctx context.Context) interface{}
 	layout        *template.Template
 	templates     map[string]*template.Template
+	modelHandlers []ModelHandler
 }
 
 type PreenConfig struct {
@@ -58,6 +58,14 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		templates:     map[string]*template.Template{},
 		auth:          BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
 		getSiteModel:  pc.GetSiteModel,
+	}
+
+	p.modelHandlers = []ModelHandler{
+		&RedirectModelHandler{},
+		&RenderModelHandler{
+			getSiteModel: p.getSiteModel,
+			render:       p.view,
+		},
 	}
 
 	for _, ext := range pc.TemplateTypes {
@@ -199,22 +207,12 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	render := func(w http.ResponseWriter, req *http.Request, model interface{}) {
 		ctx := req.Context()
 
-		redirect, isRedirect := model.(Redirect)
-		beeline.AddField(ctx, "preen.is_redirect", isRedirect)
-
-		if isRedirect {
-			beeline.AddField(ctx, "preen.redirect_url", redirect.URL)
-			http.Redirect(w, req, redirect.URL, http.StatusSeeOther)
-		} else {
-
-			siteModel := p.getSiteModel(req.Context())
-			viewModel := ComposeModels(siteModel, model)
-			viewName := getViewName(ctl)
-
-			beeline.AddField(ctx, "preen.view_name", viewName)
-
-			p.view(w, req, viewName, viewModel)
+		for _, md := range p.modelHandlers {
+			if md.CanHandle(ctx, model) && md.Handle(ctx, ctl, req, w, model) {
+				continue
+			}
 		}
+
 	}
 
 	if auth, ok := c.(Auth); ok {
