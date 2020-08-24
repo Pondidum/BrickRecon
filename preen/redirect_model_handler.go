@@ -34,15 +34,15 @@ func ControllerRedirect(controller string, parameters ...string) interface{} {
 var rx = regexp.MustCompile("{(.*?)}")
 
 type ControllerRedirectModelHandler struct {
-	controllers map[string]Controller
+	controllers map[string]string
 }
 
 func NewControllerRedirectModelHandler(controllers []Controller) *ControllerRedirectModelHandler {
 
-	lookup := map[string]Controller{}
+	lookup := map[string]string{}
 
 	for _, ctl := range controllers {
-		lookup[controllerName(ctl)] = ctl
+		lookup[controllerName(ctl)] = ctl.Path()
 	}
 
 	return &ControllerRedirectModelHandler{
@@ -66,9 +66,9 @@ func (mh ControllerRedirectModelHandler) Handle(ctx context.Context, ctl Control
 		return false
 	}
 
-	toController := mh.controllers[redirect.controller]
+	toControllerPath := mh.controllers[redirect.controller]
 
-	url := "/" + rx.ReplaceAllStringFunc(toController.Path(), func(match string) string {
+	url := "/" + rx.ReplaceAllStringFunc(toControllerPath, func(match string) string {
 		return redirect.parameters[strings.Trim(match, "{}")]
 	})
 
