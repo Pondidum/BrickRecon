@@ -46,5 +46,5 @@ func (c CreateController) Post(req *http.Request) interface{} {
 		return preen.ErrorModel(err)
 	}
 
-	return preen.Redirect{URL: "/project/" + string(modelName)}
+	return preen.ControllerRedirect("project", "name", string(modelName))
 }

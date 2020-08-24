@@ -61,7 +61,7 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 	}
 
 	p.modelHandlers = []ModelHandler{
-		&RedirectModelHandler{},
+		NewControllerRedirectModelHandler(p.controllers),
 		&RenderModelHandler{
 			getSiteModel: p.getSiteModel,
 			render:       p.view,

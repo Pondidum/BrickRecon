@@ -1,9 +1,5 @@
 package preen
 
-type Redirect struct {
-	URL string
-}
-
 type Error struct {
 	ErrorMessage string
 }

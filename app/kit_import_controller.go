@@ -38,5 +38,5 @@ func (c KitImportController) Post(req *http.Request) interface{} {
 		return preen.ErrorModel(err)
 	}
 
-	return preen.Redirect{URL: "/kit/" + kitNumber}
+	return preen.ControllerRedirect("kit", "kitnumber", kitNumber)
 }

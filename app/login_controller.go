@@ -21,5 +21,5 @@ func (c LoginController) Path() string {
 }
 
 func (c LoginController) Get(req *http.Request) interface{} {
-	return preen.Redirect{URL: "/"}
+	return preen.ControllerRedirect("root")
 }

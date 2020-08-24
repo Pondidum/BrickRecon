@@ -155,7 +155,7 @@ func (c ProjectController) exportWanted(req *http.Request) interface{} {
 		return preen.ErrorModel(err)
 	}
 
-	return preen.Redirect{URL: "/project/" + string(project.Name) + "/export"}
+	return preen.ControllerRedirect("project_export", "name", string(project.Name))
 }
 
 func kitPartQuantities(quantities map[all_projects.PartKey]int) []lego.PartQuantity {
