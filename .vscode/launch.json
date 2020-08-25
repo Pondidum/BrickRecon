@@ -25,6 +25,17 @@
     },
 
     {
+      "name": "Import Kit",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}",
+      "env": {
+      },
+      "args": ["kit", "import", "75976-1"]
+    },
+
+    {
       "name": "Rebuild Views",
       "type": "go",
       "request": "launch",
