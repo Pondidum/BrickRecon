@@ -4,8 +4,10 @@
 - [ ] add view model data to honeycomb
 - [ ] abstract query params/ form bodies
 - [x] export wanted-list
-- [ ] project audit trail
-  * "Added 6 items"
-  * "Added Kit 234234s {Remove}"
-  * "Removed Kit 12313"
-  * "Exported Part list"
+- [x] project audit trail
+- [ ] audit trail links
+  - [ ] "kit [12313-4](/kits/123123-4) added. [remove](...)"
+  - [ ]
+- [ ] update a project parts by re-importing
+- [ ] `controllerRedirect "project" "123123123"` from templates
+- [x] wantedlistexport: support quantity and inventory properties

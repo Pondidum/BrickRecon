@@ -12,10 +12,11 @@ type wantedList struct {
 }
 
 type wantedListItem struct {
-	Type     string               `xml:"ITEMTYPE"`
-	ID       lego.BrickLinkPart   `xml:"ITEMID"`
-	Color    lego.BrickLinkColour `xml:"COLOR"`
-	Quantity int                  `xml:"MINQTY"`
+	Type      string               `xml:"ITEMTYPE"`
+	ID        lego.BrickLinkPart   `xml:"ITEMID"`
+	Color     lego.BrickLinkColour `xml:"COLOR"`
+	Quantity  int                  `xml:"MINQTY"`
+	Inventory int                  `xml:"QTYFILLED"`
 }
 
 type WantedListXmlExporter struct{}
@@ -34,10 +35,11 @@ func wantedListFromParts(parts []*lego.ProjectPart) wantedList {
 
 	for i, p := range parts {
 		wanted[i] = wantedListItem{
-			Type:     "P",
-			ID:       p.Aliases.BrickLinkID,
-			Color:    p.Colour.Aliases.BrickLinkID,
-			Quantity: p.NeededQuantity(),
+			Type:      "P",
+			ID:        p.Aliases.BrickLinkID,
+			Color:     p.Colour.Aliases.BrickLinkID,
+			Quantity:  p.Quantity,
+			Inventory: p.NeededQuantity(),
 		}
 	}
 
