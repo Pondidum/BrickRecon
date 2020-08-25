@@ -250,7 +250,12 @@ func sanitisePartName(name string, id string, colour lego.Colour) string {
 
 	name = strings.TrimPrefix(name, "LEGO ")
 	name = strings.TrimPrefix(name, string(colour.Name))
-	name = name[0:strings.LastIndex(name, "(")]
+
+	braceIndex := strings.LastIndex(name, "(")
+	if braceIndex > 0 {
+		name = name[0:strings.LastIndex(name, "(")]
+	}
+
 	name = strings.TrimSpace(name)
 
 	return name

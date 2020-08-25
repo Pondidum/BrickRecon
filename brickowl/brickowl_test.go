@@ -82,10 +82,11 @@ func TestSanitisePartName(t *testing.T) {
 	}
 
 	cases := map[string]string{
-		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b)":          "Plate 1 x 2 with Shooter",
-		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b / 123132)": "Plate 1 x 2 with Shooter",
-		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403)":           "Plate 1 x 2 with Shooter",
-		"LEGO Medium Stone Gray Slope 1 x 1 (31°) (50746 / 54200)":          "Slope 1 x 1 (31°)",
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b)":                          "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b / 123132)":                 "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403)":                           "Plate 1 x 2 with Shooter",
+		"LEGO Medium Stone Gray Slope 1 x 1 (31°) (50746 / 54200)":                          "Slope 1 x 1 (31°)",
+		"LEGO Medium Stone Gray Dish 8 x 8 Inverted with yellow hoses and panel decoration": "Dish 8 x 8 Inverted with yellow hoses and panel decoration",
 	}
 
 	for input, expected := range cases {
