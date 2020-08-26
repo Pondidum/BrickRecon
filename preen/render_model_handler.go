@@ -26,7 +26,7 @@ func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, v
 	context := NewTemplateContext()
 	mh := &RenderModelHandler{
 		getSiteModel:  getSiteModel,
-		layout:        template.New("layout").Funcs(context.EmptyFunctions),
+		layout:        template.New("layout").Funcs(context.Functions),
 		templateTypes: map[string]bool{},
 		Context:       context,
 	}
@@ -184,7 +184,4 @@ func (mh *RenderModelHandler) render(w http.ResponseWriter, req *http.Request, v
 	}
 
 	w.Write(buffer.Bytes())
-}
-
-type ReqHolder struct {
 }

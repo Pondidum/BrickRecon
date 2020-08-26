@@ -12,36 +12,14 @@ import (
 type TemplateContext struct {
 	Request *http.Request
 
-	EmptyFunctions template.FuncMap
-	Functions      template.FuncMap
+	Functions template.FuncMap
 }
 
 func NewTemplateContext() *TemplateContext {
 	tf := &TemplateContext{}
-	tf.EmptyFunctions = emptyFunctions()
 	tf.Functions = realFunctions(tf)
 
 	return tf
-}
-
-func emptyFunctions() template.FuncMap {
-	return template.FuncMap{
-		"_user": func() UserInfo {
-			return UserInfo{}
-		},
-		"_page": func() PageInfo {
-			return PageInfo{}
-		},
-		"_site": func() SiteInfo {
-			return SiteInfo{}
-		},
-		"active": func(url string, queries ...interface{}) bool {
-			return false
-		},
-		"format": func(ts time.Time, layout string) string {
-			return ts.Format(layout)
-		},
-	}
 }
 
 func realFunctions(tf *TemplateContext) template.FuncMap {
