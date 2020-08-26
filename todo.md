@@ -11,3 +11,11 @@
 - [ ] update a project parts by re-importing
 - [ ] `controllerRedirect "project" "123123123"` from templates
 - [x] wantedlistexport: support quantity and inventory properties
+- [ ] add and remove parts from a project
+- [ ] change part colours
+- [ ] filtering parts list
+- [ ] better display of adding kit to project
+  - needs to show what it will add that you need somehow
+- [ ] eventstore: warn when an event is processed but not registered
+- [ ] ui: error model page
+- [x] preen: refactor render pipeline in to render_model_handler

@@ -1,11 +1,8 @@
 package preen
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"html/template"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -21,13 +18,10 @@ import (
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
 
 type Preen struct {
-	viewRoot      string
-	controllers   []Controller
-	templateTypes map[string]bool
+	viewRoot    string
+	controllers []Controller
+
 	auth          basicAuth
-	getSiteModel  func(ctx context.Context) interface{}
-	layout        *template.Template
-	templates     map[string]*template.Template
 	modelHandlers []ModelHandler
 }
 
@@ -52,32 +46,19 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 	}
 
 	p := Preen{
-		viewRoot:      pc.ApplicationRoot,
-		controllers:   pc.Controllers,
-		templateTypes: map[string]bool{},
-		templates:     map[string]*template.Template{},
-		auth:          BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
-		getSiteModel:  pc.GetSiteModel,
+		viewRoot:    pc.ApplicationRoot,
+		controllers: pc.Controllers,
+		auth:        BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
+	}
+
+	renderer, err := NewRenderModelHandler(pc.GetSiteModel, pc.ApplicationRoot, pc.Controllers, pc.TemplateTypes)
+	if err != nil {
+		return p, err
 	}
 
 	p.modelHandlers = []ModelHandler{
 		NewControllerRedirectModelHandler(p.controllers),
-		&RenderModelHandler{
-			getSiteModel: p.getSiteModel,
-			render:       p.view,
-		},
-	}
-
-	for _, ext := range pc.TemplateTypes {
-		p.templateTypes[ext] = true
-	}
-
-	if err := p.loadViews(); err != nil {
-		return p, err
-	}
-
-	if err := p.loadKnownTemplates(path.Join(pc.ApplicationRoot, "_shared")); err != nil {
-		return p, err
+		renderer,
 	}
 
 	return p, nil
@@ -93,107 +74,6 @@ func (p *Preen) Apply(r *mux.Router) {
 	for _, ctl := range p.controllers {
 		p.registerController(r, ctl)
 	}
-}
-
-func (p *Preen) loadViews() error {
-	p.layout = template.New("layout").Funcs(TemplateFuncDefinitions())
-
-	for _, c := range p.controllers {
-
-		ctl, isController := c.(Controller)
-
-		if !isController {
-			return fmt.Errorf("%T is not a valid Controller", c)
-		}
-
-		templates, err := parseController(p.viewRoot, p.layout, ctl)
-		if err != nil {
-			return err
-		}
-
-		for name, tpl := range templates {
-			p.templates[name] = tpl
-		}
-	}
-
-	return nil
-}
-
-func parseController(viewRoot string, parentTemplate *template.Template, c Controller) (map[string]*template.Template, error) {
-	templates := map[string]*template.Template{}
-
-	for _, viewFilename := range c.Views() {
-
-		content, err := ioutil.ReadFile(path.Join(viewRoot, viewFilename))
-		if err != nil {
-			return nil, err
-		}
-
-		viewPath := strings.TrimPrefix(viewFilename, controllerName(c)+"_")
-		viewPath = strings.TrimSuffix(viewPath, "index.html")
-		viewPath = strings.TrimSuffix(viewPath, ".html")
-		viewPath = getViewName(c) + "/" + viewPath
-		viewPath = strings.Trim(viewPath, "/")
-
-		tpl := parentTemplate
-		if viewPath != "" {
-			tpl = parentTemplate.New(viewPath)
-		}
-
-		_, err = tpl.Parse(string(content))
-		if err != nil {
-			return nil, err
-		}
-
-		templates[viewPath] = tpl
-	}
-
-	return templates, nil
-}
-
-func (p *Preen) loadKnownTemplates(dir string) error {
-
-	entries, err := ioutil.ReadDir(dir)
-
-	if err != nil {
-		return err
-	}
-
-	for _, entry := range entries {
-		currentPath := path.Join(dir, entry.Name())
-
-		if entry.IsDir() == false {
-
-			ext := path.Ext(entry.Name())
-
-			if !p.templateTypes[ext] {
-				continue
-			}
-
-			content, err := ioutil.ReadFile(currentPath)
-
-			if err != nil {
-				return err
-			}
-
-			name := templateName("_shared", strings.TrimPrefix(currentPath, p.viewRoot+"/"))
-			tpl, err := p.layout.New(name).Parse(string(content))
-
-			if err != nil {
-				return err
-			}
-
-			p.templates[name] = tpl
-		} else {
-			err := p.loadKnownTemplates(currentPath)
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
 }
 
 func (p *Preen) registerController(r *mux.Router, c interface{}) error {
@@ -277,30 +157,6 @@ func getViewName(ctl Controller) string {
 
 func (p *Preen) HandleStaticAssets(r *mux.Router) {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
-}
-
-func (p *Preen) view(w http.ResponseWriter, req *http.Request, viewName string, model interface{}) {
-
-	clone, _ := p.layout.Clone()
-
-	clone.Funcs(TemplateFuncs(req))
-
-	if tpl, found := p.templates[viewName]; viewName != "" && found {
-		clone.AddParseTree("content", tpl.Tree)
-	} else {
-		clone.New("content").Parse("")
-	}
-
-	var buffer bytes.Buffer
-	err := clone.Execute(&buffer, ComposeModels(model))
-
-	if err != nil {
-		w.WriteHeader(500)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	w.Write(buffer.Bytes())
 }
 
 func ComposeModels(models ...interface{}) interface{} {

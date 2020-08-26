@@ -1,15 +1,49 @@
 package preen
 
 import (
+	"bytes"
 	"context"
+	"html/template"
+	"io/ioutil"
 	"net/http"
+	"path"
+	"strings"
 
 	"github.com/honeycombio/beeline-go"
 )
 
 type RenderModelHandler struct {
 	getSiteModel func(ctx context.Context) interface{}
-	render       func(w http.ResponseWriter, req *http.Request, viewName string, model interface{})
+
+	layout        *template.Template
+	templates     map[string]*template.Template
+	templateTypes map[string]bool
+}
+
+func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string) (*RenderModelHandler, error) {
+
+	layout := template.New("layout").Funcs(TemplateFuncDefinitions())
+	templates, err := loadViews(layout, viewRoot, controllers)
+	if err != nil {
+		return nil, err
+	}
+
+	mh := &RenderModelHandler{
+		getSiteModel:  getSiteModel,
+		layout:        layout,
+		templates:     templates,
+		templateTypes: map[string]bool{},
+	}
+
+	for _, ext := range templateTypes {
+		mh.templateTypes[ext] = true
+	}
+
+	if err := mh.loadKnownTemplates(viewRoot, path.Join(viewRoot, "_shared")); err != nil {
+		return mh, err
+	}
+
+	return mh, nil
 }
 
 func (mh *RenderModelHandler) CanHandle(ctx context.Context, model interface{}) bool {
@@ -27,4 +61,124 @@ func (mh *RenderModelHandler) Handle(ctx context.Context, ctl Controller, req *h
 	mh.render(res, req, viewName, viewModel)
 
 	return true
+}
+
+func loadViews(layout *template.Template, viewRoot string, controllers []Controller) (map[string]*template.Template, error) {
+
+	templates := map[string]*template.Template{}
+
+	for _, c := range controllers {
+
+		controllerTemplates, err := parseController(viewRoot, layout, c)
+		if err != nil {
+			return nil, err
+		}
+
+		for name, tpl := range controllerTemplates {
+			templates[name] = tpl
+		}
+	}
+
+	return templates, nil
+}
+
+func parseController(viewRoot string, parentTemplate *template.Template, c Controller) (map[string]*template.Template, error) {
+	templates := map[string]*template.Template{}
+
+	for _, viewFilename := range c.Views() {
+
+		content, err := ioutil.ReadFile(path.Join(viewRoot, viewFilename))
+		if err != nil {
+			return nil, err
+		}
+
+		viewPath := strings.TrimPrefix(viewFilename, controllerName(c)+"_")
+		viewPath = strings.TrimSuffix(viewPath, "index.html")
+		viewPath = strings.TrimSuffix(viewPath, ".html")
+		viewPath = getViewName(c) + "/" + viewPath
+		viewPath = strings.Trim(viewPath, "/")
+
+		tpl := parentTemplate
+		if viewPath != "" {
+			tpl = parentTemplate.New(viewPath)
+		}
+
+		_, err = tpl.Parse(string(content))
+		if err != nil {
+			return nil, err
+		}
+
+		templates[viewPath] = tpl
+	}
+
+	return templates, nil
+}
+
+func (mh *RenderModelHandler) loadKnownTemplates(viewRoot string, dir string) error {
+
+	entries, err := ioutil.ReadDir(dir)
+
+	if err != nil {
+		return err
+	}
+
+	for _, entry := range entries {
+		currentPath := path.Join(dir, entry.Name())
+
+		if entry.IsDir() == false {
+
+			ext := path.Ext(entry.Name())
+
+			if !mh.templateTypes[ext] {
+				continue
+			}
+
+			content, err := ioutil.ReadFile(currentPath)
+
+			if err != nil {
+				return err
+			}
+
+			name := templateName("_shared", strings.TrimPrefix(currentPath, viewRoot+"/"))
+			tpl, err := mh.layout.New(name).Parse(string(content))
+
+			if err != nil {
+				return err
+			}
+
+			mh.templates[name] = tpl
+		} else {
+			err := mh.loadKnownTemplates(viewRoot, currentPath)
+
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (mh *RenderModelHandler) render(w http.ResponseWriter, req *http.Request, viewName string, model interface{}) {
+
+	clone, _ := mh.layout.Clone()
+
+	clone.Funcs(TemplateFuncs(req))
+
+	if tpl, found := mh.templates[viewName]; viewName != "" && found {
+		clone.AddParseTree("content", tpl.Tree)
+	} else {
+		clone.New("content").Parse("")
+	}
+
+	var buffer bytes.Buffer
+	err := clone.Execute(&buffer, ComposeModels(model))
+
+	if err != nil {
+		w.WriteHeader(500)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.Write(buffer.Bytes())
 }
