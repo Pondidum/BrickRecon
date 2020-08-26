@@ -22,17 +22,14 @@ type RenderModelHandler struct {
 
 func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string) (*RenderModelHandler, error) {
 
-	layout := template.New("layout").Funcs(TemplateFuncDefinitions())
-	templates, err := loadViews(layout, viewRoot, controllers)
-	if err != nil {
-		return nil, err
-	}
-
 	mh := &RenderModelHandler{
 		getSiteModel:  getSiteModel,
-		layout:        layout,
-		templates:     templates,
+		layout:        template.New("layout").Funcs(TemplateFuncDefinitions()),
 		templateTypes: map[string]bool{},
+	}
+
+	if err := mh.loadViews(viewRoot, controllers); err != nil {
+		return nil, err
 	}
 
 	for _, ext := range templateTypes {
@@ -63,15 +60,15 @@ func (mh *RenderModelHandler) Handle(ctx context.Context, ctl Controller, req *h
 	return true
 }
 
-func loadViews(layout *template.Template, viewRoot string, controllers []Controller) (map[string]*template.Template, error) {
+func (mh *RenderModelHandler) loadViews(viewRoot string, controllers []Controller) error {
 
 	templates := map[string]*template.Template{}
 
 	for _, c := range controllers {
 
-		controllerTemplates, err := parseController(viewRoot, layout, c)
+		controllerTemplates, err := mh.parseController(viewRoot, c)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		for name, tpl := range controllerTemplates {
@@ -79,10 +76,12 @@ func loadViews(layout *template.Template, viewRoot string, controllers []Control
 		}
 	}
 
-	return templates, nil
+	mh.templates = templates
+
+	return nil
 }
 
-func parseController(viewRoot string, parentTemplate *template.Template, c Controller) (map[string]*template.Template, error) {
+func (mh *RenderModelHandler) parseController(viewRoot string, c Controller) (map[string]*template.Template, error) {
 	templates := map[string]*template.Template{}
 
 	for _, viewFilename := range c.Views() {
@@ -98,9 +97,9 @@ func parseController(viewRoot string, parentTemplate *template.Template, c Contr
 		viewPath = getViewName(c) + "/" + viewPath
 		viewPath = strings.Trim(viewPath, "/")
 
-		tpl := parentTemplate
+		tpl := mh.layout
 		if viewPath != "" {
-			tpl = parentTemplate.New(viewPath)
+			tpl = mh.layout.New(viewPath)
 		}
 
 		_, err = tpl.Parse(string(content))
