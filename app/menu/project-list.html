@@ -9,9 +9,9 @@
 <ul class="nav flex-column">
   {{ range .AllModels }}
   <li class="nav-item">
-    {{ $path := printf "/project/%s" . }}
+    {{ $link := linkto "project" "name" . }}
 
-    <a class="nav-link {{ if active $path }}active{{end}}" href="{{ $path }}">
+    <a class="nav-link {{ if active $link }}active{{end}}" href="{{ $link }}">
       {{ template "icons/hexagon" }}
       {{ . }}
     </a>

@@ -10,14 +10,17 @@ import (
 )
 
 type TemplateContext struct {
-	Request *http.Request
+	Request    *http.Request
+	Controller Controller
+	Functions  template.FuncMap
 
-	Functions template.FuncMap
+	linker ControllerLinker
 }
 
-func NewTemplateContext() *TemplateContext {
+func NewTemplateContext(controllers []Controller) *TemplateContext {
 	tf := &TemplateContext{}
 	tf.Functions = realFunctions(tf)
+	tf.linker = CreateControllerLinker(controllers)
 
 	return tf
 }
@@ -60,6 +63,19 @@ func realFunctions(tf *TemplateContext) template.FuncMap {
 		},
 		"format": func(ts time.Time, layout string) string {
 			return ts.Format(layout)
+		},
+		"linkto": func(controller string, parameters ...interface{}) string {
+
+			args := map[string]string{}
+
+			for i := 0; i < len(parameters); i += 2 {
+				key := strval(parameters[i])
+				value := strval(parameters[i+1])
+
+				args[key] = value
+			}
+
+			return tf.linker(controller, args)
 		},
 	}
 }

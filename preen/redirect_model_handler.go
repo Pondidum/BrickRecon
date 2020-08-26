@@ -3,8 +3,6 @@ package preen
 import (
 	"context"
 	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/honeycombio/beeline-go"
 )
@@ -31,22 +29,14 @@ func ControllerRedirect(controller string, parameters ...string) interface{} {
 	return r
 }
 
-var rx = regexp.MustCompile("{(.*?)}")
-
 type ControllerRedirectModelHandler struct {
-	controllers map[string]string
+	Linker ControllerLinker
 }
 
 func NewControllerRedirectModelHandler(controllers []Controller) *ControllerRedirectModelHandler {
 
-	lookup := map[string]string{}
-
-	for _, ctl := range controllers {
-		lookup[controllerName(ctl)] = ctl.Path()
-	}
-
 	return &ControllerRedirectModelHandler{
-		controllers: lookup,
+		Linker: CreateControllerLinker(controllers),
 	}
 }
 
@@ -66,11 +56,7 @@ func (mh ControllerRedirectModelHandler) Handle(ctx context.Context, ctl Control
 		return false
 	}
 
-	toControllerPath := mh.controllers[redirect.controller]
-
-	url := "/" + rx.ReplaceAllStringFunc(toControllerPath, func(match string) string {
-		return redirect.parameters[strings.Trim(match, "{}")]
-	})
+	url := mh.Linker(redirect.controller, redirect.parameters)
 
 	beeline.AddField(ctx, "preen.redirect_url", url)
 	http.Redirect(res, req, url, http.StatusSeeOther)

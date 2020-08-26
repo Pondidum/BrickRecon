@@ -7,7 +7,6 @@
 - [x] project audit trail
 - [ ] audit trail links
   - [ ] "kit [12313-4](/kits/123123-4) added. [remove](...)"
-  - [ ]
 - [ ] update a project parts by re-importing
 - [ ] `controllerRedirect "project" "123123123"` from templates
 - [x] wantedlistexport: support quantity and inventory properties
@@ -19,3 +18,6 @@
 - [ ] eventstore: warn when an event is processed but not registered
 - [ ] ui: error model page
 - [x] preen: refactor render pipeline in to render_model_handler
+- [ ] import from stud.io files
+  - they are just zipfiles with some ldraw files inside
+  - password protected (`soho0909`)

@@ -9,7 +9,7 @@
 <ul class="nav flex-column">
   {{ range .AllKits }}
   <li class="nav-item">
-    {{ $link := (print "/kit/" .Number ) }}
+    {{ $link := linkto "kit" "kitnumber" .Number }}
     <a class="nav-link {{ if eq _page.Path $link }}active{{end}}" href="{{ $link }}">
       {{ template "icons/archive" }}
       {{ .Name }}

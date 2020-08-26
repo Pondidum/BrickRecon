@@ -23,7 +23,8 @@ type RenderModelHandler struct {
 
 func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string) (*RenderModelHandler, error) {
 
-	context := NewTemplateContext()
+	context := NewTemplateContext(controllers)
+
 	mh := &RenderModelHandler{
 		getSiteModel:  getSiteModel,
 		layout:        template.New("layout").Funcs(context.Functions),
@@ -58,7 +59,7 @@ func (mh *RenderModelHandler) Handle(ctx context.Context, ctl Controller, req *h
 
 	beeline.AddField(ctx, "preen.view_name", viewName)
 
-	mh.render(res, req, viewName, viewModel)
+	mh.render(ctl, req, res, viewName, viewModel)
 
 	return true
 }
@@ -161,11 +162,12 @@ func (mh *RenderModelHandler) loadKnownTemplates(viewRoot string, dir string) er
 	return nil
 }
 
-func (mh *RenderModelHandler) render(w http.ResponseWriter, req *http.Request, viewName string, model interface{}) {
+func (mh *RenderModelHandler) render(ctl Controller, req *http.Request, w http.ResponseWriter, viewName string, model interface{}) {
 
 	clone, _ := mh.layout.Clone()
 
 	mh.Context.Request = req
+
 	clone.Funcs(mh.Context.Functions)
 
 	if tpl, found := mh.templates[viewName]; viewName != "" && found {

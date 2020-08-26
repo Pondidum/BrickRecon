@@ -8,8 +8,8 @@ import (
 )
 
 type ProjectExportModel struct {
-	WantedList string
-	ProjectUrl string
+	WantedList  string
+	ProjectName lego.ProjectName
 }
 
 type ProjectExportController struct {
@@ -37,8 +37,8 @@ func (c ProjectExportController) Get(req *http.Request) interface{} {
 	project, _ := c.Store.ReadProject(req.Context(), projectName)
 
 	return ProjectExportModel{
-		WantedList: project.BrickLinkXml,
-		ProjectUrl: "/project/" + string(projectName),
+		WantedList:  project.BrickLinkXml,
+		ProjectName: projectName,
 	}
 
 }
