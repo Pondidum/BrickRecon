@@ -18,14 +18,17 @@ type RenderModelHandler struct {
 	layout        *template.Template
 	templates     map[string]*template.Template
 	templateTypes map[string]bool
+	Context       *TemplateContext
 }
 
 func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string) (*RenderModelHandler, error) {
 
+	context := NewTemplateContext()
 	mh := &RenderModelHandler{
 		getSiteModel:  getSiteModel,
-		layout:        template.New("layout").Funcs(TemplateFuncDefinitions()),
+		layout:        template.New("layout").Funcs(context.EmptyFunctions),
 		templateTypes: map[string]bool{},
+		Context:       context,
 	}
 
 	if err := mh.loadViews(viewRoot, controllers); err != nil {
@@ -162,7 +165,8 @@ func (mh *RenderModelHandler) render(w http.ResponseWriter, req *http.Request, v
 
 	clone, _ := mh.layout.Clone()
 
-	clone.Funcs(TemplateFuncs(req))
+	mh.Context.Request = req
+	clone.Funcs(mh.Context.Functions)
 
 	if tpl, found := mh.templates[viewName]; viewName != "" && found {
 		clone.AddParseTree("content", tpl.Tree)
@@ -180,4 +184,7 @@ func (mh *RenderModelHandler) render(w http.ResponseWriter, req *http.Request, v
 	}
 
 	w.Write(buffer.Bytes())
+}
+
+type ReqHolder struct {
 }

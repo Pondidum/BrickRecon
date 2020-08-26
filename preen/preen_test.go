@@ -1,7 +1,6 @@
 package preen
 
 import (
-	"html/template"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -45,29 +44,3 @@ type TwoNameController struct{}
 
 func (c TwoNameController) Path() string    { return "" }
 func (c TwoNameController) Views() []string { return nil }
-
-func TestControllerRegistration(t *testing.T) {
-
-	controller := &TestImportController{}
-
-	parent := template.New("root")
-
-	templates, err := parseController("", parent, controller)
-	assert.NoError(t, err)
-	assert.Contains(t, templates, "test/import")
-	assert.Contains(t, templates, "test/import/form")
-	assert.Contains(t, templates, "test/import/dir")
-	assert.Contains(t, templates, "test/import/dir/test")
-}
-
-type TestImportController struct{}
-
-func (c TestImportController) Path() string { return "test/import" }
-func (c TestImportController) Views() []string {
-	return []string{
-		"test_import_index.html",
-		"test_import_form.html",
-		"dir/index.html",
-		"dir/test.html",
-	}
-}

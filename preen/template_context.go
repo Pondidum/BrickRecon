@@ -9,8 +9,22 @@ import (
 	"github.com/gorilla/context"
 )
 
-func TemplateFuncDefinitions() template.FuncMap {
+type TemplateContext struct {
+	Request *http.Request
 
+	EmptyFunctions template.FuncMap
+	Functions      template.FuncMap
+}
+
+func NewTemplateContext() *TemplateContext {
+	tf := &TemplateContext{}
+	tf.EmptyFunctions = emptyFunctions()
+	tf.Functions = realFunctions(tf)
+
+	return tf
+}
+
+func emptyFunctions() template.FuncMap {
 	return template.FuncMap{
 		"_user": func() UserInfo {
 			return UserInfo{}
@@ -30,10 +44,10 @@ func TemplateFuncDefinitions() template.FuncMap {
 	}
 }
 
-func TemplateFuncs(req *http.Request) template.FuncMap {
+func realFunctions(tf *TemplateContext) template.FuncMap {
 	return template.FuncMap{
 		"_user": func() UserInfo {
-			user, found := context.Get(req, "UserInfo").(UserInfo)
+			user, found := context.Get(tf.Request, "UserInfo").(UserInfo)
 
 			if !found {
 				user = UserInfo{}
@@ -42,18 +56,18 @@ func TemplateFuncs(req *http.Request) template.FuncMap {
 			return user
 		},
 		"_page": func() PageInfo {
-			return PageInfo{Path: req.URL.Path}
+			return PageInfo{Path: tf.Request.URL.Path}
 		},
 		"_site": func() SiteInfo {
-			return SiteInfo{URL: req.Host}
+			return SiteInfo{URL: tf.Request.Host}
 		},
 		"active": func(url string, queries ...interface{}) bool {
 
-			if req.URL.Path != url {
+			if tf.Request.URL.Path != url {
 				return false
 			}
 
-			qs := req.URL.Query()
+			qs := tf.Request.URL.Query()
 
 			for i := 0; i < len(queries); i += 2 {
 				key := strval(queries[i])
