@@ -14,6 +14,7 @@
 - [ ] add and remove parts from a project
 - [ ] change part colours
 - [ ] filtering parts list
+- [ ] sorting parts list
 - [ ] better display of adding kit to project
   - needs to show what it will add that you need somehow
 - [ ] eventstore: warn when an event is processed but not registered

@@ -5,14 +5,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
-	"github.com/mitchellh/mapstructure"
 )
 
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
@@ -157,49 +155,8 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	return nil
 }
 
-func getViewName(ctl Controller) string {
-
-	if custom, ok := ctl.(CustomViewName); ok {
-		return custom.View()
-	}
-
-	return ctl.Path()
-}
-
 func (p *Preen) HandleStaticAssets(r *mux.Router) {
 	r.PathPrefix("/static").Handler(http.StripPrefix("/static", http.FileServer(http.Dir("./app/static/"))))
-}
-
-func ComposeModels(models ...interface{}) interface{} {
-
-	result := map[string]interface{}{}
-
-	for _, m := range models {
-		mapstructure.Decode(m, &result)
-	}
-
-	return result
-}
-
-func templateName(controller string, filepath string) string {
-
-	if strings.HasPrefix(filepath, controller+"_") {
-		filepath = strings.Replace(filepath, controller+"_", controller+"/", 1)
-	}
-
-	ext := path.Ext(filepath)
-	base := path.Base(filepath)
-
-	if base == "index.html" {
-		filepath = strings.TrimSuffix(filepath, base)
-	}
-
-	filepath = strings.TrimSuffix(filepath, ext)
-	filepath = strings.TrimSuffix(filepath, "/")
-
-	filepath = strings.TrimPrefix(filepath, "_shared/")
-
-	return filepath
 }
 
 func controllerName(c Controller) string {

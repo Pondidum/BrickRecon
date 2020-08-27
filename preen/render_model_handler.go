@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/honeycombio/beeline-go"
+	"github.com/mitchellh/mapstructure"
 )
 
 type RenderModelHandler struct {
@@ -54,7 +55,7 @@ func (mh *RenderModelHandler) CanHandle(ctx context.Context, model interface{}) 
 func (mh *RenderModelHandler) Handle(ctx context.Context, ctl Controller, req *http.Request, res http.ResponseWriter, model interface{}) bool {
 
 	siteModel := mh.getSiteModel(ctx)
-	viewModel := ComposeModels(siteModel, model)
+	viewModel := composeModels(siteModel, model)
 	viewName := getViewName(ctl)
 
 	beeline.AddField(ctx, "preen.view_name", viewName)
@@ -177,7 +178,7 @@ func (mh *RenderModelHandler) render(ctl Controller, req *http.Request, w http.R
 	}
 
 	var buffer bytes.Buffer
-	err := clone.Execute(&buffer, ComposeModels(model))
+	err := clone.Execute(&buffer, composeModels(model))
 
 	if err != nil {
 		w.WriteHeader(500)
@@ -186,4 +187,45 @@ func (mh *RenderModelHandler) render(ctl Controller, req *http.Request, w http.R
 	}
 
 	w.Write(buffer.Bytes())
+}
+
+func getViewName(ctl Controller) string {
+
+	if custom, ok := ctl.(CustomViewName); ok {
+		return custom.View()
+	}
+
+	return ctl.Path()
+}
+
+func composeModels(models ...interface{}) interface{} {
+
+	result := map[string]interface{}{}
+
+	for _, m := range models {
+		mapstructure.Decode(m, &result)
+	}
+
+	return result
+}
+
+func templateName(controller string, filepath string) string {
+
+	if strings.HasPrefix(filepath, controller+"_") {
+		filepath = strings.Replace(filepath, controller+"_", controller+"/", 1)
+	}
+
+	ext := path.Ext(filepath)
+	base := path.Base(filepath)
+
+	if base == "index.html" {
+		filepath = strings.TrimSuffix(filepath, base)
+	}
+
+	filepath = strings.TrimSuffix(filepath, ext)
+	filepath = strings.TrimSuffix(filepath, "/")
+
+	filepath = strings.TrimPrefix(filepath, "_shared/")
+
+	return filepath
 }
