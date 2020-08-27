@@ -7,11 +7,11 @@
     {{ range .Project.Events }}
 
       <div class="list-group-item px-0">
-        <div class="d-flex w-100 justify-content-end">
+        <div class="d-flex w-100 justify-content-between">
+          <span>{{ .Description | html }}</span>
           <!-- <small>{{ .Type }} </small> -->
           <small>{{ format .Timestamp "2006-01-02 15:04" }}</small>
         </div>
-        <span>{{ .Description }}</span>
       </div>
 
     {{ end }}

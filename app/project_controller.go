@@ -5,6 +5,7 @@ import (
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
 	"brickrecon/stud_io"
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -40,7 +41,7 @@ func (c ProjectController) View() string {
 func (c ProjectController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
 	return ProjectModel{
-		Project: projectWithKit(c.Store, req),
+		Project: projectWithKit(c.Store, pc, req),
 	}
 
 }
@@ -76,7 +77,7 @@ func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Re
 	}
 
 	return ProjectModel{
-		Project: projectWithKit(c.Store, req),
+		Project: projectWithKit(c.Store, pc, req),
 	}
 
 }
@@ -103,7 +104,7 @@ func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Re
 	}
 
 	return ProjectModel{
-		Project: projectWithKit(c.Store, req),
+		Project: projectWithKit(c.Store, pc, req),
 	}
 
 }
@@ -132,7 +133,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 	}
 
 	return ProjectModel{
-		Project: projectWithKit(c.Store, req),
+		Project: projectWithKit(c.Store, pc, req),
 	}
 
 }
@@ -194,7 +195,7 @@ type quantityModel struct {
 	Quantity int
 }
 
-func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
+func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) *ProjectWithKit {
 	vars := mux.Vars(req)
 
 	projectName := lego.ProjectName(vars["name"])
@@ -233,8 +234,23 @@ func projectWithKit(store *AppStore, req *http.Request) *ProjectWithKit {
 		Name:   project.Name,
 		Parts:  parts,
 		Kits:   project.Kits,
-		Events: project.Events,
+		Events: withLinks(pc, project.Events),
 	}
+}
+
+func withLinks(pc *preen.PreenContext, events []*all_projects.EventDescription) []*all_projects.EventDescription {
+
+	for _, event := range events {
+		if event.Type == "KitAddedToProject" {
+			event.Description = fmt.Sprintf(
+				`Kit <a href="%s">%s</a> added`,
+				pc.LinkToController("kit", event.Additional),
+				event.Additional["KitName"],
+			)
+		}
+	}
+
+	return events
 }
 
 func sortByKitAddition(parts []PartWithKitPart) {
@@ -274,7 +290,7 @@ type ProjectWithKit struct {
 
 	Parts  []PartWithKitPart
 	Kits   map[lego.KitNumber]all_projects.KitView
-	Events []all_projects.EventDescription
+	Events []*all_projects.EventDescription
 }
 
 type PartWithKitPart struct {

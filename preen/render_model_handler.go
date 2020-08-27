@@ -21,9 +21,9 @@ type RenderModelHandler struct {
 	Context       *TemplateContext
 }
 
-func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string) (*RenderModelHandler, error) {
+func NewRenderModelHandler(getSiteModel func(ctx context.Context) interface{}, viewRoot string, controllers []Controller, templateTypes []string, linker ControllerLinker) (*RenderModelHandler, error) {
 
-	context := NewTemplateContext(controllers)
+	context := NewTemplateContext(linker)
 
 	mh := &RenderModelHandler{
 		getSiteModel:  getSiteModel,

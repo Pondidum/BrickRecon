@@ -18,9 +18,9 @@ import (
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
 
 type Preen struct {
-	viewRoot    string
-	controllers []Controller
-
+	viewRoot      string
+	controllers   []Controller
+	linker        ControllerLinker
 	auth          basicAuth
 	modelHandlers []ModelHandler
 }
@@ -49,15 +49,22 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		viewRoot:    pc.ApplicationRoot,
 		controllers: pc.Controllers,
 		auth:        BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
+		linker:      NewControllerLinker(pc.Controllers),
 	}
 
-	renderer, err := NewRenderModelHandler(pc.GetSiteModel, pc.ApplicationRoot, pc.Controllers, pc.TemplateTypes)
+	renderer, err := NewRenderModelHandler(
+		pc.GetSiteModel,
+		pc.ApplicationRoot,
+		pc.Controllers,
+		pc.TemplateTypes,
+		p.linker)
+
 	if err != nil {
 		return p, err
 	}
 
 	p.modelHandlers = []ModelHandler{
-		NewControllerRedirectModelHandler(p.controllers),
+		NewControllerRedirectModelHandler(p.linker),
 		renderer,
 	}
 
@@ -101,7 +108,9 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		}
 	}
 
-	context := &PreenContext{}
+	context := &PreenContext{
+		LinkToController: p.linker,
+	}
 
 	if get, ok := c.(Getable); ok {
 
@@ -241,4 +250,6 @@ type postActions struct {
 	Action string
 }
 
-type PreenContext struct{}
+type PreenContext struct {
+	LinkToController ControllerLinker
+}

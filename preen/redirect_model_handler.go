@@ -1,6 +1,7 @@
 package preen
 
 import (
+	"brickrecon/util"
 	"context"
 	"net/http"
 
@@ -9,19 +10,19 @@ import (
 
 type controllerRedirect struct {
 	controller string
-	parameters map[string]string
+	parameters map[string]interface{}
 }
 
 func ControllerRedirect(controller string, parameters ...string) interface{} {
 
 	r := controllerRedirect{
 		controller: controller,
-		parameters: map[string]string{},
+		parameters: map[string]interface{}{},
 	}
 
 	for i := 0; i < len(parameters); i += 2 {
-		key := strval(parameters[i])
-		value := strval(parameters[i+1])
+		key := util.Strval(parameters[i])
+		value := parameters[i+1]
 
 		r.parameters[key] = value
 	}
@@ -30,13 +31,13 @@ func ControllerRedirect(controller string, parameters ...string) interface{} {
 }
 
 type ControllerRedirectModelHandler struct {
-	Linker ControllerLinker
+	linker ControllerLinker
 }
 
-func NewControllerRedirectModelHandler(controllers []Controller) *ControllerRedirectModelHandler {
+func NewControllerRedirectModelHandler(linker ControllerLinker) *ControllerRedirectModelHandler {
 
 	return &ControllerRedirectModelHandler{
-		Linker: CreateControllerLinker(controllers),
+		linker: linker,
 	}
 }
 
@@ -56,7 +57,7 @@ func (mh ControllerRedirectModelHandler) Handle(ctx context.Context, ctl Control
 		return false
 	}
 
-	url := mh.Linker(redirect.controller, redirect.parameters)
+	url := mh.linker(redirect.controller, redirect.parameters)
 
 	beeline.AddField(ctx, "preen.redirect_url", url)
 	http.Redirect(res, req, url, http.StatusSeeOther)

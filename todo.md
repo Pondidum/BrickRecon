@@ -6,7 +6,8 @@
 - [x] export wanted-list
 - [x] project audit trail
 - [ ] audit trail links
-  - [ ] "kit [12313-4](/kits/123123-4) added. [remove](...)"
+  - [x] "kit [12313-4](/kits/123123-4) added."
+  - [ ] extra links "[remove](...)" etc.
 - [ ] update a project parts by re-importing
 - [ ] `controllerRedirect "project" "123123123"` from templates
 - [x] wantedlistexport: support quantity and inventory properties
@@ -21,3 +22,11 @@
 - [ ] import from stud.io files
   - they are just zipfiles with some ldraw files inside
   - password protected (`soho0909`)
+  - `model.ldr` contains ldraw for the actual model
+  - `modelv1.ldr` seems to be a custom format of ldr
+  - `model2.ldr` ldraw for actual model, but with all bricks expanded as submodels also
+- [ ] eventstore: fs backend should save views non-minified
+- [ ] preen: PreenContext for Actions (access to useful functions)
+  - [ ] controllerRedirect
+  - [ ] errorModel
+  - [ ] ...

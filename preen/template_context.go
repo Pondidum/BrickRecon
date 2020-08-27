@@ -1,7 +1,7 @@
 package preen
 
 import (
-	"fmt"
+	"brickrecon/util"
 	"html/template"
 	"net/http"
 	"time"
@@ -17,10 +17,10 @@ type TemplateContext struct {
 	linker ControllerLinker
 }
 
-func NewTemplateContext(controllers []Controller) *TemplateContext {
+func NewTemplateContext(linker ControllerLinker) *TemplateContext {
 	tf := &TemplateContext{}
 	tf.Functions = realFunctions(tf)
-	tf.linker = CreateControllerLinker(controllers)
+	tf.linker = linker
 
 	return tf
 }
@@ -51,8 +51,8 @@ func realFunctions(tf *TemplateContext) template.FuncMap {
 			qs := tf.Request.URL.Query()
 
 			for i := 0; i < len(queries); i += 2 {
-				key := strval(queries[i])
-				value := strval(queries[i+1])
+				key := util.Strval(queries[i])
+				value := util.Strval(queries[i+1])
 
 				if qs.Get(key) != value {
 					return false
@@ -66,32 +66,20 @@ func realFunctions(tf *TemplateContext) template.FuncMap {
 		},
 		"linkto": func(controller string, parameters ...interface{}) string {
 
-			args := map[string]string{}
+			args := map[string]interface{}{}
 
 			for i := 0; i < len(parameters); i += 2 {
-				key := strval(parameters[i])
-				value := strval(parameters[i+1])
+				key := util.Strval(parameters[i])
+				value := parameters[i+1]
 
 				args[key] = value
 			}
 
 			return tf.linker(controller, args)
 		},
-	}
-}
-
-func strval(v interface{}) string {
-	switch v := v.(type) {
-	case string:
-		return v
-	case []byte:
-		return string(v)
-	case error:
-		return v.Error()
-	case fmt.Stringer:
-		return v.String()
-	default:
-		return fmt.Sprintf("%v", v)
+		"html": func(html string) template.HTML {
+			return template.HTML(html)
+		},
 	}
 }
 
