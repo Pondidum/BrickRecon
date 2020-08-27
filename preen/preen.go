@@ -101,10 +101,12 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		}
 	}
 
+	context := &PreenContext{}
+
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			render(w, req, get.Get(req))
+			render(w, req, get.Get(context, req))
 		}).Methods("GET")
 
 	}
@@ -114,7 +116,7 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		postChain := p.auth.Wrap(render)
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			postChain(w, req, post.Post(req))
+			postChain(w, req, post.Post(context, req))
 		}).Methods("POST")
 
 	}
@@ -138,7 +140,7 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 				return
 			}
 
-			postChain(w, req, handler(req))
+			postChain(w, req, handler(context, req))
 		}).Methods("POST")
 
 	}
@@ -238,3 +240,5 @@ func getAction(req *http.Request) (string, error) {
 type postActions struct {
 	Action string
 }
+
+type PreenContext struct{}

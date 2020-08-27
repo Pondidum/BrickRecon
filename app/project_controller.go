@@ -37,7 +37,7 @@ func (c ProjectController) View() string {
 	return "project"
 }
 
-func (c ProjectController) Get(req *http.Request) interface{} {
+func (c ProjectController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
 	return ProjectModel{
 		Project: projectWithKit(c.Store, req),
@@ -45,8 +45,8 @@ func (c ProjectController) Get(req *http.Request) interface{} {
 
 }
 
-func (c ProjectController) PostActions() map[string]func(req *http.Request) interface{} {
-	return map[string]func(req *http.Request) interface{}{
+func (c ProjectController) PostActions() preen.PostActionMap {
+	return map[string]func(pc *preen.PreenContext, req *http.Request) interface{}{
 		"increase":     c.increaseQuantity,
 		"decrease":     c.decreaseQuantity,
 		"applykit":     c.applyKit,
@@ -54,7 +54,7 @@ func (c ProjectController) PostActions() map[string]func(req *http.Request) inte
 	}
 }
 
-func (c ProjectController) increaseQuantity(req *http.Request) interface{} {
+func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
 	project, err := c.projectAggregate(req)
@@ -81,7 +81,7 @@ func (c ProjectController) increaseQuantity(req *http.Request) interface{} {
 
 }
 
-func (c ProjectController) decreaseQuantity(req *http.Request) interface{} {
+func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
 	project, err := c.projectAggregate(req)
@@ -108,7 +108,7 @@ func (c ProjectController) decreaseQuantity(req *http.Request) interface{} {
 
 }
 
-func (c ProjectController) applyKit(req *http.Request) interface{} {
+func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
 	vars := mux.Vars(req)
@@ -137,7 +137,7 @@ func (c ProjectController) applyKit(req *http.Request) interface{} {
 
 }
 
-func (c ProjectController) exportWanted(req *http.Request) interface{} {
+func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
 	project, err := c.projectAggregate(req)

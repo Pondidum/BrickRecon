@@ -24,11 +24,11 @@ func (c KitImportController) AuthRequired() bool {
 	return true
 }
 
-func (c KitImportController) Get(req *http.Request) interface{} {
+func (c KitImportController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 	return nil
 }
 
-func (c KitImportController) Post(req *http.Request) interface{} {
+func (c KitImportController) Post(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 	kitNumber := req.FormValue("kitNumber")
 

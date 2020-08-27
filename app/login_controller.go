@@ -20,6 +20,6 @@ func (c LoginController) Path() string {
 	return "login"
 }
 
-func (c LoginController) Get(req *http.Request) interface{} {
+func (c LoginController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 	return preen.ControllerRedirect("root")
 }

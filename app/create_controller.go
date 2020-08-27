@@ -25,11 +25,11 @@ func (c CreateController) AuthRequired() bool {
 	return true
 }
 
-func (c CreateController) Get(req *http.Request) interface{} {
+func (c CreateController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 	return nil
 }
 
-func (c CreateController) Post(req *http.Request) interface{} {
+func (c CreateController) Post(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 	file, _, err := req.FormFile("modelFile")
 	modelName := lego.ProjectName(req.FormValue("modelName"))

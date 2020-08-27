@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/preen"
 	"net/http"
 )
 
@@ -21,6 +22,6 @@ func (c RootController) Path() string {
 	return ""
 }
 
-func (c RootController) Get(req *http.Request) interface{} {
+func (c RootController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 	return nil
 }

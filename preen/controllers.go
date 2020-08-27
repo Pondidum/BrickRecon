@@ -8,15 +8,17 @@ type Controller interface {
 }
 
 type Getable interface {
-	Get(req *http.Request) interface{}
+	Get(pc *PreenContext, req *http.Request) interface{}
 }
 
 type Postable interface {
-	Post(req *http.Request) interface{}
+	Post(pc *PreenContext, req *http.Request) interface{}
 }
 
+type PostActionMap map[string]func(pc *PreenContext, req *http.Request) interface{}
+
 type PostActions interface {
-	PostActions() map[string]func(req *http.Request) interface{}
+	PostActions() PostActionMap // map[string]func(pc *PreenContext, req *http.Request) interface{}
 }
 
 type CustomViewName interface {

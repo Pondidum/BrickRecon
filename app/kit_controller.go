@@ -3,6 +3,7 @@ package app
 import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_kits"
+	"brickrecon/preen"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -30,7 +31,7 @@ func (c KitController) View() string {
 	return "kit"
 }
 
-func (c KitController) Get(req *http.Request) interface{} {
+func (c KitController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
 	vars := mux.Vars(req)
 

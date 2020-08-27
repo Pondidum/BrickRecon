@@ -2,6 +2,7 @@ package app
 
 import (
 	"brickrecon/lego"
+	"brickrecon/preen"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -30,7 +31,7 @@ func (c ProjectExportController) View() string {
 	return "project_export"
 }
 
-func (c ProjectExportController) Get(req *http.Request) interface{} {
+func (c ProjectExportController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 	vars := mux.Vars(req)
 
 	projectName := lego.ProjectName(vars["name"])
