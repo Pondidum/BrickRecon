@@ -4,7 +4,9 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"fmt"
+	"reflect"
 
+	"github.com/mitchellh/mapstructure"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -64,26 +66,26 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kit)
 		}
 
-		audit(project, event, fmt.Sprintf("%v parts added", len(e.Parts)))
+		audit(project, e, "%v parts added", len(e.Parts))
 
 	case *lego.ProjectInventoryAdded:
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
-		audit(project, event, fmt.Sprintf("Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID))
+		audit(project, e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.ProjectInventoryRemoved:
 		part := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
-		audit(project, event, fmt.Sprintf("Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID))
+		audit(project, e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.KitAddedToProject:
 		for _, pq := range e.Parts {
 			part := findPart(project.Parts, pq.PartID, pq.ColourID)
 			part.Inventory += pq.Quantity
 		}
-		audit(project, event, fmt.Sprintf("%s (Kit %s) applied", e.KitName, e.KitNumber))
+		audit(project, e, "%s (Kit %s) applied", e.KitName, e.KitNumber)
 
 	case *lego.KitCreated:
 		kit := createKitView(e)
@@ -97,19 +99,34 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	case *lego.WantedListExported:
 		project.BrickLinkXml = e.Markup
 
-		audit(project, event, "WantedList XML generated")
+		audit(project, e, "WantedList XML generated")
 	}
 
 	return view
 }
 
-func audit(project *ProjectView, event eventstore.Event, message string) {
-	project.Events = append(project.Events, EventDescription{
+func audit(project *ProjectView, event eventstore.Event, format string, args ...interface{}) {
+
+	desc := &EventDescription{
 		Timestamp:   event.Meta().Timestamp,
 		Type:        event.Meta().Type,
-		Description: message,
+		Description: fmt.Sprintf(format, args...),
 		Additional:  map[string]interface{}{},
+	}
+
+	decoder, _ := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		DecodeHook: func(src reflect.Type, dest reflect.Type, in interface{}) (interface{}, error) {
+			return in, nil
+		},
+		Result: &desc.Additional,
 	})
+
+	decoder.Decode(event)
+	// mapstructure.Decode(event, &desc.Additional)
+	delete(desc.Additional, "EventMeta")
+	delete(desc.Additional, "ID")
+
+	project.Events = append(project.Events, desc)
 }
 
 func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectView {

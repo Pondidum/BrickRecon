@@ -38,7 +38,7 @@ type ProjectView struct {
 
 	BrickLinkXml string
 
-	Events []EventDescription
+	Events []*EventDescription
 }
 
 type EventDescription struct {
@@ -46,6 +46,11 @@ type EventDescription struct {
 	Type        string
 	Description string
 	Additional  map[string]interface{}
+}
+
+func (e *EventDescription) With(key string, value interface{}) *EventDescription {
+	e.Additional[key] = value
+	return e
 }
 
 type ProjectPartView struct {

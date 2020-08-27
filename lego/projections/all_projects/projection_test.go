@@ -4,10 +4,35 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"testing"
+	"time"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestAddingAuditWithExtraData(t *testing.T) {
+
+	project := &ProjectView{Events: []*EventDescription{}}
+	event := &lego.KitAddedToProject{
+		EventMeta: eventstore.EventMeta{AggregateRootID: uuid.NewV4(), Timestamp: time.Now()},
+		KitName:   lego.KitName("test kit"),
+		KitNumber: lego.KitNumber("1234-2"),
+		Parts: []lego.PartQuantity{
+			{PartID: lego.LDrawPart("123"), ColourID: lego.BrickLinkColour(23), Quantity: 5},
+		},
+	}
+
+	audit(project, event, "Test message")
+
+	expected := map[string]interface{}{
+		"KitName":   event.KitName,
+		"KitNumber": event.KitNumber,
+		"Parts":     event.Parts,
+	}
+
+	assert.Equal(t, event.KitName, project.Events[0].Additional["KitName"])
+	assert.Equal(t, expected, project.Events[0].Additional)
+}
 
 func TestAddingKits(t *testing.T) {
 
