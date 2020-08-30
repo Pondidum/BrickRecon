@@ -16,11 +16,10 @@ import (
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
 
 type Preen struct {
-	viewRoot      string
-	controllers   []Controller
-	linker        ControllerLinker
-	modelHandlers []ModelHandler
-	pipeline      []Middleware
+	viewRoot    string
+	controllers []Controller
+	linker      ControllerLinker
+	pipeline    []Middleware
 }
 
 type PreenConfig struct {
@@ -37,37 +36,34 @@ var defaultConfig PreenConfig = PreenConfig{
 	TemplateTypes: []string{".html", ".svg"},
 }
 
-func NewPreen(pc PreenConfig) (Preen, error) {
+func NewPreen(pc PreenConfig) (*Preen, error) {
 
 	if pc.TemplateTypes == nil {
 		pc.TemplateTypes = defaultConfig.TemplateTypes
 	}
 
 	linker := NewControllerLinker(pc.Controllers)
-	p := Preen{
+
+	renderer, err := NewRenderMiddleware(
+		pc.GetSiteModel,
+		pc.ApplicationRoot,
+		pc.Controllers,
+		pc.TemplateTypes,
+		linker)
+
+	if err != nil {
+		return nil, err
+	}
+
+	p := &Preen{
 		viewRoot:    pc.ApplicationRoot,
 		controllers: pc.Controllers,
 		linker:      linker,
 		pipeline: []Middleware{
 			NewBasicAuthMiddlware("test", "testing", "Bricks").Middleware,
 			RedirectMiddleware,
-			RenderMiddlware,
+			renderer.Middleware,
 		},
-	}
-
-	renderer, err := NewRenderModelHandler(
-		pc.GetSiteModel,
-		pc.ApplicationRoot,
-		pc.Controllers,
-		pc.TemplateTypes,
-		p.linker)
-
-	if err != nil {
-		return p, err
-	}
-
-	p.modelHandlers = []ModelHandler{
-		renderer,
 	}
 
 	return p, nil
@@ -78,7 +74,6 @@ func (p *Preen) Apply(r *mux.Router) {
 	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
-	// r.Use(p.auth.UserContext)
 
 	for _, ctl := range p.controllers {
 		p.registerController(r, ctl)
@@ -108,7 +103,6 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 	mc := &MiddlewareContext{
 		ControllerLink: p.linker,
-		ModelHandlers:  p.modelHandlers,
 		Controller:     ctl,
 	}
 

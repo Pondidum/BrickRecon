@@ -8,7 +8,6 @@ type Middleware func(c *MiddlewareContext, request *http.Request, response http.
 
 type MiddlewareContext struct {
 	Controller     Controller
-	ModelHandlers  []ModelHandler
 	ControllerLink ControllerLinker
 	Model          interface{}
 }
