@@ -19,8 +19,8 @@ type Preen struct {
 	viewRoot      string
 	controllers   []Controller
 	linker        ControllerLinker
-	auth          basicAuth
 	modelHandlers []ModelHandler
+	pipeline      []Middleware
 }
 
 type PreenConfig struct {
@@ -46,8 +46,11 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 	p := Preen{
 		viewRoot:    pc.ApplicationRoot,
 		controllers: pc.Controllers,
-		auth:        BasicAuthMiddleware(AuthOptions{User: "test", Password: "testing"}),
 		linker:      NewControllerLinker(pc.Controllers),
+		pipeline: []Middleware{
+			NewBasicAuthMiddlware("test", "testing", "Bricks").Middleware,
+			RenderMiddlware,
+		},
 	}
 
 	renderer, err := NewRenderModelHandler(
@@ -74,10 +77,19 @@ func (p *Preen) Apply(r *mux.Router) {
 	p.HandleStaticAssets(r)
 
 	r.Handle("/favicon.ico", http.NotFoundHandler())
-	r.Use(p.auth.UserContext)
+	// r.Use(p.auth.UserContext)
 
 	for _, ctl := range p.controllers {
 		p.registerController(r, ctl)
+	}
+}
+
+func (p *Preen) runMiddleware(mc *MiddlewareContext, req *http.Request, res http.ResponseWriter) {
+
+	for _, mw := range p.pipeline {
+		if mw(mc, req, res) == false {
+			return
+		}
 	}
 }
 
@@ -89,23 +101,6 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		return fmt.Errorf("%T is not a valid Controller", c)
 	}
 
-	render := func(w http.ResponseWriter, req *http.Request, model interface{}) {
-		ctx := req.Context()
-
-		for _, md := range p.modelHandlers {
-			if md.CanHandle(ctx, model) && md.Handle(ctx, ctl, req, w, model) {
-				continue
-			}
-		}
-
-	}
-
-	if auth, ok := c.(Auth); ok {
-		if auth.AuthRequired() {
-			render = p.auth.Wrap(render)
-		}
-	}
-
 	context := &PreenContext{
 		LinkToController: p.linker,
 	}
@@ -113,41 +108,62 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			render(w, req, get.Get(context, req))
+
+			c := &MiddlewareContext{
+				ModelHandlers: p.modelHandlers,
+				Controller:    ctl,
+				Model:         get.Get(context, req),
+			}
+
+			p.runMiddleware(c, req, w)
+
 		}).Methods("GET")
 
 	}
 
 	if post, ok := c.(Postable); ok {
 
-		postChain := p.auth.Wrap(render)
-
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			postChain(w, req, post.Post(context, req))
+			c := &MiddlewareContext{
+				ModelHandlers: p.modelHandlers,
+				Controller:    ctl,
+				Model:         post.Post(context, req),
+			}
+
+			p.runMiddleware(c, req, w)
+
 		}).Methods("POST")
 
 	}
 
 	if postActions, ok := c.(PostActions); ok {
 
-		postChain := p.auth.Wrap(render)
 		allActions := postActions.PostActions()
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 			action, err := getAction(req)
 
+			c := &MiddlewareContext{
+				ModelHandlers: p.modelHandlers,
+				Controller:    ctl,
+			}
+
 			if err != nil {
-				render(w, req, context.Error(err))
+				c.Model = context.Error(err)
+				p.runMiddleware(c, req, w)
 				return
 			}
 
 			handler, found := allActions[action]
 			if !found {
-				render(w, req, context.ErrorS("No action found called "+action))
+				c.Model = context.ErrorS("No action found called " + action)
+				p.runMiddleware(c, req, w)
 				return
 			}
 
-			postChain(w, req, handler(context, req))
+			c.Model = handler(context, req)
+			p.runMiddleware(c, req, w)
+
 		}).Methods("POST")
 
 	}
