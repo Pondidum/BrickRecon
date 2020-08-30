@@ -97,11 +97,11 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		return fmt.Errorf("%T is not a valid Controller", c)
 	}
 
-	context := &PreenContext{
+	controllerContext := &PreenContext{
 		LinkToController: p.linker,
 	}
 
-	mc := &MiddlewareContext{
+	middlewareContext := &MiddlewareContext{
 		ControllerLink: p.linker,
 		Controller:     ctl,
 	}
@@ -110,8 +110,8 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 
-			mc.Model = get.Get(context, req)
-			p.runMiddleware(mc, req, w)
+			middlewareContext.Model = get.Get(controllerContext, req)
+			p.runMiddleware(middlewareContext, req, w)
 
 		}).Methods("GET")
 
@@ -120,9 +120,9 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	if post, ok := c.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			mc.Model = post.Post(context, req)
+			middlewareContext.Model = post.Post(controllerContext, req)
 
-			p.runMiddleware(mc, req, w)
+			p.runMiddleware(middlewareContext, req, w)
 
 		}).Methods("POST")
 
@@ -136,20 +136,20 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 			action, err := getAction(req)
 
 			if err != nil {
-				mc.Model = context.Error(err)
-				p.runMiddleware(mc, req, w)
+				middlewareContext.Model = controllerContext.Error(err)
+				p.runMiddleware(middlewareContext, req, w)
 				return
 			}
 
 			handler, found := allActions[action]
 			if !found {
-				mc.Model = context.ErrorS("No action found called " + action)
-				p.runMiddleware(mc, req, w)
+				middlewareContext.Model = controllerContext.ErrorS("No action found called " + action)
+				p.runMiddleware(middlewareContext, req, w)
 				return
 			}
 
-			mc.Model = handler(context, req)
-			p.runMiddleware(mc, req, w)
+			middlewareContext.Model = handler(controllerContext, req)
+			p.runMiddleware(middlewareContext, req, w)
 
 		}).Methods("POST")
 
