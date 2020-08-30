@@ -2,7 +2,6 @@ package preen
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -89,13 +88,7 @@ func (p *Preen) runMiddleware(mc *MiddlewareContext, req *http.Request, res http
 	}
 }
 
-func (p *Preen) registerController(r *mux.Router, c interface{}) error {
-
-	ctl, isController := c.(Controller)
-
-	if !isController {
-		return fmt.Errorf("%T is not a valid Controller", c)
-	}
+func (p *Preen) registerController(r *mux.Router, ctl Controller) error {
 
 	controllerContext := &PreenContext{
 		LinkToController: p.linker,
@@ -106,7 +99,7 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		Controller:     ctl,
 	}
 
-	if get, ok := c.(Getable); ok {
+	if get, ok := ctl.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 
@@ -117,7 +110,7 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 	}
 
-	if post, ok := c.(Postable); ok {
+	if post, ok := ctl.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 			middlewareContext.Model = post.Post(controllerContext, req)
@@ -128,7 +121,7 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 
 	}
 
-	if postActions, ok := c.(PostActions); ok {
+	if postActions, ok := ctl.(PostActions); ok {
 
 		allActions := postActions.PostActions()
 
