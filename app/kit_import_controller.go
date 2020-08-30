@@ -35,7 +35,7 @@ func (c KitImportController) Post(pc *preen.PreenContext, req *http.Request) int
 	_, err := ImportKit(ctx, c.Store, lego.KitNumber(kitNumber))
 
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return preen.ControllerRedirect("kit", "kitnumber", kitNumber)

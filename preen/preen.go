@@ -137,13 +137,13 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 			action, err := getAction(req)
 
 			if err != nil {
-				render(w, req, ErrorModel(err))
+				render(w, req, context.Error(err))
 				return
 			}
 
 			handler, found := allActions[action]
 			if !found {
-				render(w, req, ErrorModelS("No action found called "+action))
+				render(w, req, context.ErrorS("No action found called "+action))
 				return
 			}
 
@@ -205,8 +205,4 @@ func getAction(req *http.Request) (string, error) {
 
 type postActions struct {
 	Action string
-}
-
-type PreenContext struct {
-	LinkToController ControllerLinker
 }

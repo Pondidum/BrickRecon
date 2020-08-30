@@ -35,7 +35,7 @@ func (c CreateController) Post(pc *preen.PreenContext, req *http.Request) interf
 	modelName := lego.ProjectName(req.FormValue("modelName"))
 
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	defer file.Close()
@@ -43,7 +43,7 @@ func (c CreateController) Post(pc *preen.PreenContext, req *http.Request) interf
 	_, err = CreateProject(ctx, c.Store, modelName, file)
 
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return preen.ControllerRedirect("project", "name", string(modelName))

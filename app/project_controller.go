@@ -60,20 +60,20 @@ func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Re
 
 	project, err := c.projectAggregate(req)
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	var pm quantityModel
 	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return ProjectModel{
@@ -87,20 +87,20 @@ func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Re
 
 	project, err := c.projectAggregate(req)
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	var pm quantityModel
 	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return ProjectModel{
@@ -121,7 +121,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 
 	project := lego.BlankProject()
 	if err := c.Store.EventStore.LoadAggregate(ctx, projectView.ID, project); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	kit := projectView.Kits[kitNumber]
@@ -129,7 +129,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 	project.AddKitContents(kit.Number, kit.Name, kitPartQuantities(kit.Parts))
 
 	if err := c.Store.Save(ctx, project); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return ProjectModel{
@@ -143,17 +143,17 @@ func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Reques
 
 	project, err := c.projectAggregate(req)
 	if err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	exporter := &stud_io.WantedListXmlExporter{}
 
 	if _, err := project.ExportWantedList(exporter); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	if err := c.Store.Save(ctx, project); err != nil {
-		return preen.ErrorModel(err)
+		return pc.Error(err)
 	}
 
 	return preen.ControllerRedirect("project_export", "name", string(project.Name))
