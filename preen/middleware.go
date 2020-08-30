@@ -7,9 +7,10 @@ import (
 type Middleware func(c *MiddlewareContext, request *http.Request, response http.ResponseWriter) bool
 
 type MiddlewareContext struct {
-	Controller    Controller
-	ModelHandlers []ModelHandler
-	Model         interface{}
+	Controller     Controller
+	ModelHandlers  []ModelHandler
+	ControllerLink ControllerLinker
+	Model          interface{}
 }
 
 func (mc *MiddlewareContext) AuthRequired() bool {

@@ -43,12 +43,14 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 		pc.TemplateTypes = defaultConfig.TemplateTypes
 	}
 
+	linker := NewControllerLinker(pc.Controllers)
 	p := Preen{
 		viewRoot:    pc.ApplicationRoot,
 		controllers: pc.Controllers,
-		linker:      NewControllerLinker(pc.Controllers),
+		linker:      linker,
 		pipeline: []Middleware{
 			NewBasicAuthMiddlware("test", "testing", "Bricks").Middleware,
+			RedirectMiddleware,
 			RenderMiddlware,
 		},
 	}
@@ -65,7 +67,6 @@ func NewPreen(pc PreenConfig) (Preen, error) {
 	}
 
 	p.modelHandlers = []ModelHandler{
-		NewControllerRedirectModelHandler(p.linker),
 		renderer,
 	}
 
@@ -105,17 +106,18 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		LinkToController: p.linker,
 	}
 
+	mc := &MiddlewareContext{
+		ControllerLink: p.linker,
+		ModelHandlers:  p.modelHandlers,
+		Controller:     ctl,
+	}
+
 	if get, ok := c.(Getable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 
-			c := &MiddlewareContext{
-				ModelHandlers: p.modelHandlers,
-				Controller:    ctl,
-				Model:         get.Get(context, req),
-			}
-
-			p.runMiddleware(c, req, w)
+			mc.Model = get.Get(context, req)
+			p.runMiddleware(mc, req, w)
 
 		}).Methods("GET")
 
@@ -124,13 +126,9 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 	if post, ok := c.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			c := &MiddlewareContext{
-				ModelHandlers: p.modelHandlers,
-				Controller:    ctl,
-				Model:         post.Post(context, req),
-			}
+			mc.Model = post.Post(context, req)
 
-			p.runMiddleware(c, req, w)
+			p.runMiddleware(mc, req, w)
 
 		}).Methods("POST")
 
@@ -143,26 +141,21 @@ func (p *Preen) registerController(r *mux.Router, c interface{}) error {
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 			action, err := getAction(req)
 
-			c := &MiddlewareContext{
-				ModelHandlers: p.modelHandlers,
-				Controller:    ctl,
-			}
-
 			if err != nil {
-				c.Model = context.Error(err)
-				p.runMiddleware(c, req, w)
+				mc.Model = context.Error(err)
+				p.runMiddleware(mc, req, w)
 				return
 			}
 
 			handler, found := allActions[action]
 			if !found {
-				c.Model = context.ErrorS("No action found called " + action)
-				p.runMiddleware(c, req, w)
+				mc.Model = context.ErrorS("No action found called " + action)
+				p.runMiddleware(mc, req, w)
 				return
 			}
 
-			c.Model = handler(context, req)
-			p.runMiddleware(c, req, w)
+			mc.Model = handler(context, req)
+			p.runMiddleware(mc, req, w)
 
 		}).Methods("POST")
 
