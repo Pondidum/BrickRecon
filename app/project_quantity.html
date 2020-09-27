@@ -1,5 +1,5 @@
 {{ if _user.Authenticated }}
-<form method="POST">
+<form method="POST" onsubmit="return submitForm(this, event);" >
   <input type="hidden" name="part" value="{{ .ID }}">
   <input type="hidden" name="colour" value="{{ .ColourID }}">
   <input type="hidden" name="quantity" value="1">

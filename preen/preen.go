@@ -61,6 +61,7 @@ func NewPreen(pc PreenConfig) (*Preen, error) {
 		pipeline: []Middleware{
 			NewBasicAuthMiddlware("test", "testing", "Bricks").Middleware,
 			RedirectMiddleware,
+			TurbolinksMiddleware,
 			renderer.Middleware,
 		},
 	}

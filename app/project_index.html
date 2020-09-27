@@ -55,8 +55,14 @@
 
         {{ range .Project.Parts }}
         <tr>
-          <td width="66"><img loading="lazy" src="/static/img/parts/{{ .ID }}-{{ .ColourID }}.png" alt="part {{ .ID }}"
-              width="66px"></td>
+          <td width="66">
+            <img
+              loading="{{ if _user.Authenticated }}eager{{else}}lazy{{end}}"
+              src="/static/img/parts/{{ .ID }}-{{ .ColourID }}.png"
+              alt="part {{ .ID }}"
+              width="66px"
+            >
+          </td>
           <td>{{ .ID }}</td>
           <td>{{ .Name }}</td>
           <td>{{ template "swatch" . }}</td>
