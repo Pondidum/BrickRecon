@@ -15,7 +15,7 @@
 - [ ] change part colours
 - [ ] filtering parts list
   - [x] colour
-  - [ ] all/needed/owned
+  - [x] all/needed/owned
   - [ ] text
 - [ ] sorting parts list
 - [ ] better display of adding kit to project

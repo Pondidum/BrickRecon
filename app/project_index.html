@@ -11,14 +11,14 @@
         </div>
 
         <div class="btn-group btn-group-toggle mr-2" data-toggle="buttons">
-          <label class="btn btn-sm btn-outline-secondary active">
-            <input type="radio" name="options" id="option1"> All
+          <label class="btn btn-sm btn-outline-secondary">
+            <input type="radio" name="filter-inventory" value="all"> All
           </label>
           <label class="btn btn-sm btn-outline-secondary">
-            <input type="radio" name="options" id="option2"> Needed
+            <input type="radio" name="filter-inventory" value="needed"> Needed
           </label>
           <label class="btn btn-sm btn-outline-secondary">
-            <input type="radio" name="options" id="option3"> Owned
+            <input type="radio" name="filter-inventory" value="owned"> Owned
           </label>
         </div>
 
@@ -54,7 +54,7 @@
       <tbody class="reactable-data" id="parts">
 
         {{ range .Project.Parts }}
-        <tr data-part-colour="{{ .ColourID }}">
+        <tr data-part-colour="{{ .ColourID }}" data-part-inventory="{{ .TotalInventory }}" data-part-quantity="{{ .Quantity }}">
           <td width="66">
             <img
               loading="{{ if _user.Authenticated }}eager{{else}}lazy{{end}}"
@@ -75,35 +75,67 @@
 
 
     <script>
-      var selector = document.getElementById("filter-colour")
-      var table = document.getElementById("parts")
-
       var params = new URLSearchParams(window.location.search);
+
+
+
+      var colourSelector = document.getElementById("filter-colour")
       var filterColour = params.get("filter-colour") || "none"
 
-      for (var i = 0, row; row = table.rows[i]; i++) {
-        if (filterColour == "none") {
-          row.style.display = "table-row"
-        } else {
-          var rowColour = row.getAttribute("data-part-colour")
-          row.style.display = (rowColour == filterColour) ? "table-row" : "none"
-        }
-      }
-
-      for (var i = 0, option; option = selector.options[i]; i++) {
+      for (var i = 0, option; option = colourSelector.options[i]; i++) {
         if (option.value == filterColour) {
-          selector.selectedIndex = i;
+          colourSelector.selectedIndex = i;
           break
         }
       }
 
-      selector.addEventListener("change", (e) => {
+      colourSelector.addEventListener("change", (e) => {
         const filterColour = e.target.value
 
-        const params = new URLSearchParams(window.location.search);
         params.set("filter-colour", filterColour)
         window.location.search = params.toString()
       })
+
+
+      // ---
+
+      var inventorySelector = document.getElementsByName("filter-inventory")
+      var filterInventory = params.get("filter-inventory") || "all"
+
+      var handler = e => {
+        const filterInventory = e.target.value
+
+        params.set("filter-inventory", filterInventory)
+        window.location.search = params.toString()
+      }
+
+      inventorySelector.forEach(s => {
+        s.addEventListener("change", handler)
+
+        if (s.value == filterInventory) {
+          s.parentElement.classList.add("active")
+        }
+      })
+
+      // --------
+      var table = document.getElementById("parts")
+
+      for (var i = 0, row; row = table.rows[i]; i++) {
+
+        var colourMatch = (filterColour == "none" || row.getAttribute("data-part-colour") == filterColour)
+        var inventoryMatch = true
+
+        if (filterInventory == "needed") {
+          inventoryMatch = row.getAttribute("data-part-inventory") < row.getAttribute("data-part-quantity")
+        }
+
+        if (filterInventory == "owned") {
+          inventoryMatch = row.getAttribute("data-part-inventory") >= row.getAttribute("data-part-quantity")
+        }
+
+        row.style.display = (colourMatch && inventoryMatch) ? "table-row" : "none"
+
+      }
 
     </script>
   </div>
