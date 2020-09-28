@@ -230,11 +230,12 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 	}
 
 	return &ProjectWithKit{
-		ID:     project.ID,
-		Name:   project.Name,
-		Parts:  parts,
-		Kits:   project.Kits,
-		Events: withLinks(pc, project.Events),
+		ID:      project.ID,
+		Name:    project.Name,
+		Parts:   parts,
+		Kits:    project.Kits,
+		Colours: project.Colours,
+		Events:  withLinks(pc, project.Events),
 	}
 }
 
@@ -288,9 +289,10 @@ type ProjectWithKit struct {
 	ID   uuid.UUID
 	Name lego.ProjectName
 
-	Parts  []PartWithKitPart
-	Kits   map[lego.KitNumber]all_projects.KitView
-	Events []*all_projects.EventDescription
+	Parts   []PartWithKitPart
+	Kits    map[lego.KitNumber]all_projects.KitView
+	Colours []*all_projects.ColourView
+	Events  []*all_projects.EventDescription
 }
 
 type PartWithKitPart struct {

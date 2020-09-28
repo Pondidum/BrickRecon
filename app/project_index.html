@@ -23,11 +23,11 @@
         </div>
 
         <div class="input-group input-group-sm mr-2">
-          <select class="custom-select">
-            <option selected>Any Colour</option>
-            <option value="1">Dark Bluish Gray</option>
-            <option value="2">Light Bluish Gray</option>
-            <option value="3">Pink</option>
+          <select class="custom-select" id="filter-colour">
+            <option value="none">Any Colour</option>
+            {{ range .Project.Colours }}
+              <option value="{{ .ID }}">{{ .Name }}</option>
+            {{ end }}
           </select>
         </div>
 
@@ -51,10 +51,10 @@
         </tr>
       </thead>
 
-      <tbody class="reactable-data">
+      <tbody class="reactable-data" id="parts">
 
         {{ range .Project.Parts }}
-        <tr>
+        <tr data-part-colour="{{ .ColourID }}">
           <td width="66">
             <img
               loading="{{ if _user.Authenticated }}eager{{else}}lazy{{end}}"
@@ -72,6 +72,40 @@
 
       </tbody>
     </table>
+
+
+    <script>
+      var selector = document.getElementById("filter-colour")
+      var table = document.getElementById("parts")
+
+      var params = new URLSearchParams(window.location.search);
+      var filterColour = params.get("filter-colour") || "none"
+
+      for (var i = 0, row; row = table.rows[i]; i++) {
+        if (filterColour == "none") {
+          row.style.display = "table-row"
+        } else {
+          var rowColour = row.getAttribute("data-part-colour")
+          row.style.display = (rowColour == filterColour) ? "table-row" : "none"
+        }
+      }
+
+      for (var i = 0, option; option = selector.options[i]; i++) {
+        if (option.value == filterColour) {
+          selector.selectedIndex = i;
+          break
+        }
+      }
+
+      selector.addEventListener("change", (e) => {
+        const filterColour = e.target.value
+
+        const params = new URLSearchParams(window.location.search);
+        params.set("filter-colour", filterColour)
+        window.location.search = params.toString()
+      })
+
+    </script>
   </div>
 
   <div class="col-md-3">

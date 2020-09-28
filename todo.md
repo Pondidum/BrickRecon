@@ -14,6 +14,9 @@
 - [ ] add and remove parts from a project
 - [ ] change part colours
 - [ ] filtering parts list
+  - [x] colour
+  - [ ] all/needed/owned
+  - [ ] text
 - [ ] sorting parts list
 - [ ] better display of adding kit to project
   - needs to show what it will add that you need somehow
