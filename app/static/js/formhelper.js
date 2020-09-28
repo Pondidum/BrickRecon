@@ -49,7 +49,11 @@ function submitForm(form, e) {
 
   xhr.open(
     "POST",
-    location.protocol + "//" + location.host + location.pathname
+    location.protocol +
+      "//" +
+      location.host +
+      location.pathname +
+      location.search
   );
 
   xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
