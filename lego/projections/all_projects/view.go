@@ -33,8 +33,9 @@ type ProjectView struct {
 	ID   uuid.UUID
 	Name lego.ProjectName
 
-	Parts []*ProjectPartView
-	Kits  map[lego.KitNumber]KitView
+	Parts   []*ProjectPartView
+	Kits    map[lego.KitNumber]KitView
+	Colours []*ColourView
 
 	BrickLinkXml string
 
@@ -72,4 +73,10 @@ type KitView struct {
 
 	Parts      map[PartKey]int
 	TotalParts int
+}
+
+type ColourView struct {
+	ID   lego.BrickLinkColour
+	Name lego.ColourName
+	Hex  lego.HexColour
 }

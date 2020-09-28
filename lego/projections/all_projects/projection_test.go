@@ -63,7 +63,7 @@ func TestAddingProjectParts(t *testing.T) {
 
 	assert.Contains(t, view.Projects, projectName)
 
-	expected := []*ProjectPartView{
+	expectedParts := []*ProjectPartView{
 		&ProjectPartView{
 			ID:       lego.LDrawPart("567"),
 			ColourID: lego.BrickLinkColour(85),
@@ -72,7 +72,35 @@ func TestAddingProjectParts(t *testing.T) {
 		},
 	}
 
-	assert.Equal(t, expected, view.Projects[projectName].Parts)
+	expectedColours := []*ColourView{
+		&ColourView{
+			ID: lego.BrickLinkColour(85),
+		},
+	}
+
+	assert.Equal(t, expectedParts, view.Projects[projectName].Parts)
+	assert.Equal(t, expectedColours, view.Projects[projectName].Colours)
+}
+
+func TestAddingMultipleProjectParts(t *testing.T) {
+
+	projectID := uuid.NewV4()
+	projectName := lego.ProjectName("test-project")
+	partOne := lego.Part{ID: lego.LDrawPart("123"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 1}
+	partTwo := lego.Part{ID: lego.LDrawPart("456"), Colour: lego.Colour{ID: lego.BrickLinkColour(10)}, Quantity: 2}
+	partThree := lego.Part{ID: lego.LDrawPart("789"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 3}
+
+	view := apply(
+		createProject(projectID, projectName),
+		createProjectParts(projectID, partOne, partTwo, partThree),
+	)
+
+	expectedColours := []*ColourView{
+		{ID: lego.BrickLinkColour(85)},
+		{ID: lego.BrickLinkColour(10)},
+	}
+
+	assert.Equal(t, expectedColours, view.Projects[projectName].Colours)
 }
 
 func TestWhenKitAddedAfterProject(t *testing.T) {

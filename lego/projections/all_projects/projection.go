@@ -47,9 +47,10 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 
 	case *lego.ProjectCreated:
 		project = &ProjectView{
-			ID:   e.AggregateRootID,
-			Name: e.Name,
-			Kits: map[lego.KitNumber]KitView{},
+			ID:      e.AggregateRootID,
+			Name:    e.Name,
+			Kits:    map[lego.KitNumber]KitView{},
+			Colours: []*ColourView{},
 		}
 
 		audit(project, event, "Project created")
@@ -60,6 +61,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	case *lego.ProjectPartsAdded:
 		for _, part := range e.Parts {
 			project.Parts = append(project.Parts, toProjectPartView(part))
+			project.Colours = appendNewColours(project.Colours, part)
 		}
 
 		for _, kit := range view.Kits {
@@ -103,6 +105,23 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	}
 
 	return view
+}
+
+func appendNewColours(unique []*ColourView, part lego.Part) []*ColourView {
+
+	for _, view := range unique {
+		if view.ID == part.Colour.ID {
+			return unique
+		}
+	}
+
+	unique = append(unique, &ColourView{
+		ID:   part.Colour.ID,
+		Name: part.Colour.Name,
+		Hex:  part.Colour.Hex,
+	})
+
+	return unique
 }
 
 func audit(project *ProjectView, event eventstore.Event, format string, args ...interface{}) {
