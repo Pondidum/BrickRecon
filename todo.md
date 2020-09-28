@@ -26,7 +26,7 @@
   - `model.ldr` contains ldraw for the actual model
   - `modelv1.ldr` seems to be a custom format of ldr
   - `model2.ldr` ldraw for actual model, but with all bricks expanded as submodels also
-- [ ] eventstore: fs backend should save views non-minified
+- [x] eventstore: fs backend should save views non-minified
 - [ ] preen: PreenContext for Actions (access to useful functions)
   - [ ] controllerRedirect
   - [ ] errorModel

@@ -32,7 +32,7 @@ func (v *FsView) ReadView(ctx context.Context, view interface{}) error {
 }
 
 func (v *FsView) WriteView(ctx context.Context, view interface{}, lastIndex int) error {
-	viewBytes, err := json.Marshal(view)
+	viewBytes, err := json.MarshalIndent(view, "", "  ")
 
 	if err != nil {
 		return err
