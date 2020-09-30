@@ -44,9 +44,7 @@
       <thead>
         <tr class="reactable-column-header">
           <th tabindex="0" width="66"><strong class="name-header">Image</strong></th>
-          <th tabindex="0"><strong class="name-header">Part No</strong></th>
           <th tabindex="0"><strong class="name-header">Name</strong></th>
-          <th tabindex="0"><strong class="name-header">Colour</strong></th>
           <th tabindex="0"><strong class="name-header">Quantity</strong></th>
         </tr>
       </thead>
@@ -63,9 +61,10 @@
               width="66px"
             >
           </td>
-          <td>{{ .ID }}</td>
-          <td>{{ .Name }}</td>
-          <td>{{ template "swatch" . }}</td>
+          <td>
+            <p>{{ .Name }}</p>
+            <p class="mb-0">{{ template "swatch" . }} <a href="#">{{ .ID }}</a></p>
+          </td>
           <td {{ if .KitQuantity }}class="table-marker-right"{{end}}>{{ template "project/quantity" . }}</td>
         </tr>
         {{ end }}
