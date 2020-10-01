@@ -18,7 +18,7 @@ func toProjectPartView(part lego.Part) *ProjectPartView {
 		ColourName: part.Colour.Name,
 		ColourHex:  part.Colour.Hex,
 		Quantity:   part.Quantity,
-		Key:        CreatePartKey(part.ID, part.Colour.ID),
+		Key:        lego.CreatePartKey(part.ID, part.Colour.ID),
 	}
 }
 
@@ -169,7 +169,7 @@ func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.Bri
 }
 
 func calculateKitFulfillment(project *ProjectView, kit KitView) {
-	fulfilled := map[PartKey]int{}
+	fulfilled := map[lego.PartKey]int{}
 	total := 0
 
 	for _, part := range project.Parts {
@@ -194,10 +194,10 @@ func calculateKitFulfillment(project *ProjectView, kit KitView) {
 
 func createKitView(event *lego.KitCreated) KitView {
 
-	kp := make(map[PartKey]int, len(event.Parts))
+	kp := make(map[lego.PartKey]int, len(event.Parts))
 
 	for _, p := range event.Parts {
-		kp[CreatePartKey(p.ID, p.Colour.ID)] = p.Quantity
+		kp[lego.CreatePartKey(p.ID, p.Colour.ID)] = p.Quantity
 	}
 
 	return KitView{

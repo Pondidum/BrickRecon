@@ -159,12 +159,12 @@ func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Reques
 	return preen.ControllerRedirect("project_export", "name", string(project.Name))
 }
 
-func kitPartQuantities(quantities map[all_projects.PartKey]int) []lego.PartQuantity {
+func kitPartQuantities(quantities map[lego.PartKey]int) []lego.PartQuantity {
 
 	parts := make([]lego.PartQuantity, len(quantities))
 	i := 0
 	for key, q := range quantities {
-		part, colour := all_projects.ParseKey(key)
+		part, colour := lego.ParsePartKey(key)
 
 		parts[i] = lego.PartQuantity{PartID: part, ColourID: colour, Quantity: q}
 		i++
@@ -213,7 +213,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 			TotalInventory:  p.Inventory,
 		}
 
-		pk := all_projects.CreatePartKey(p.ID, p.ColourID)
+		pk := lego.CreatePartKey(p.ID, p.ColourID)
 
 		if quantity, found := kit.Parts[pk]; found {
 			part.KitQuantity = quantity
