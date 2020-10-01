@@ -3,7 +3,7 @@ package lego
 import "fmt"
 
 type ProjectPartList struct {
-	parts []*ProjectPart
+	parts map[PartKey]*ProjectPart
 }
 
 type ProjectPart struct {
@@ -24,13 +24,9 @@ func (p *ProjectPart) NeededQuantity() int {
 	return p.Quantity - p.Inventory
 }
 
-func NewPartsList(parts []Part) *ProjectPartList {
+func NewPartsList() *ProjectPartList {
 	list := ProjectPartList{
-		parts: make([]*ProjectPart, len(parts)),
-	}
-
-	for i, p := range parts {
-		list.parts[i] = &ProjectPart{Part: p, Inventory: 0}
+		parts: map[PartKey]*ProjectPart{},
 	}
 
 	return &list
@@ -38,17 +34,15 @@ func NewPartsList(parts []Part) *ProjectPartList {
 
 func (m *ProjectPartList) Add(part Part) {
 
-	id := part.ID
-	colour := part.Colour.ID
-
-	existing, found := m.FindPart(id, colour)
+	key := CreatePartKey(part.ID, part.Colour.ID)
+	existing, found := m.FindPartByKey(key)
 
 	if found {
 		existing.Quantity += part.Quantity
 		return
 	}
 
-	m.parts = append(m.parts, &ProjectPart{Part: part, Inventory: 0})
+	m.parts[key] = &ProjectPart{Part: part, Inventory: 0}
 }
 
 func (m *ProjectPartList) AddInventory(partID LDrawPart, colourID BrickLinkColour, quantity int) error {
@@ -78,4 +72,10 @@ func (m *ProjectPartList) FindPart(partID LDrawPart, colourID BrickLinkColour) (
 	}
 
 	return nil, false
+}
+
+func (m *ProjectPartList) FindPartByKey(partKey PartKey) (*ProjectPart, bool) {
+	part, found := m.parts[partKey]
+
+	return part, found
 }

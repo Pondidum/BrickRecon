@@ -22,7 +22,7 @@ type Project struct {
 
 func BlankProject() *Project {
 	project := Project{
-		parts: &ProjectPartList{},
+		parts: NewPartsList(),
 	}
 	project.Aggregator = eventstore.NewAggregator(project.on)
 
