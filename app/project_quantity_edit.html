@@ -1,0 +1,6 @@
+<div class="input-group input-group-sm" id="part-quantity-editor">
+  <input type="number" name="{{ .ID }}|{{ .ColourID }}" class="form-control" size="1" min="0" max="{{ .Quantity }}" value="{{ .TotalInventory }}">
+  <div class="input-group-append">
+    <span class="input-group-text" name="quantity">/ {{ .Quantity }}</span>
+  </div>
+</div>

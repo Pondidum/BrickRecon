@@ -1,11 +1,9 @@
 <div class="row">
   <div class="col-md-9">
 
+    <div class="mb-2 mb-md-0 pt-3 pb-2 mb-3 d-flex justify-content-between">
 
-    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3">
-      <h3>Parts</h3>
-      <div class="btn-toolbar mb-2 mb-md-0">
-
+      <div class="btn-toolbar">
         <div class="input-group input-group-sm mr-2">
           <input type="text" class="form-control" placeholder="filter...">
         </div>
@@ -30,14 +28,21 @@
             {{ end }}
           </select>
         </div>
-
-        <form method="POST">
-          <button type="submit" class="btn btn-sm btn-outline-secondary ml-5" name="action" value="exportWanted">
-            Export
-          </button>
-        </form>
       </div>
+
+      <form method="POST">
+        <a class="btn btn-sm btn-outline-secondary" href="{{ addquery _page.URL "edit" "true" }}" role="button">Edit</a>
+
+        <button type="submit" class="btn btn-sm btn-outline-secondary" name="action" value="exportWanted">
+          Export
+        </button>
+      </form>
     </div>
+
+    {{ $isEdit := and _user.Authenticated (hasquery "edit" "true") }}
+    {{ if  $isEdit }}
+    <form method="POST" onsubmit="return submitForm(this, event);">
+    {{ end }}
 
     <table class="table">
 
@@ -65,13 +70,44 @@
             <p>{{ .Name }}</p>
             <p class="mb-0">{{ template "swatch" . }} <a href="#">{{ .ID }}</a></p>
           </td>
-          <td {{ if .KitQuantity }}class="table-marker-right"{{end}}>{{ template "project/quantity" . }}</td>
+          <td {{ if .KitQuantity }}class="table-marker-right"{{end}}>
+            {{ if $isEdit }}
+              {{ template "project/quantity_edit" . }}
+            {{ else }}
+              {{ template "project/quantity" . }}
+            {{ end }}
+          </td>
         </tr>
         {{ end }}
 
       </tbody>
     </table>
 
+    {{ if $isEdit  }}
+    <div class="row fixed-bottom">
+      <div class="col-md-9 ml-sm-auto col-lg-10 px-md-4">
+        <div class="row">
+          <div class="col-md-9">
+            <div class="p-2">
+              <div class="d-flex justify-content-end bg-light ">
+
+                <a class="btn btn-outline-secondary mr-1" href="{{ removequery _page.URL "edit" }}" role="button">Cancel</a>
+
+                <button type="submit" class="btn btn-secondary" name="action" value="updateQuantities">
+                  Save
+                </button>
+              </div>
+
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    </form>
+    {{ end }}
 
     <script>
       var params = new URLSearchParams(window.location.search);

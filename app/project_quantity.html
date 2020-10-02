@@ -1,15 +1,1 @@
-{{ if _user.Authenticated }}
-<form method="POST" onsubmit="return submitForm(this, event);" >
-  <input type="hidden" name="part" value="{{ .ID }}">
-  <input type="hidden" name="colour" value="{{ .ColourID }}">
-  <input type="hidden" name="quantity" value="1">
-
-  <button type="submit" class="btn btn-link btn-sm p-0"  name="action" value="decrease">{{ template "icons/arrow-down-circle" }}</button>
-{{end}}
-
 {{ .TotalInventory }} <span class="text-muted">/ {{ .Quantity }}</span> {{ if .KitQuantity }}<span class="text-primary">(+{{ .KitQuantity }})</span>{{ end }}
-
-{{ if _user.Authenticated }}
-  <button type="submit" class="btn btn-link btn-sm p-0" name="action" value="increase">{{ template "icons/arrow-up-circle" }}</button>
-</form>
-{{ end }}

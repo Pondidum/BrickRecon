@@ -72,6 +72,31 @@ func (prj *Project) RemoveInventory(partID LDrawPart, colourID BrickLinkColour, 
 	return nil
 }
 
+func (prj *Project) UpdateInventory(inventoryState map[PartKey]int) error {
+
+	for key, quantity := range inventoryState {
+
+		partID, colourID := ParsePartKey(key)
+
+		current, found := prj.parts.FindPartByKey(key)
+		if !found {
+			return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
+		}
+
+		diff := quantity - current.Inventory
+
+		if diff < 0 {
+			prj.Apply(&ProjectInventoryRemoved{PartID: partID, ColourID: colourID, Quantity: diff * -1})
+		}
+
+		if diff > 0 {
+			prj.Apply(&ProjectInventoryAdded{PartID: partID, ColourID: colourID, Quantity: diff})
+		}
+	}
+
+	return nil
+}
+
 func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQuantity) {
 
 	if len(parts) == 0 {

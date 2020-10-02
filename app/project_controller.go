@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
@@ -25,6 +26,7 @@ func (c ProjectController) Views() []string {
 	return []string{
 		"project_index.html",
 		"project_quantity.html",
+		"project_quantity_edit.html",
 		"project_kits.html",
 		"project_events.html",
 	}
@@ -48,11 +50,50 @@ func (c ProjectController) Get(pc *preen.PreenContext, req *http.Request) interf
 
 func (c ProjectController) PostActions() preen.PostActionMap {
 	return map[string]func(pc *preen.PreenContext, req *http.Request) interface{}{
-		"increase":     c.increaseQuantity,
-		"decrease":     c.decreaseQuantity,
-		"applykit":     c.applyKit,
-		"exportWanted": c.exportWanted,
+		"increase":         c.increaseQuantity,
+		"decrease":         c.decreaseQuantity,
+		"applykit":         c.applyKit,
+		"exportWanted":     c.exportWanted,
+		"updateQuantities": c.updateQuantities,
 	}
+}
+
+func (c ProjectController) updateQuantities(pc *preen.PreenContext, req *http.Request) interface{} {
+	ctx := req.Context()
+
+	project, err := c.projectAggregate(req)
+	if err != nil {
+		return pc.Error(err)
+	}
+
+	pm := map[lego.PartKey]int{}
+
+	for key, values := range req.PostForm {
+
+		if key == "action" {
+			continue
+		}
+
+		inventory, err := strconv.Atoi(values[0])
+		if err != nil {
+			return pc.Error(err)
+		}
+
+		pm[lego.PartKey(key)] = inventory
+	}
+
+	if err := project.UpdateInventory(pm); err != nil {
+		return pc.Error(err)
+	}
+
+	if err := c.Store.Save(ctx, project); err != nil {
+		return pc.Error(err)
+	}
+
+	return ProjectModel{
+		Project: projectWithKit(c.Store, pc, req),
+	}
+
 }
 
 func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Request) interface{} {

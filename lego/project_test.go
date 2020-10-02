@@ -72,3 +72,35 @@ func TestRemovingInventory(t *testing.T) {
 
 	assert.Equal(t, 0, thePart.Inventory)
 }
+
+func TestUpdatingInventory(t *testing.T) {
+
+	partID := LDrawPart("1234b")
+	colourID := BrickLinkColour(5678)
+	key := CreatePartKey(partID, colourID)
+
+	project := NewProject("Test Project", []Part{
+		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+	})
+
+	thePart, _ := project.FindPart(partID, colourID)
+
+	// no change in inventory
+	project.UpdateInventory(map[PartKey]int{
+		key: 5,
+	})
+	assert.Equal(t, 5, thePart.Inventory)
+
+	// reduce inventory
+	project.UpdateInventory(map[PartKey]int{
+		key: 2,
+	})
+	assert.Equal(t, 2, thePart.Inventory)
+
+	// increate inventory
+	project.UpdateInventory(map[PartKey]int{
+		key: 14,
+	})
+	assert.Equal(t, 14, thePart.Inventory)
+
+}
