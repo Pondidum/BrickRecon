@@ -4,6 +4,7 @@ import (
 	"brickrecon/util"
 	"html/template"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gorilla/context"
@@ -37,7 +38,10 @@ func realFunctions(tf *TemplateContext) template.FuncMap {
 			return user
 		},
 		"_page": func() PageInfo {
-			return PageInfo{Path: tf.Request.URL.Path}
+			return PageInfo{
+				Path: tf.Request.URL.Path,
+				URL:  tf.Request.URL.String(),
+			}
 		},
 		"_site": func() SiteInfo {
 			return SiteInfo{URL: tf.Request.Host}
@@ -64,6 +68,61 @@ func realFunctions(tf *TemplateContext) template.FuncMap {
 		"format": func(ts time.Time, layout string) string {
 			return ts.Format(layout)
 		},
+
+		"hasquery": func(queries ...interface{}) bool {
+
+			qs := tf.Request.URL.Query()
+
+			for i := 0; i < len(queries); i += 2 {
+				key := util.Strval(queries[i])
+				value := util.Strval(queries[i+1])
+
+				if qs.Get(key) != value {
+					return false
+				}
+			}
+
+			return true
+
+		},
+		"addquery": func(rawurl string, queries ...interface{}) (string, error) {
+
+			u, err := url.Parse(rawurl)
+			if err != nil {
+				return "", err
+			}
+
+			query := u.Query()
+
+			for i := 0; i < len(queries); i += 2 {
+				key := util.Strval(queries[i])
+				value := util.Strval(queries[i+1])
+
+				query.Set(key, value)
+			}
+
+			u.RawQuery = query.Encode()
+
+			return u.String(), nil
+		},
+		"removequery": func(rawurl string, queries ...interface{}) (string, error) {
+
+			u, err := url.Parse(rawurl)
+			if err != nil {
+				return "", err
+			}
+
+			query := u.Query()
+
+			for i := 0; i < len(queries); i++ {
+				key := util.Strval(queries[i])
+				query.Del(key)
+			}
+
+			u.RawQuery = query.Encode()
+
+			return u.String(), nil
+		},
 		"linkto": func(controller string, parameters ...interface{}) string {
 
 			args := map[string]interface{}{}
@@ -89,4 +148,5 @@ type SiteInfo struct {
 
 type PageInfo struct {
 	Path string
+	URL  string
 }
