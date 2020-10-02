@@ -5,6 +5,7 @@ import (
 	"brickrecon/lego"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/mitchellh/mapstructure"
 	uuid "github.com/satori/go.uuid"
@@ -121,6 +122,9 @@ func appendNewColours(unique []*ColourView, part lego.Part) []*ColourView {
 		Hex:  part.Colour.Hex,
 	})
 
+	sort.Slice(unique, func(i, j int) bool {
+		return unique[i].Name < unique[j].Name
+	})
 	return unique
 }
 
