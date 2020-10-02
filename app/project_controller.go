@@ -90,9 +90,11 @@ func (c ProjectController) updateQuantities(pc *preen.PreenContext, req *http.Re
 		return pc.Error(err)
 	}
 
-	return ProjectModel{
-		Project: projectWithKit(c.Store, pc, req),
-	}
+	qs := req.URL.Query()
+	qs.Del("edit")
+	req.URL.RawQuery = qs.Encode()
+
+	return pc.Redirect(req.URL.String())
 
 }
 
