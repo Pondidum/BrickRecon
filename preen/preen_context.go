@@ -2,6 +2,7 @@ package preen
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/schema"
 )
@@ -34,4 +35,20 @@ func (pc *PreenContext) PostModel(model interface{}) error {
 	}
 
 	return decoder.Decode(model, pc.request.PostForm)
+}
+
+func (pc *PreenContext) QueryModel(model interface{}) error {
+
+	decoder.IgnoreUnknownKeys(true)
+
+	values, err := url.ParseQuery(pc.request.URL.RawQuery)
+	if err != nil {
+		return err
+	}
+
+	return decoder.Decode(model, values)
+}
+
+func (pc *PreenContext) QueryValue(key string) string {
+	return pc.request.URL.Query().Get(key)
 }

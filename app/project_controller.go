@@ -158,7 +158,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 	vars := mux.Vars(req)
 
 	projectName := lego.ProjectName(vars["name"])
-	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
 	projectView, _ := c.Store.ReadProject(ctx, projectName)
 
@@ -242,7 +242,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 	vars := mux.Vars(req)
 
 	projectName := lego.ProjectName(vars["name"])
-	kitNumber := lego.KitNumber(req.URL.Query().Get("kit"))
+	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
 	project, _ := store.ReadProject(req.Context(), projectName)
 	kit := project.Kits[kitNumber]
