@@ -107,7 +107,7 @@ func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Re
 	}
 
 	var pm quantityModel
-	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+	if err := pc.PostModel(&pm); err != nil {
 		return pc.Error(err)
 	}
 
@@ -134,7 +134,7 @@ func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Re
 	}
 
 	var pm quantityModel
-	if err := preen.DecodePostForm(req.PostForm, &pm); err != nil {
+	if err := pc.PostModel(&pm); err != nil {
 		return pc.Error(err)
 	}
 

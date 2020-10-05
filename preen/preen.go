@@ -3,13 +3,11 @@ package preen
 import (
 	"context"
 	"net/http"
-	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/gorilla/schema"
 )
 
 type ViewMiddleware func(http.ResponseWriter, *http.Request, interface{})
@@ -104,6 +102,7 @@ func (p *Preen) registerController(r *mux.Router, ctl Controller) error {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
 
+			controllerContext.request = req
 			middlewareContext.Model = get.Get(controllerContext, req)
 			p.runMiddleware(middlewareContext, req, w)
 
@@ -114,6 +113,7 @@ func (p *Preen) registerController(r *mux.Router, ctl Controller) error {
 	if post, ok := ctl.(Postable); ok {
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
+			controllerContext.request = req
 			middlewareContext.Model = post.Post(controllerContext, req)
 
 			p.runMiddleware(middlewareContext, req, w)
@@ -127,7 +127,9 @@ func (p *Preen) registerController(r *mux.Router, ctl Controller) error {
 		allActions := postActions.PostActions()
 
 		r.HandleFunc("/"+ctl.Path(), func(w http.ResponseWriter, req *http.Request) {
-			action, err := getAction(req)
+			controllerContext.request = req
+
+			action, err := getAction(controllerContext)
 
 			if err != nil {
 				middlewareContext.Model = controllerContext.Error(err)
@@ -176,24 +178,9 @@ func slither(input string) string {
 	return strings.ToLower(snake)
 }
 
-var decoder = schema.NewDecoder()
-
-func DecodePostForm(form url.Values, model interface{}) error {
-
-	decoder.IgnoreUnknownKeys(true)
-
-	err := decoder.Decode(model, form)
-	return err
-}
-
-func getAction(req *http.Request) (string, error) {
-
-	if err := req.ParseForm(); err != nil {
-		return "", err
-	}
-
+func getAction(pc *PreenContext) (string, error) {
 	var pm postActions
-	if err := DecodePostForm(req.PostForm, &pm); err != nil {
+	if err := pc.PostModel(&pm); err != nil {
 		return "", err
 	}
 
