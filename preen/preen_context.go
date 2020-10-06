@@ -1,9 +1,11 @@
 package preen
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/schema"
 )
 
@@ -25,6 +27,10 @@ func (pc *PreenContext) ErrorS(err string) Error {
 }
 
 var decoder = schema.NewDecoder()
+
+func (pc *PreenContext) Context() context.Context {
+	return pc.request.Context()
+}
 
 func (pc *PreenContext) PostModel(model interface{}) error {
 
@@ -51,4 +57,11 @@ func (pc *PreenContext) QueryModel(model interface{}) error {
 
 func (pc *PreenContext) QueryValue(key string) string {
 	return pc.request.URL.Query().Get(key)
+}
+
+func (pc *PreenContext) RouteValue(key string) string {
+
+	vars := mux.Vars(pc.request)
+
+	return vars[key]
 }

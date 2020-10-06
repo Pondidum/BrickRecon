@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 )
 
@@ -61,7 +60,7 @@ func (c ProjectController) PostActions() preen.PostActionMap {
 func (c ProjectController) updateQuantities(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
-	project, err := c.projectAggregate(req)
+	project, err := c.projectAggregate(pc)
 	if err != nil {
 		return pc.Error(err)
 	}
@@ -101,7 +100,7 @@ func (c ProjectController) updateQuantities(pc *preen.PreenContext, req *http.Re
 func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
-	project, err := c.projectAggregate(req)
+	project, err := c.projectAggregate(pc)
 	if err != nil {
 		return pc.Error(err)
 	}
@@ -128,7 +127,7 @@ func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Re
 func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
-	project, err := c.projectAggregate(req)
+	project, err := c.projectAggregate(pc)
 	if err != nil {
 		return pc.Error(err)
 	}
@@ -155,9 +154,7 @@ func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Re
 func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
-	vars := mux.Vars(req)
-
-	projectName := lego.ProjectName(vars["name"])
+	projectName := lego.ProjectName(pc.RouteValue("name"))
 	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
 	projectView, _ := c.Store.ReadProject(ctx, projectName)
@@ -184,7 +181,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Request) interface{} {
 	ctx := req.Context()
 
-	project, err := c.projectAggregate(req)
+	project, err := c.projectAggregate(pc)
 	if err != nil {
 		return pc.Error(err)
 	}
@@ -216,12 +213,11 @@ func kitPartQuantities(quantities map[lego.PartKey]int) []lego.PartQuantity {
 	return parts
 }
 
-func (c ProjectController) projectAggregate(req *http.Request) (*lego.Project, error) {
+func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Project, error) {
 
-	ctx := req.Context()
-	vars := mux.Vars(req)
+	ctx := pc.Context()
 
-	projectName := lego.ProjectName(vars["name"])
+	projectName := lego.ProjectName(pc.RouteValue("name"))
 	selected, _ := c.Store.ReadProject(ctx, projectName)
 
 	project := lego.BlankProject()
@@ -239,9 +235,8 @@ type quantityModel struct {
 }
 
 func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) *ProjectWithKit {
-	vars := mux.Vars(req)
 
-	projectName := lego.ProjectName(vars["name"])
+	projectName := lego.ProjectName(pc.RouteValue("name"))
 	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
 	project, _ := store.ReadProject(req.Context(), projectName)

@@ -5,8 +5,6 @@ import (
 	"brickrecon/lego/projections/all_kits"
 	"brickrecon/preen"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 type KitModel struct {
@@ -33,9 +31,7 @@ func (c KitController) View() string {
 
 func (c KitController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
-	vars := mux.Vars(req)
-
-	selected, _ := c.Store.ReadKit(req.Context(), lego.KitNumber(vars["kitnumber"]))
+	selected, _ := c.Store.ReadKit(req.Context(), lego.KitNumber(pc.RouteValue("kitnumber")))
 
 	return KitModel{
 		Kit: selected,

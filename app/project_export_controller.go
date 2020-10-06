@@ -4,8 +4,6 @@ import (
 	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 type ProjectExportModel struct {
@@ -32,9 +30,8 @@ func (c ProjectExportController) View() string {
 }
 
 func (c ProjectExportController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
-	vars := mux.Vars(req)
 
-	projectName := lego.ProjectName(vars["name"])
+	projectName := lego.ProjectName(pc.RouteValue("name"))
 	project, _ := c.Store.ReadProject(req.Context(), projectName)
 
 	return ProjectExportModel{
