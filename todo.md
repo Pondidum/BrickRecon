@@ -34,3 +34,4 @@
   - [ ] controllerRedirect
   - [ ] errorModel
   - [ ] ...
+- [x] bug in export logic (see plate 1 x 2 in kazortype export)

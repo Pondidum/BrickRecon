@@ -39,7 +39,7 @@ func wantedListFromParts(parts []*lego.ProjectPart) wantedList {
 			ID:        p.Aliases.BrickLinkID,
 			Color:     p.Colour.Aliases.BrickLinkID,
 			Quantity:  p.Quantity,
-			Inventory: p.NeededQuantity(),
+			Inventory: p.Inventory,
 		}
 	}
 

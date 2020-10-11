@@ -10,10 +10,22 @@ import (
 
 func TestSerializationFormat(t *testing.T) {
 
-	parts := wantedList{
-		Items: []wantedListItem{
-			{Type: "P", ID: "2540", Color: lego.BrickLinkColour(85), Quantity: 9, Inventory: 3},
-			{Type: "P", ID: "11477", Color: lego.BrickLinkColour(59), Quantity: 2},
+	parts := []*lego.ProjectPart{
+		{
+			Part: lego.Part{
+				Aliases:  lego.PartAliases{BrickLinkID: lego.BrickLinkPart("2540")},
+				Colour:   lego.Colour{Aliases: lego.ColourAliases{BrickLinkID: lego.BrickLinkColour(85)}},
+				Quantity: 9,
+			},
+			Inventory: 3,
+		},
+		{
+			Part: lego.Part{
+				Aliases:  lego.PartAliases{BrickLinkID: lego.BrickLinkPart("11477")},
+				Colour:   lego.Colour{Aliases: lego.ColourAliases{BrickLinkID: lego.BrickLinkColour(59)}},
+				Quantity: 2,
+			},
+			Inventory: 0,
 		},
 	}
 
@@ -36,7 +48,7 @@ func TestSerializationFormat(t *testing.T) {
 </INVENTORY>
 `)
 
-	xml, err := marshal(parts)
+	xml, err := marshal(wantedListFromParts(parts))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, xml)
