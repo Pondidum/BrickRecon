@@ -2,7 +2,6 @@ package eventstore
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"time"
 
@@ -17,6 +16,8 @@ type Projector func(state interface{}, event Event) interface{}
 
 type EventStore interface {
 	RegisterEvent(ctx context.Context, creator Initialiser) error
+	RegisterEvents(ctx context.Context, creator []Initialiser) error
+
 	RegisterProjection(ctx context.Context, projection Projection)
 	ReadView(ctx context.Context, name string, view interface{}) error
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
@@ -25,7 +26,7 @@ type EventStore interface {
 }
 
 type eventStore struct {
-	registry    map[string]Initialiser
+	registry    *EventRegistry
 	projections map[string]Projection
 
 	backend Backend
@@ -35,7 +36,7 @@ type Initialiser func() interface{}
 
 func NewEventStore(backend Backend) EventStore {
 	return &eventStore{
-		registry:    map[string]Initialiser{},
+		registry:    NewRegistry(),
 		projections: map[string]Projection{},
 		backend:     backend,
 	}
@@ -48,16 +49,11 @@ type Projection interface {
 }
 
 func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) error {
+	return es.registry.Register(ctx, creator)
+}
 
-	event := creator()
-	v := reflect.ValueOf(event)
-	if v.Kind() != reflect.Ptr || v.Elem().Kind() != reflect.Struct {
-		return errors.New("Event initialiser must return a pointer to a struct")
-	}
-
-	es.registry[eventName(event)] = creator
-
-	return nil
+func (es *eventStore) RegisterEvents(ctx context.Context, creators []Initialiser) error {
+	return es.registry.RegisterMany(ctx, creators)
 }
 
 func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {

@@ -13,9 +13,8 @@ import (
 func TestReadingLongLines(t *testing.T) {
 	t.Parallel()
 
-	registry := map[string]eventstore.Initialiser{
-		"KitCreated": func() interface{} { return &lego.KitCreated{} },
-	}
+	registry := eventstore.NewRegistry()
+	registry.Register(context.Background(), func() interface{} { return &lego.KitCreated{} })
 
 	reader, err := NewAggregateEventReader(
 		context.Background(),

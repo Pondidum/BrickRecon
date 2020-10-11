@@ -29,7 +29,7 @@ func NewAggregateBackend(root string) (*AggregateBackend, error) {
 	return be, nil
 }
 
-func (be *AggregateBackend) NewEventReader(registry map[string]eventstore.Initialiser, aggregateID uuid.UUID) (eventstore.EventReader, error) {
+func (be *AggregateBackend) NewEventReader(registry *eventstore.EventRegistry, aggregateID uuid.UUID) (eventstore.EventReader, error) {
 	return NewAggregateEventReader(context.Background(), registry, be.eventsPath, aggregateID)
 }
 

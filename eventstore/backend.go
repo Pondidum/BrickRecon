@@ -7,7 +7,7 @@ import (
 )
 
 type Backend interface {
-	NewEventReader(registry map[string]Initialiser, aggregateID uuid.UUID) (EventReader, error)
+	NewEventReader(registry *EventRegistry, aggregateID uuid.UUID) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
 	DestroyViews() error

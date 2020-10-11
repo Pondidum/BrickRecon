@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -16,7 +15,7 @@ import (
 
 type AggregateEventReader struct {
 	ctx      context.Context
-	registry map[string]eventstore.Initialiser
+	registry *eventstore.EventRegistry
 	file     *os.File
 	reader   *bufio.Reader
 
@@ -24,7 +23,7 @@ type AggregateEventReader struct {
 	err  error
 }
 
-func NewAggregateEventReader(ctx context.Context, registry map[string]eventstore.Initialiser, root DirectoryPath, id uuid.UUID) (*AggregateEventReader, error) {
+func NewAggregateEventReader(ctx context.Context, registry *eventstore.EventRegistry, root DirectoryPath, id uuid.UUID) (*AggregateEventReader, error) {
 	filepath := path.Join(string(root), id.String())
 
 	file, err := os.Open(filepath)
@@ -88,14 +87,11 @@ func (er *AggregateEventReader) Event() (eventstore.Event, error) {
 		return nil, err
 	}
 
-	creator, found := er.registry[et.Type]
-
-	if !found {
-		beeline.AddField(er.ctx, "es.event_type_lookup_failed", true)
-		return nil, fmt.Errorf("Unable to find an event of type %s", et.Type)
+	event, err := er.registry.CreateInstance(er.ctx, et.Type)
+	if err != nil {
+		return nil, err
 	}
 
-	event := creator()
 	if err := json.Unmarshal(er.line, event); err != nil {
 		beeline.AddField(er.ctx, "es.event_unmarshal_err", err)
 		return nil, err

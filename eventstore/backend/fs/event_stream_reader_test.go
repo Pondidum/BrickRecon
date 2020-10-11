@@ -69,11 +69,11 @@ func createTestReader(temp string, id uuid.UUID) (*AggregateEventReader, error) 
 	eventsFile := path.Join(temp, id.String())
 	ioutil.WriteFile(eventsFile, []byte(testEvents), 0666)
 
+	registry := eventstore.NewRegistry()
+	registry.Register(context.Background(), func() interface{} { return &TestEvent{} })
 	reader, err := NewAggregateEventReader(
 		context.Background(),
-		map[string]eventstore.Initialiser{
-			"TestEvent": func() interface{} { return &TestEvent{} },
-		},
+		registry,
 		DirectoryPath(temp),
 		id,
 	)

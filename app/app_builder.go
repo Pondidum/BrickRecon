@@ -41,9 +41,9 @@ func (b *AppBuilder) CreateBackend() (*fs.AggregateBackend, error) {
 func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.EventStore {
 	es := eventstore.NewEventStore(backend)
 
-	eventstore.RegisterMany(es, b.ctx, lego.ProjectEvents)
-	eventstore.RegisterMany(es, b.ctx, lego.KitEvents)
-	eventstore.RegisterMany(es, b.ctx, background.ImageCacheEvents)
+	es.RegisterEvents(b.ctx, lego.ProjectEvents)
+	es.RegisterEvents(b.ctx, lego.KitEvents)
+	es.RegisterEvents(b.ctx, background.ImageCacheEvents)
 
 	es.RegisterProjection(b.ctx, &all_projects.ProjectsProjection{})
 	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
