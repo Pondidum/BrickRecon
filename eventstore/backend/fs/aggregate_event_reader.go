@@ -10,7 +10,6 @@ import (
 	"path"
 
 	"github.com/honeycombio/beeline-go"
-	uuid "github.com/satori/go.uuid"
 )
 
 type AggregateEventReader struct {
@@ -23,8 +22,8 @@ type AggregateEventReader struct {
 	err  error
 }
 
-func NewAggregateEventReader(ctx context.Context, registry *eventstore.EventRegistry, root DirectoryPath, id uuid.UUID) (*AggregateEventReader, error) {
-	filepath := path.Join(string(root), id.String())
+func NewAggregateEventReader(ctx context.Context, registry *eventstore.EventRegistry, root DirectoryPath, id string) (*AggregateEventReader, error) {
+	filepath := path.Join(string(root), id)
 
 	file, err := os.Open(filepath)
 	if err != nil && !os.IsNotExist(err) {

@@ -75,7 +75,7 @@ func createTestReader(temp string, id uuid.UUID) (*AggregateEventReader, error) 
 		context.Background(),
 		registry,
 		DirectoryPath(temp),
-		id,
+		id.String(),
 	)
 
 	return reader, err
