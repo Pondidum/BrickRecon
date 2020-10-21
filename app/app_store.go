@@ -8,6 +8,8 @@ import (
 	"brickrecon/lego/projections/all_projects"
 	"context"
 	"fmt"
+
+	uuid "github.com/satori/go.uuid"
 )
 
 type SiteModel struct {
@@ -58,7 +60,32 @@ func (a *AppStore) ReadProjectView(ctx context.Context, name lego.ProjectName) (
 
 }
 
-func (a *AppStore) ReadKit(ctx context.Context, kitNumber lego.KitNumber) (*all_kits.KitView, error) {
+func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*lego.Project, error) {
+
+	selected, err := a.ReadProjectView(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	project := lego.BlankProject()
+	if err := a.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (a *AppStore) ReadProjectByID(ctx context.Context, id uuid.UUID) (*lego.Project, error) {
+
+	project := lego.BlankProject()
+	if err := a.EventStore.LoadAggregate(ctx, id, project); err != nil {
+		return nil, err
+	}
+
+	return project, nil
+}
+
+func (a *AppStore) ReadKitView(ctx context.Context, kitNumber lego.KitNumber) (*all_kits.KitView, error) {
 
 	var view all_kits.AllKitsView
 	if err := a.EventStore.ReadView(ctx, all_kits.ProjectionName, &view); err != nil {

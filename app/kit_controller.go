@@ -31,7 +31,7 @@ func (c KitController) View() string {
 
 func (c KitController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
-	selected, _ := c.Store.ReadKit(req.Context(), lego.KitNumber(pc.RouteValue("kitnumber")))
+	selected, _ := c.Store.ReadKitView(req.Context(), lego.KitNumber(pc.RouteValue("kitnumber")))
 
 	return KitModel{
 		Kit: selected,

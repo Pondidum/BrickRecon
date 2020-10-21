@@ -158,13 +158,12 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
 	projectView, _ := c.Store.ReadProjectView(ctx, projectName)
+	kit := projectView.Kits[kitNumber]
 
-	project := lego.BlankProject()
-	if err := c.Store.EventStore.LoadAggregate(ctx, projectView.ID, project); err != nil {
+	project, err := c.Store.ReadProjectByID(ctx, projectView.ID)
+	if err != nil {
 		return pc.Error(err)
 	}
-
-	kit := projectView.Kits[kitNumber]
 
 	project.AddKitContents(kit.Number, kit.Name, kitPartQuantities(kit.Parts))
 
@@ -218,14 +217,8 @@ func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Proje
 	ctx := pc.Context()
 
 	projectName := lego.ProjectName(pc.RouteValue("name"))
-	selected, _ := c.Store.ReadProjectView(ctx, projectName)
 
-	project := lego.BlankProject()
-	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
-		return nil, err
-	}
-
-	return project, nil
+	return c.Store.ReadProject(ctx, projectName)
 }
 
 type quantityModel struct {
