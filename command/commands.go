@@ -23,6 +23,9 @@ func Commands(ui cli.Ui) map[string]cli.CommandFactory {
 		"project list": func() (cli.Command, error) {
 			return &ProjectListCommand{Meta: meta}, nil
 		},
+		"project diff": func() (cli.Command, error) {
+			return &ProjectDiffCommand{Meta: meta}, nil
+		},
 		"kit import": func() (cli.Command, error) {
 			return &KitImportCommand{Meta: meta}, nil
 		},
