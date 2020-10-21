@@ -41,7 +41,7 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	}
 }
 
-func (a *AppStore) ReadProject(ctx context.Context, name lego.ProjectName) (*all_projects.ProjectView, error) {
+func (a *AppStore) ReadProjectView(ctx context.Context, name lego.ProjectName) (*all_projects.ProjectView, error) {
 
 	var view all_projects.AllProjectsView
 	if err := a.EventStore.ReadView(ctx, all_projects.ProjectionName, &view); err != nil {

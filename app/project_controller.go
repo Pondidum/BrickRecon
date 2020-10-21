@@ -157,7 +157,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 	projectName := lego.ProjectName(pc.RouteValue("name"))
 	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
-	projectView, _ := c.Store.ReadProject(ctx, projectName)
+	projectView, _ := c.Store.ReadProjectView(ctx, projectName)
 
 	project := lego.BlankProject()
 	if err := c.Store.EventStore.LoadAggregate(ctx, projectView.ID, project); err != nil {
@@ -218,7 +218,7 @@ func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Proje
 	ctx := pc.Context()
 
 	projectName := lego.ProjectName(pc.RouteValue("name"))
-	selected, _ := c.Store.ReadProject(ctx, projectName)
+	selected, _ := c.Store.ReadProjectView(ctx, projectName)
 
 	project := lego.BlankProject()
 	if err := c.Store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
@@ -239,7 +239,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 	projectName := lego.ProjectName(pc.RouteValue("name"))
 	kitNumber := lego.KitNumber(pc.QueryValue("kit"))
 
-	project, _ := store.ReadProject(req.Context(), projectName)
+	project, _ := store.ReadProjectView(req.Context(), projectName)
 	kit := project.Kits[kitNumber]
 
 	parts := make([]PartWithKitPart, len(project.Parts))

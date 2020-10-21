@@ -68,7 +68,7 @@ func (c *ProjectDiffCommand) Run(args []string) int {
 		return 1
 	}
 
-	selected, _ := store.ReadProject(ctx, projectName)
+	selected, _ := store.ReadProjectView(ctx, projectName)
 	project := lego.BlankProject()
 	if err := store.EventStore.LoadAggregate(ctx, selected.ID, project); err != nil {
 		c.UI.Error(err.Error())

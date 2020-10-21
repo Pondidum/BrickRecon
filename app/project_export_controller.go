@@ -32,7 +32,7 @@ func (c ProjectExportController) View() string {
 func (c ProjectExportController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
 	projectName := lego.ProjectName(pc.RouteValue("name"))
-	project, _ := c.Store.ReadProject(req.Context(), projectName)
+	project, _ := c.Store.ReadProjectView(req.Context(), projectName)
 
 	return ProjectExportModel{
 		WantedList:  project.BrickLinkXml,
