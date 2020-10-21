@@ -106,6 +106,49 @@ func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQ
 	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
 }
 
+func (prj *Project) ReplaceParts(parts []Part) error {
+	other := NewPartsList()
+	for _, part := range parts {
+		other.Add(part)
+	}
+
+	changes := prj.parts.Diff(other)
+
+	event := &PartsChanged{
+		Additions: []Part{},
+		Removals:  map[PartKey]int{},
+	}
+
+	for key, change := range changes {
+		if change < 0 {
+			event.Removals[key] = change * -1
+		}
+
+		if change > 0 {
+			part, _ := other.FindPartByKey(key)
+			part.Quantity = change
+			event.Additions = append(event.Additions, part.Part)
+		}
+	}
+
+	prj.Apply(event)
+
+	return nil
+}
+
+func (prj *Project) Parts() []*ProjectPart {
+	return prj.parts.All()
+}
+
+func (prj *Project) Diff(parts []Part) map[PartKey]int {
+	other := NewPartsList()
+	for _, part := range parts {
+		other.Add(part)
+	}
+
+	return prj.parts.Diff(other)
+}
+
 func (prj *Project) ExportWantedList(exporter Exporter) (string, error) {
 
 	if prj.exportedRecently {
@@ -163,6 +206,17 @@ func (prj *Project) on(event eventstore.Event) {
 	case *KitAddedToProject:
 		for _, pq := range e.Parts {
 			prj.parts.AddInventory(pq.PartID, pq.ColourID, pq.Quantity)
+		}
+
+	case *PartsChanged:
+		{
+			for key, amount := range e.Removals {
+				prj.parts.Remove(key, amount)
+			}
+
+			for _, part := range e.Additions {
+				prj.parts.Add(part)
+			}
 		}
 
 	case *WantedListExported:

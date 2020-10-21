@@ -50,6 +50,13 @@ type WantedListExported struct {
 	Markup string
 }
 
+type PartsChanged struct {
+	eventstore.EventMeta
+
+	Additions []Part
+	Removals  map[PartKey]int
+}
+
 var ProjectEvents = []eventstore.Initialiser{
 	func() interface{} { return &ProjectCreated{} },
 	func() interface{} { return &ProjectPartsAdded{} },
@@ -57,4 +64,5 @@ var ProjectEvents = []eventstore.Initialiser{
 	func() interface{} { return &ProjectInventoryRemoved{} },
 	func() interface{} { return &KitAddedToProject{} },
 	func() interface{} { return &WantedListExported{} },
+	func() interface{} { return &PartsChanged{} },
 }

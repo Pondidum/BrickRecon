@@ -42,3 +42,93 @@ func TestPartListAdding(t *testing.T) {
 	assert.Equal(t, 18, model.parts[CreatePartKey(partID, black)].Quantity)
 	assert.Equal(t, 1, model.parts[CreatePartKey(partID, red)].Quantity)
 }
+
+func TestDiffingPartLists(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Identical lists", func(t *testing.T) {
+		start := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		updated := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		assert.Empty(t, start.Diff(updated))
+		assert.Empty(t, updated.Diff(start))
+	})
+
+	t.Run("Part Quantity Increase", func(t *testing.T) {
+		start := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		updated := partList(map[PartKey]int{
+			"123|10": 8,
+		})
+
+		assert.Equal(t, map[PartKey]int{
+			PartKey("123|10"): 3,
+		}, start.Diff(updated))
+	})
+
+	t.Run("Part Quantity Decrease", func(t *testing.T) {
+		start := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		updated := partList(map[PartKey]int{
+			"123|10": 1,
+		})
+
+		assert.Equal(t, map[PartKey]int{
+			PartKey("123|10"): -4,
+		}, start.Diff(updated))
+	})
+
+	t.Run("Remove a part", func(t *testing.T) {
+		start := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		updated := partList(map[PartKey]int{})
+
+		assert.Equal(t, map[PartKey]int{
+			PartKey("123|10"): -5,
+		}, start.Diff(updated))
+	})
+
+	t.Run("Add a part", func(t *testing.T) {
+		start := partList(map[PartKey]int{
+			"123|10": 5,
+		})
+
+		updated := partList(map[PartKey]int{
+			"123|10": 5,
+			"456|14": 2,
+		})
+
+		assert.Equal(t, map[PartKey]int{
+			PartKey("456|14"): 2,
+		}, start.Diff(updated))
+	})
+
+}
+
+func partList(parts map[PartKey]int) *ProjectPartList {
+
+	list := NewPartsList()
+
+	for key, quantity := range parts {
+
+		id, colour := ParsePartKey(key)
+		list.Add(Part{
+			ID:       LDrawPart(id),
+			Colour:   Colour{ID: BrickLinkColour(colour)},
+			Quantity: quantity,
+		})
+	}
+
+	return list
+}

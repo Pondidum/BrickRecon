@@ -104,3 +104,35 @@ func TestUpdatingInventory(t *testing.T) {
 	assert.Equal(t, 14, thePart.Inventory)
 
 }
+
+func TestChangingParts(t *testing.T) {
+	parts := []Part{
+		createPart("123|10", 5),
+		createPart("456|15", 5),
+		createPart("789|10", 5),
+	}
+
+	replacementParts := []Part{
+		createPart("123|10", 10),
+		createPart("456|15", 5),
+	}
+
+	project := NewProject("Test Project", parts)
+	project.ReplaceParts(replacementParts)
+
+	first, _ := project.parts.FindPartByKey(PartKey("123|10"))
+	second, _ := project.parts.FindPartByKey(PartKey("456|15"))
+
+	assert.Len(t, project.Parts(), 2)
+	assert.Equal(t, 10, first.Quantity)
+	assert.Equal(t, 5, second.Quantity)
+}
+
+func createPart(key string, quantity int) Part {
+	id, colour := ParsePartKey(PartKey(key))
+	return Part{
+		ID:       LDrawPart(id),
+		Colour:   Colour{ID: BrickLinkColour(colour)},
+		Quantity: quantity,
+	}
+}

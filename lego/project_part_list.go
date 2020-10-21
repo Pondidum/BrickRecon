@@ -32,6 +32,16 @@ func NewPartsList() *ProjectPartList {
 	return &list
 }
 
+func (l *ProjectPartList) All() []*ProjectPart {
+	parts := []*ProjectPart{}
+
+	for _, p := range l.parts {
+		parts = append(parts, p)
+	}
+
+	return parts
+}
+
 func (m *ProjectPartList) Add(part Part) {
 
 	key := CreatePartKey(part.ID, part.Colour.ID)
@@ -43,6 +53,18 @@ func (m *ProjectPartList) Add(part Part) {
 	}
 
 	m.parts[key] = &ProjectPart{Part: part, Inventory: 0}
+}
+
+func (m *ProjectPartList) Remove(key PartKey, quantity int) {
+
+	if part, found := m.FindPartByKey(key); found {
+		part.Quantity -= quantity
+
+		if part.Quantity <= 0 {
+			delete(m.parts, key)
+		}
+	}
+
 }
 
 func (m *ProjectPartList) AddInventory(partID LDrawPart, colourID BrickLinkColour, quantity int) error {
@@ -78,4 +100,31 @@ func (m *ProjectPartList) FindPartByKey(partKey PartKey) (*ProjectPart, bool) {
 	part, found := m.parts[partKey]
 
 	return part, found
+}
+
+func (m *ProjectPartList) Diff(other *ProjectPartList) map[PartKey]int {
+
+	deltas := map[PartKey]int{}
+
+	for key, op := range other.parts {
+		if p, found := m.parts[key]; found {
+
+			quantityChange := op.Quantity - p.Quantity
+
+			if quantityChange != 0 {
+				deltas[key] = quantityChange
+			}
+		} else {
+			deltas[key] = op.Quantity
+		}
+	}
+
+	for key, p := range m.parts {
+
+		if _, found := other.parts[key]; !found {
+			deltas[key] = p.Quantity * -1
+		}
+	}
+
+	return deltas
 }
