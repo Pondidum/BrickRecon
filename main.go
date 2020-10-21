@@ -27,7 +27,6 @@ func Run(args []string) int {
 	ui := &cli.ColoredUi{
 		WarnColor:  cli.UiColorYellow,
 		ErrorColor: cli.UiColorRed,
-		InfoColor:  cli.UiColorGreen,
 		Ui: &cli.BasicUi{
 			Reader:      os.Stdin,
 			Writer:      colorable.NewColorableStdout(),

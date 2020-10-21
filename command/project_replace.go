@@ -6,34 +6,47 @@ import (
 	"brickrecon/stud_io"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/fatih/color"
 	"github.com/honeycombio/beeline-go"
+	"github.com/posener/complete"
 )
 
-type ProjectDiffCommand struct {
+type ProjectReplaceCommand struct {
 	Meta
 }
 
-func (c *ProjectDiffCommand) Help() string {
+func (c *ProjectReplaceCommand) Help() string {
 	return ""
 }
 
-func (c *ProjectDiffCommand) Synopsis() string {
-	return "Diff a lego Projects parts"
+func (c *ProjectReplaceCommand) Synopsis() string {
+	return "Replaces the parts in a lego Projects"
 }
 
-func (c *ProjectDiffCommand) Name() string {
-	return "project diff"
+func (c *ProjectReplaceCommand) Name() string {
+	return "project replace"
 }
 
-func (c *ProjectDiffCommand) Run(args []string) int {
+func (c *ProjectReplaceCommand) AutocompleteFlags() complete.Flags {
+	return complete.Flags{
+		"--dry": complete.PredictNothing,
+	}
+}
+
+func (c *ProjectReplaceCommand) AutocompleteArgs() complete.Predictor {
+	return complete.PredictNothing
+}
+
+func (c *ProjectReplaceCommand) Run(args []string) int {
 
 	ctx, send := c.NewPhase(c)
 	defer send()
 
+	var dryRun bool
+
 	flags := c.FlagSet(c)
+	flags.BoolVar(&dryRun, "dry", false, "")
 
 	if err := flags.Parse(args); err != nil {
 		c.UI.Error(err.Error())
@@ -74,8 +87,29 @@ func (c *ProjectDiffCommand) Run(args []string) int {
 		return 1
 	}
 
-	diff := project.Diff(parts)
+	if dryRun {
+		diff := project.Diff(parts)
+		c.outputTable(diff)
+	} else {
+		diff := project.ReplaceParts(parts)
+		c.outputTable(diff)
 
+		c.UI.Info("Saving project...")
+
+		if err := store.Save(ctx, project); err != nil {
+			c.UI.Error(err.Error())
+			return 1
+		}
+
+		c.UI.Output("Done.")
+	}
+
+	beeline.AddField(ctx, "complete", true)
+
+	return 0
+}
+
+func (c *ProjectReplaceCommand) outputTable(diff map[lego.PartKey]int) {
 	rows := []string{
 		"Part Number | Colour | Quantity Change",
 	}
@@ -91,16 +125,12 @@ func (c *ProjectDiffCommand) Run(args []string) int {
 		}
 
 		rows = append(rows, fmt.Sprintf(
-			"%s | %s | %s",
+			"%s | %v | %s",
 			part,
-			strconv.Itoa(int(c)),
+			c,
 			delta,
 		))
 	}
 
 	c.UI.Output(tableOutput(rows))
-
-	beeline.AddField(ctx, "complete", true)
-
-	return 0
 }

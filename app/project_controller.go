@@ -215,7 +215,6 @@ func kitPartQuantities(quantities map[lego.PartKey]int) []lego.PartQuantity {
 func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Project, error) {
 
 	ctx := pc.Context()
-
 	projectName := lego.ProjectName(pc.RouteValue("name"))
 
 	return c.Store.ReadProject(ctx, projectName)

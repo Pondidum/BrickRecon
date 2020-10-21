@@ -60,32 +60,38 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		view.Projects[e.Name] = project
 
 	case *lego.ProjectPartsAdded:
-		for _, part := range e.Parts {
-			project.Parts = append(project.Parts, toProjectPartView(part))
-			project.Colours = appendNewColours(project.Colours, part)
-		}
+		addParts(project, e.Parts)
+		audit(project, e, "%v parts added", len(e.Parts))
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
 		}
 
-		audit(project, e, "%v parts added", len(e.Parts))
+	case *lego.PartsChanged:
+		addParts(project, e.Additions)
+		removeParts(project, e.Removals)
+
+		for _, kit := range view.Kits {
+			calculateKitFulfillment(project, kit)
+		}
+
+		audit(project, e, "%v parts changed", len(e.Additions)+len(e.Removals))
 
 	case *lego.ProjectInventoryAdded:
-		part := findPart(project.Parts, e.PartID, e.ColourID)
+		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
 		audit(project, e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.ProjectInventoryRemoved:
-		part := findPart(project.Parts, e.PartID, e.ColourID)
+		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
 		audit(project, e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.KitAddedToProject:
 		for _, pq := range e.Parts {
-			part := findPart(project.Parts, pq.PartID, pq.ColourID)
+			part, _ := findPart(project.Parts, pq.PartID, pq.ColourID)
 			part.Inventory += pq.Quantity
 		}
 		audit(project, e, "%s (Kit %s) applied", e.KitName, e.KitNumber)
@@ -106,6 +112,27 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	}
 
 	return view
+}
+
+func addParts(project *ProjectView, parts []lego.Part) {
+	for _, part := range parts {
+		project.Parts = append(project.Parts, toProjectPartView(part))
+		project.Colours = appendNewColours(project.Colours, part)
+	}
+}
+
+func removeParts(project *ProjectView, parts map[lego.PartKey]int) {
+
+	for key, amount := range parts {
+		partID, colourID := lego.ParsePartKey(key)
+		part, index := findPart(project.Parts, partID, colourID)
+
+		part.Quantity -= amount
+
+		if part.Quantity <= 0 {
+			project.Parts = append(project.Parts[:index], project.Parts[index+1:]...)
+		}
+	}
 }
 
 func appendNewColours(unique []*ColourView, part lego.Part) []*ColourView {
@@ -161,15 +188,15 @@ func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectVi
 	return nil
 }
 
-func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.BrickLinkColour) *ProjectPartView {
+func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.BrickLinkColour) (*ProjectPartView, int) {
 
-	for _, part := range parts {
+	for i, part := range parts {
 		if part.ID == partID && part.ColourID == colourID {
-			return part
+			return part, i
 		}
 	}
 
-	return nil
+	return nil, -1
 }
 
 func calculateKitFulfillment(project *ProjectView, kit KitView) {

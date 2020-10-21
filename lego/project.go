@@ -106,13 +106,17 @@ func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQ
 	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
 }
 
-func (prj *Project) ReplaceParts(parts []Part) error {
+func (prj *Project) ReplaceParts(parts []Part) map[PartKey]int {
 	other := NewPartsList()
 	for _, part := range parts {
 		other.Add(part)
 	}
 
 	changes := prj.parts.Diff(other)
+
+	if len(changes) == 0 {
+		return changes
+	}
 
 	event := &PartsChanged{
 		Additions: []Part{},
@@ -133,7 +137,7 @@ func (prj *Project) ReplaceParts(parts []Part) error {
 
 	prj.Apply(event)
 
-	return nil
+	return changes
 }
 
 func (prj *Project) Parts() []*ProjectPart {
