@@ -24,10 +24,15 @@ func Run(args []string) int {
 	})
 	defer beeline.Close()
 
-	ui := &cli.BasicUi{
-		Reader:      os.Stdin,
-		Writer:      colorable.NewColorableStdout(),
-		ErrorWriter: colorable.NewColorableStderr(),
+	ui := &cli.ColoredUi{
+		WarnColor:  cli.UiColorYellow,
+		ErrorColor: cli.UiColorRed,
+		InfoColor:  cli.UiColorGreen,
+		Ui: &cli.BasicUi{
+			Reader:      os.Stdin,
+			Writer:      colorable.NewColorableStdout(),
+			ErrorWriter: colorable.NewColorableStderr(),
+		},
 	}
 
 	commands := command.Commands(ui)

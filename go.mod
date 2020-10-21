@@ -3,6 +3,7 @@ module brickrecon
 go 1.14
 
 require (
+	github.com/fatih/color v1.9.0
 	github.com/gorilla/context v1.1.1
 	github.com/gorilla/mux v1.7.4
 	github.com/gorilla/schema v1.1.0
