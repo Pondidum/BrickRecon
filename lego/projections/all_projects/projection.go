@@ -52,6 +52,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			Name:    e.Name,
 			Kits:    map[lego.KitNumber]KitView{},
 			Colours: []*ColourView{},
+			Stats:   &ProjectStatsView{},
 		}
 
 		audit(project, event, "Project created")
@@ -61,11 +62,13 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 
 	case *lego.ProjectPartsAdded:
 		addParts(project, e.Parts)
-		audit(project, e, "%v parts added", len(e.Parts))
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
 		}
+
+		calculateStats(project)
+		audit(project, e, "%v parts added", len(e.Parts))
 
 	case *lego.PartsChanged:
 		addParts(project, e.Additions)
@@ -75,18 +78,21 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kit)
 		}
 
+		calculateStats(project)
 		audit(project, e, "%v parts changed", len(e.Additions)+len(e.Removals))
 
 	case *lego.ProjectInventoryAdded:
 		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory += e.Quantity
 
+		calculateStats(project)
 		audit(project, e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.ProjectInventoryRemoved:
 		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
 		part.Inventory -= e.Quantity
 
+		calculateStats(project)
 		audit(project, e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.KitAddedToProject:
@@ -94,6 +100,8 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			part, _ := findPart(project.Parts, pq.PartID, pq.ColourID)
 			part.Inventory += pq.Quantity
 		}
+
+		calculateStats(project)
 		audit(project, e, "%s (Kit %s) applied", e.KitName, e.KitNumber)
 
 	case *lego.KitCreated:
@@ -177,6 +185,20 @@ func audit(project *ProjectView, event eventstore.Event, format string, args ...
 	delete(desc.Additional, "ID")
 
 	project.Events = append(project.Events, desc)
+}
+
+func calculateStats(project *ProjectView) {
+	totalQuantity := 0
+	totalInventory := 0
+
+	for _, part := range project.Parts {
+		totalQuantity += part.Quantity
+		totalInventory += part.Inventory
+	}
+
+	project.Stats.TotalPartsQuantity = totalQuantity
+	project.Stats.TotalPartsInventory = totalInventory
+	project.Stats.PercentComplete = int(float64(totalInventory) / float64(totalQuantity) * 100)
 }
 
 func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectView {

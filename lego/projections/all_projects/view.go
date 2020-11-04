@@ -21,6 +21,8 @@ type ProjectView struct {
 	Kits    map[lego.KitNumber]KitView
 	Colours []*ColourView
 
+	Stats *ProjectStatsView
+
 	BrickLinkXml string
 
 	Events []*EventDescription
@@ -63,4 +65,10 @@ type ColourView struct {
 	ID   lego.BrickLinkColour
 	Name lego.ColourName
 	Hex  lego.HexColour
+}
+
+type ProjectStatsView struct {
+	TotalPartsQuantity  int
+	TotalPartsInventory int
+	PercentComplete     int
 }

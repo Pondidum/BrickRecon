@@ -26,6 +26,7 @@ func (c ProjectController) Views() []string {
 		"project_index.html",
 		"project_quantity.html",
 		"project_quantity_edit.html",
+		"project_stats.html",
 		"project_kits.html",
 		"project_events.html",
 	}
@@ -266,6 +267,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 		Kits:    project.Kits,
 		Colours: project.Colours,
 		Events:  withLinks(pc, project.Events),
+		Stats:   project.Stats,
 	}
 }
 
@@ -323,6 +325,7 @@ type ProjectWithKit struct {
 	Kits    map[lego.KitNumber]all_projects.KitView
 	Colours []*all_projects.ColourView
 	Events  []*all_projects.EventDescription
+	Stats   *all_projects.ProjectStatsView
 }
 
 type PartWithKitPart struct {
