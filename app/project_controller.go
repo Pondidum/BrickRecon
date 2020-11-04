@@ -235,7 +235,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 	project, _ := store.ReadProjectView(req.Context(), projectName)
 	kit := project.Kits[kitNumber]
 
-	parts := make([]PartWithKitPart, len(project.Parts))
+	parts := make([]*PartWithKitPart, len(project.Parts))
 
 	for i, p := range project.Parts {
 
@@ -251,7 +251,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 			part.TotalInventory += quantity
 		}
 
-		parts[i] = part
+		parts[i] = &part
 	}
 
 	if kit.Name != lego.KitName("") {
@@ -260,10 +260,12 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 		sortByPartAndColour(parts)
 	}
 
+	filter := createFilter(pc)
+
 	return &ProjectWithKit{
 		ID:      project.ID,
 		Name:    project.Name,
-		Parts:   parts,
+		Parts:   filterParts(parts, filter),
 		Kits:    project.Kits,
 		Colours: project.Colours,
 		Events:  withLinks(pc, project.Events),
@@ -286,7 +288,7 @@ func withLinks(pc *preen.PreenContext, events []*all_projects.EventDescription) 
 	return events
 }
 
-func sortByKitAddition(parts []PartWithKitPart) {
+func sortByKitAddition(parts []*PartWithKitPart) {
 	sort.Slice(parts, func(x int, y int) bool {
 		l := parts[x]
 		r := parts[y]
@@ -304,7 +306,7 @@ func sortByKitAddition(parts []PartWithKitPart) {
 	})
 }
 
-func sortByPartAndColour(parts []PartWithKitPart) {
+func sortByPartAndColour(parts []*PartWithKitPart) {
 	sort.Slice(parts, func(x int, y int) bool {
 		l := parts[x]
 		r := parts[y]
@@ -321,7 +323,7 @@ type ProjectWithKit struct {
 	ID   uuid.UUID
 	Name lego.ProjectName
 
-	Parts   []PartWithKitPart
+	Parts   []*PartWithKitPart
 	Kits    map[lego.KitNumber]all_projects.KitView
 	Colours []*all_projects.ColourView
 	Events  []*all_projects.EventDescription

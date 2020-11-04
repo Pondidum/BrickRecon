@@ -152,26 +152,6 @@
         }
       })
 
-      // --------
-      var table = document.getElementById("parts")
-
-      for (var i = 0, row; row = table.rows[i]; i++) {
-
-        var colourMatch = (filterColour == "none" || row.getAttribute("data-part-colour") == filterColour)
-        var inventoryMatch = true
-
-        if (filterInventory == "needed") {
-          inventoryMatch = row.getAttribute("data-part-inventory") < row.getAttribute("data-part-quantity")
-        }
-
-        if (filterInventory == "owned") {
-          inventoryMatch = row.getAttribute("data-part-inventory") >= row.getAttribute("data-part-quantity")
-        }
-
-        row.style.display = (colourMatch && inventoryMatch) ? "table-row" : "none"
-
-      }
-
     </script>
   </div>
 
