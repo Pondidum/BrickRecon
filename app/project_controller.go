@@ -7,7 +7,6 @@ import (
 	"brickrecon/stud_io"
 	"fmt"
 	"net/http"
-	"sort"
 	"strconv"
 
 	uuid "github.com/satori/go.uuid"
@@ -254,18 +253,16 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 		parts[i] = &part
 	}
 
-	if kit.Name != lego.KitName("") {
-		sortByKitAddition(parts)
-	} else {
-		sortByPartAndColour(parts)
-	}
-
 	filter := createFilter(pc)
+	sorter := createSorter(pc)
+
+	parts = filter.Parts(parts)
+	parts = sorter.Parts(parts)
 
 	return &ProjectWithKit{
 		ID:      project.ID,
 		Name:    project.Name,
-		Parts:   filterParts(parts, filter),
+		Parts:   parts,
 		Kits:    project.Kits,
 		Colours: project.Colours,
 		Events:  withLinks(pc, project.Events),
@@ -286,37 +283,6 @@ func withLinks(pc *preen.PreenContext, events []*all_projects.EventDescription) 
 	}
 
 	return events
-}
-
-func sortByKitAddition(parts []*PartWithKitPart) {
-	sort.Slice(parts, func(x int, y int) bool {
-		l := parts[x]
-		r := parts[y]
-
-		if (l.KitQuantity > 0) == (r.KitQuantity > 0) {
-
-			if l.ID == r.ID {
-				return l.ColourID < r.ColourID
-			}
-
-			return l.ID < r.ID
-		}
-
-		return l.KitQuantity > 0
-	})
-}
-
-func sortByPartAndColour(parts []*PartWithKitPart) {
-	sort.Slice(parts, func(x int, y int) bool {
-		l := parts[x]
-		r := parts[y]
-
-		if l.ID == r.ID {
-			return l.ColourID < r.ColourID
-		}
-
-		return l.ID < r.ID
-	})
 }
 
 type ProjectWithKit struct {

@@ -30,15 +30,14 @@ func createFilter(pc *preen.PreenContext) filter {
 	}
 }
 
-func filterParts(parts []*PartWithKitPart, f filter) []*PartWithKitPart {
+func (f *filter) Parts(parts []*PartWithKitPart) []*PartWithKitPart {
 
 	result := []*PartWithKitPart{}
 
 	for _, part := range parts {
 
-		colourMatch := f.HasColour == false || part.ColourID == f.Colour
-
-		inventoryMatch := f.HasInventory == false || isInventoryMatch(part, f.Inventory)
+		colourMatch := f.isColourMatch(part)
+		inventoryMatch := f.isInventoryMatch(part)
 
 		if colourMatch && inventoryMatch {
 			result = append(result, part)
@@ -48,13 +47,21 @@ func filterParts(parts []*PartWithKitPart, f filter) []*PartWithKitPart {
 	return result
 }
 
-func isInventoryMatch(part *PartWithKitPart, inventory string) bool {
+func (f *filter) isColourMatch(part *PartWithKitPart) bool {
+	return f.HasColour == false || part.ColourID == f.Colour
+}
 
-	if inventory == "needed" {
+func (f *filter) isInventoryMatch(part *PartWithKitPart) bool {
+
+	if f.HasInventory == false {
+		return true
+	}
+
+	if f.Inventory == "needed" {
 		return part.Inventory < part.Quantity
 	}
 
-	if inventory == "owned" {
+	if f.Inventory == "owned" {
 		return part.Inventory >= part.Quantity
 	}
 
