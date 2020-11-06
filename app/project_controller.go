@@ -23,6 +23,7 @@ type ProjectController struct {
 func (c ProjectController) Views() []string {
 	return []string{
 		"project_index.html",
+		"project_parts_list.html",
 		"project_quantity.html",
 		"project_quantity_edit.html",
 		"project_stats.html",
