@@ -5,7 +5,7 @@
 
       <div class="btn-toolbar">
         <div class="input-group input-group-sm mr-2">
-          <input type="text" class="form-control" placeholder="filter...">
+          <input type="text" class="form-control" placeholder="filter..." id="filter-name">
         </div>
 
         <div class="btn-group btn-group-toggle mr-2" data-toggle="buttons">
@@ -57,7 +57,7 @@
       <tbody class="reactable-data" id="parts">
 
         {{ range .Project.Parts }}
-        <tr data-part-colour="{{ .ColourID }}" data-part-inventory="{{ .TotalInventory }}" data-part-quantity="{{ .Quantity }}">
+        <tr data-part-name="{{ .Name }}">
           <td width="66">
             <img
               loading="{{ if _user.Authenticated }}eager{{else}}lazy{{end}}"
@@ -112,8 +112,6 @@
     <script>
       var params = new URLSearchParams(window.location.search);
 
-
-
       var colourSelector = document.getElementById("filter-colour")
       var filterColour = params.get("filter-colour") || "none"
 
@@ -151,6 +149,23 @@
           s.parentElement.classList.add("active")
         }
       })
+
+      // ---
+
+      var filter = document.getElementById("filter-name")
+      var table = document.getElementById("parts")
+
+      filter.addEventListener("input", () => {
+        var value = (filter.value || "").trim().toLowerCase()
+
+        for (var i = 0, row; row = table.rows[i]; i++) {
+
+          var visible = (filter == "") || row.getAttribute("data-part-name").toLowerCase().includes(value)
+
+          row.style.display = visible ? "table-row" : "none"
+        }
+      })
+
 
     </script>
   </div>
