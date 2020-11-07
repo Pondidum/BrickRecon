@@ -10,7 +10,7 @@ type EventMeta struct {
 	Timestamp       time.Time `json:"meta_timestamp"`
 	ID              uuid.UUID `json:"meta_id"`
 	AggregateRootID uuid.UUID `json:"meta_aggregate_id"`
-	Version         int       `json:"meta_version"`
+	Sequence        int       `json:"meta_sequence"`
 	Type            string    `json:"meta_type"`
 }
 

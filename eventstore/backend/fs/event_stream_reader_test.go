@@ -15,9 +15,9 @@ import (
 )
 
 var testEvents string = strings.TrimSpace(`
-{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"7e0b10e5-2c81-4ac7-a29f-4781fd7d4e0c","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_version":4, "meta_type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
-{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"983f19c8-268f-4903-b4bf-37a3031d242b","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_version":5, "meta_type":"TestEvent","Content":{"Name":"Two","SetNumber":1234}}
-{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"42b70c6a-2e38-42a8-9fa2-778ffc963c93","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_version":6, "meta_type":"TestEvent","Content":{"Name":"Three","SetNumber":1234}}
+{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"7e0b10e5-2c81-4ac7-a29f-4781fd7d4e0c","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_sequence":4, "meta_type":"TestEvent","Content":{"Name":"One","SetNumber":1234}}
+{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"983f19c8-268f-4903-b4bf-37a3031d242b","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_sequence":5, "meta_type":"TestEvent","Content":{"Name":"Two","SetNumber":1234}}
+{"meta_timestamp":"2020-05-31T19:35:06.615025231+03:00","meta_id":"42b70c6a-2e38-42a8-9fa2-778ffc963c93","meta_aggregate_id":"bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6","meta_sequence":6, "meta_type":"TestEvent","Content":{"Name":"Three","SetNumber":1234}}
 `)
 
 func TestDeserialization(t *testing.T) {
@@ -45,7 +45,7 @@ func TestDeserialization(t *testing.T) {
 	assert.Equal(t, expectedEventID, event.Meta().ID)
 	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
 	assert.Equal(t, "TestEvent", event.Meta().Type)
-	assert.Equal(t, 4, event.Meta().Version)
+	assert.Equal(t, 4, event.Meta().Sequence)
 	assert.Equal(t, expectedTime, event.Meta().Timestamp)
 }
 

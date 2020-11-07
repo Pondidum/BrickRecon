@@ -3,9 +3,9 @@ package eventstore
 import uuid "github.com/satori/go.uuid"
 
 type Aggregator struct {
-	id      uuid.UUID
-	changes []Event
-	version int
+	id       uuid.UUID
+	changes  []Event
+	sequence int
 
 	onEvent func(event Event)
 }
@@ -40,7 +40,7 @@ func (a *Aggregator) SetID(aggregateID uuid.UUID) {
 func (a *Aggregator) fromEvents(events []Event) {
 	for _, event := range events {
 		a.onEvent(event)
-		a.version++
+		a.sequence++
 	}
 }
 

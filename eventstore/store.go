@@ -101,10 +101,10 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 		}
 
 		aggregator.onEvent(r)
-		aggregator.version = r.Meta().Version
+		aggregator.sequence = r.Meta().Sequence
 	}
 
-	beeline.AddField(ctx, "es.aggregate_version", aggregator.version)
+	beeline.AddField(ctx, "es.aggregate_sequence", aggregator.sequence)
 
 	if !hasEvents {
 		beeline.AddField(ctx, "es.aggregate_not_found", true)
@@ -126,21 +126,21 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	events := aggregate.changes
 
 	beeline.AddField(ctx, "es.aggregate_id", aggregate.id.String())
-	beeline.AddField(ctx, "es.aggregate_old_version", aggregate.version)
+	beeline.AddField(ctx, "es.aggregate_old_sequence", aggregate.sequence)
 	beeline.AddField(ctx, "es.aggregate_changes", len(events))
 
-	currentVersion := aggregate.version
+	currentSequence := aggregate.sequence
 
 	for _, e := range events {
 
-		currentVersion++
+		currentSequence++
 
 		meta := e.Meta()
 
 		meta.Timestamp = time.Now()
 		meta.ID = uuid.NewV4()
 		meta.AggregateRootID = aggregate.id
-		meta.Version = currentVersion
+		meta.Sequence = currentSequence
 		meta.Type = eventName(e)
 
 	}
@@ -151,9 +151,9 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	}
 
 	aggregate.changes = []Event{}
-	aggregate.version = aggregate.version + eventsWritten
+	aggregate.sequence = aggregate.sequence + eventsWritten
 
-	beeline.AddField(ctx, "es.aggregate_version", aggregate.version)
+	beeline.AddField(ctx, "es.aggregate_sequence", aggregate.sequence)
 
 	err = es.runProjections(ctx, events)
 
