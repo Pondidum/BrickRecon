@@ -7,9 +7,15 @@
 
   <thead>
     <tr class="reactable-column-header">
-      <th tabindex="0" width="66"><strong class="name-header">Image</strong></th>
-      <th tabindex="0"><strong class="name-header">Name</strong></th>
-      <th tabindex="0"><strong class="name-header">Quantity</strong></th>
+      <th tabindex="0" width="66">
+        <strong class="name-header">Image</strong>
+      </th>
+      <th tabindex="0"><strong class="name-header">
+        <a href="{{ addquery _page.URL "sort" "name" }}">Name</a> | <a href="{{ addquery _page.URL "sort" "colour" }}">Colour</a></strong>
+      </th>
+      <th tabindex="0">
+        <strong class="name-header">Quantity</strong>
+      </th>
     </tr>
   </thead>
 
