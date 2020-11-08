@@ -111,7 +111,8 @@ func (c ProjectController) increaseQuantity(pc *preen.PreenContext, req *http.Re
 		return pc.Error(err)
 	}
 
-	if err := project.AddInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+	key := lego.CreatePartKey(pm.Part, pm.Colour)
+	if err := project.AddInventory(key, pm.Quantity); err != nil {
 		return pc.Error(err)
 	}
 
@@ -138,7 +139,8 @@ func (c ProjectController) decreaseQuantity(pc *preen.PreenContext, req *http.Re
 		return pc.Error(err)
 	}
 
-	if err := project.RemoveInventory(pm.Part, pm.Colour, pm.Quantity); err != nil {
+	key := lego.CreatePartKey(pm.Part, pm.Colour)
+	if err := project.RemoveInventory(key, pm.Quantity); err != nil {
 		return pc.Error(err)
 	}
 

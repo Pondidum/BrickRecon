@@ -42,31 +42,33 @@ func (prj *Project) FindPart(partID LDrawPart, colourID BrickLinkColour) (*Proje
 	return prj.parts.FindPart(partID, colourID)
 }
 
-func (prj *Project) AddInventory(partID LDrawPart, colourID BrickLinkColour, quantity int) error {
+func (prj *Project) AddInventory(part PartKey, quantity int) error {
 
 	if quantity <= 0 {
 		return errors.New("Quantity must be greater than 0")
 	}
 
-	if _, found := prj.parts.FindPart(partID, colourID); !found {
-		return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
+	if _, found := prj.parts.FindPartByKey(part); !found {
+		return fmt.Errorf("No part with id %s found", part)
 	}
 
+	partID, colourID := ParsePartKey(part)
 	prj.Apply(&ProjectInventoryAdded{PartID: partID, ColourID: colourID, Quantity: quantity})
 
 	return nil
 }
 
-func (prj *Project) RemoveInventory(partID LDrawPart, colourID BrickLinkColour, quantity int) error {
+func (prj *Project) RemoveInventory(part PartKey, quantity int) error {
 
 	if quantity <= 0 {
 		return errors.New("Quantity must be greater than 0")
 	}
 
-	if _, found := prj.parts.FindPart(partID, colourID); !found {
-		return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
+	if _, found := prj.parts.FindPartByKey(part); !found {
+		return fmt.Errorf("No part with id %s found", part)
 	}
 
+	partID, colourID := ParsePartKey(part)
 	prj.Apply(&ProjectInventoryRemoved{PartID: partID, ColourID: colourID, Quantity: quantity})
 
 	return nil
