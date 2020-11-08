@@ -38,8 +38,8 @@ func NewProject(name ProjectName, parts []Part) *Project {
 	return project
 }
 
-func (prj *Project) FindPart(partID LDrawPart, colourID BrickLinkColour) (*ProjectPart, bool) {
-	return prj.parts.FindPart(partID, colourID)
+func (prj *Project) FindPart(part PartKey) (*ProjectPart, bool) {
+	return prj.parts.FindPart(part)
 }
 
 func (prj *Project) AddInventory(part PartKey, quantity int) error {
@@ -48,7 +48,7 @@ func (prj *Project) AddInventory(part PartKey, quantity int) error {
 		return errors.New("Quantity must be greater than 0")
 	}
 
-	if _, found := prj.parts.FindPartByKey(part); !found {
+	if _, found := prj.parts.FindPart(part); !found {
 		return fmt.Errorf("No part with id %s found", part)
 	}
 
@@ -64,7 +64,7 @@ func (prj *Project) RemoveInventory(part PartKey, quantity int) error {
 		return errors.New("Quantity must be greater than 0")
 	}
 
-	if _, found := prj.parts.FindPartByKey(part); !found {
+	if _, found := prj.parts.FindPart(part); !found {
 		return fmt.Errorf("No part with id %s found", part)
 	}
 
@@ -80,7 +80,7 @@ func (prj *Project) UpdateInventory(inventoryState map[PartKey]int) error {
 
 		partID, colourID := ParsePartKey(key)
 
-		current, found := prj.parts.FindPartByKey(key)
+		current, found := prj.parts.FindPart(key)
 		if !found {
 			return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
 		}
@@ -131,7 +131,7 @@ func (prj *Project) ReplaceParts(parts []Part) map[PartKey]int {
 		}
 
 		if change > 0 {
-			part, _ := other.FindPartByKey(key)
+			part, _ := other.FindPart(key)
 			part.Quantity = change
 			event.Additions = append(event.Additions, part.Part)
 		}
@@ -204,14 +204,14 @@ func (prj *Project) on(event eventstore.Event) {
 		}
 
 	case *ProjectInventoryAdded:
-		prj.parts.AddInventory(e.PartID, e.ColourID, e.Quantity)
+		prj.parts.AddInventory(CreatePartKey(e.PartID, e.ColourID), e.Quantity)
 
 	case *ProjectInventoryRemoved:
-		prj.parts.AddInventory(e.PartID, e.ColourID, -e.Quantity)
+		prj.parts.AddInventory(CreatePartKey(e.PartID, e.ColourID), -e.Quantity)
 
 	case *KitAddedToProject:
 		for _, pq := range e.Parts {
-			prj.parts.AddInventory(pq.PartID, pq.ColourID, pq.Quantity)
+			prj.parts.AddInventory(CreatePartKey(pq.PartID, pq.ColourID), pq.Quantity)
 		}
 
 	case *PartsChanged:

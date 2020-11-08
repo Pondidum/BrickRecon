@@ -16,7 +16,7 @@ func TestAddingInventory(t *testing.T) {
 		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
-	thePart, _ := project.FindPart(partID, colourID)
+	thePart, _ := project.FindPart(key)
 
 	// add to non-existing part
 	assert.Error(t, project.AddInventory(CreatePartKey(LDrawPart("99999"), colourID), 5))
@@ -52,7 +52,7 @@ func TestRemovingInventory(t *testing.T) {
 
 	project.AddInventory(key, 4)
 
-	thePart, _ := project.FindPart(partID, colourID)
+	thePart, _ := project.FindPart(key)
 
 	// remove from non-existing part
 	assert.Error(t, project.RemoveInventory(CreatePartKey(LDrawPart("99999"), colourID), 5))
@@ -85,7 +85,7 @@ func TestUpdatingInventory(t *testing.T) {
 		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
-	thePart, _ := project.FindPart(partID, colourID)
+	thePart, _ := project.FindPart(key)
 
 	// no change in inventory
 	project.UpdateInventory(map[PartKey]int{
@@ -122,8 +122,8 @@ func TestChangingParts(t *testing.T) {
 	project := NewProject("Test Project", parts)
 	project.ReplaceParts(replacementParts)
 
-	first, _ := project.parts.FindPartByKey(PartKey("123|10"))
-	second, _ := project.parts.FindPartByKey(PartKey("456|15"))
+	first, _ := project.parts.FindPart(PartKey("123|10"))
+	second, _ := project.parts.FindPart(PartKey("456|15"))
 
 	assert.Len(t, project.Parts(), 2)
 	assert.Equal(t, 10, first.Quantity)

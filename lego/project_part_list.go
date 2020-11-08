@@ -45,7 +45,7 @@ func (l *ProjectPartList) All() []*ProjectPart {
 func (m *ProjectPartList) Add(part Part) {
 
 	key := CreatePartKey(part.ID, part.Colour.ID)
-	existing, found := m.FindPartByKey(key)
+	existing, found := m.FindPart(key)
 
 	if found {
 		existing.Quantity += part.Quantity
@@ -57,7 +57,7 @@ func (m *ProjectPartList) Add(part Part) {
 
 func (m *ProjectPartList) Remove(key PartKey, quantity int) {
 
-	if part, found := m.FindPartByKey(key); found {
+	if part, found := m.FindPart(key); found {
 		part.Quantity -= quantity
 
 		if part.Quantity <= 0 {
@@ -67,12 +67,12 @@ func (m *ProjectPartList) Remove(key PartKey, quantity int) {
 
 }
 
-func (m *ProjectPartList) AddInventory(partID LDrawPart, colourID BrickLinkColour, quantity int) error {
+func (m *ProjectPartList) AddInventory(key PartKey, quantity int) error {
 
-	part, found := m.FindPart(partID, colourID)
+	part, found := m.FindPart(key)
 
 	if !found {
-		return fmt.Errorf("No part with id %s and colour %v found", partID, colourID)
+		return fmt.Errorf("No part with id %s found", key)
 	}
 
 	part.Inventory += quantity
@@ -84,19 +84,7 @@ func (m *ProjectPartList) AddInventory(partID LDrawPart, colourID BrickLinkColou
 	return nil
 }
 
-func (m *ProjectPartList) FindPart(partID LDrawPart, colourID BrickLinkColour) (*ProjectPart, bool) {
-
-	for _, p := range m.parts {
-
-		if p.ID == partID && p.Colour.ID == colourID {
-			return p, true
-		}
-	}
-
-	return nil, false
-}
-
-func (m *ProjectPartList) FindPartByKey(partKey PartKey) (*ProjectPart, bool) {
+func (m *ProjectPartList) FindPart(partKey PartKey) (*ProjectPart, bool) {
 	part, found := m.parts[partKey]
 
 	return part, found
