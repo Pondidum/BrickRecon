@@ -16,7 +16,7 @@ type ProjectCreated struct {
 type ProjectPartsAdded struct {
 	eventstore.EventMeta
 
-	Parts []Part
+	Parts []*Part
 }
 
 type ProjectInventoryAdded struct {
@@ -53,7 +53,7 @@ type WantedListExported struct {
 type PartsChanged struct {
 	eventstore.EventMeta
 
-	Additions []Part
+	Additions []*Part
 	Removals  map[PartKey]int
 }
 

@@ -36,10 +36,10 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 
 func TestAddingKits(t *testing.T) {
 
-	event := &lego.KitCreated{KitName: "test", KitNumber: "134-1", Parts: []lego.Part{
-		lego.Part{ID: lego.LDrawPart("1"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 5},
-		lego.Part{ID: lego.LDrawPart("1"), Colour: lego.Colour{ID: lego.BrickLinkColour(17)}, Quantity: 1},
-		lego.Part{ID: lego.LDrawPart("5"), Colour: lego.Colour{ID: lego.BrickLinkColour(2)}, Quantity: 2},
+	event := &lego.KitCreated{KitName: "test", KitNumber: "134-1", Parts: []*lego.Part{
+		{Key: lego.CreatePartKey(lego.LDrawPart("1"), lego.BrickLinkColour(85)), Quantity: 5},
+		{Key: lego.CreatePartKey(lego.LDrawPart("1"), lego.BrickLinkColour(17)), Quantity: 1},
+		{Key: lego.CreatePartKey(lego.LDrawPart("5"), lego.BrickLinkColour(2)), Quantity: 2},
 	}}
 
 	view := apply(
@@ -54,7 +54,7 @@ func TestAddingProjectParts(t *testing.T) {
 
 	projectID := uuid.NewV4()
 	projectName := lego.ProjectName("test-project")
-	projectPart := lego.Part{ID: lego.LDrawPart("567"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 7}
+	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
 	view := apply(
 		createProject(projectID, projectName),
@@ -65,30 +65,23 @@ func TestAddingProjectParts(t *testing.T) {
 
 	expectedParts := []*ProjectPartView{
 		&ProjectPartView{
+			Key:      lego.PartKey("567|85"),
 			ID:       lego.LDrawPart("567"),
 			ColourID: lego.BrickLinkColour(85),
-			Key:      lego.PartKey("567|85"),
 			Quantity: 7,
 		},
 	}
 
-	expectedColours := []*ColourView{
-		&ColourView{
-			ID: lego.BrickLinkColour(85),
-		},
-	}
-
 	assert.Equal(t, expectedParts, view.Projects[projectName].Parts)
-	assert.Equal(t, expectedColours, view.Projects[projectName].Colours)
 }
 
 func TestAddingMultipleProjectParts(t *testing.T) {
 
 	projectID := uuid.NewV4()
 	projectName := lego.ProjectName("test-project")
-	partOne := lego.Part{ID: lego.LDrawPart("123"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 1}
-	partTwo := lego.Part{ID: lego.LDrawPart("456"), Colour: lego.Colour{ID: lego.BrickLinkColour(10)}, Quantity: 2}
-	partThree := lego.Part{ID: lego.LDrawPart("789"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 3}
+	partOne := partFromKey(lego.PartKey("123|85"), 1)
+	partTwo := partFromKey(lego.PartKey("456|10"), 2)
+	partThree := partFromKey(lego.PartKey("789|85"), 3)
 
 	view := apply(
 		createProject(projectID, projectName),
@@ -106,11 +99,11 @@ func TestAddingMultipleProjectParts(t *testing.T) {
 func TestWhenKitAddedAfterProject(t *testing.T) {
 
 	kitNumber := lego.KitNumber("134-1")
-	kitPart := lego.Part{ID: lego.LDrawPart("567"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 5}
+	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
 	projectID := uuid.NewV4()
 	projectName := lego.ProjectName("test-project")
-	projectPart := lego.Part{ID: lego.LDrawPart("567"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 7}
+	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
 	view := apply(
 		createProject(projectID, projectName),
@@ -128,11 +121,11 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 	kitNumber := lego.KitNumber("134-1")
-	kitPart := lego.Part{ID: lego.LDrawPart("567"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 5}
+	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
 	projectID := uuid.NewV4()
 	projectName := lego.ProjectName("test-project")
-	projectPart := lego.Part{ID: lego.LDrawPart("567"), Colour: lego.Colour{ID: lego.BrickLinkColour(85)}, Quantity: 7}
+	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
 	view := apply(
 		createKit(kitNumber, kitPart),
@@ -171,7 +164,7 @@ func createProject(projectID uuid.UUID, projectName lego.ProjectName) *lego.Proj
 	return event
 }
 
-func createProjectParts(projectID uuid.UUID, parts ...lego.Part) *lego.ProjectPartsAdded {
+func createProjectParts(projectID uuid.UUID, parts ...*lego.Part) *lego.ProjectPartsAdded {
 	event := &lego.ProjectPartsAdded{
 		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
 
@@ -181,10 +174,21 @@ func createProjectParts(projectID uuid.UUID, parts ...lego.Part) *lego.ProjectPa
 	return event
 }
 
-func createKit(kn lego.KitNumber, kitParts ...lego.Part) *lego.KitCreated {
+func createKit(kn lego.KitNumber, kitParts ...*lego.Part) *lego.KitCreated {
 	return &lego.KitCreated{
 		KitName:   "test",
 		KitNumber: kn,
 		Parts:     kitParts,
+	}
+}
+
+func partFromKey(key lego.PartKey, quantity int) *lego.Part {
+	id, colour := lego.ParsePartKey(key)
+
+	return &lego.Part{
+		Key:      key,
+		Aliases:  lego.PartAliases{LDrawID: id},
+		Colour:   lego.Colour{ID: colour},
+		Quantity: quantity,
 	}
 }

@@ -69,7 +69,7 @@ func toPart(brick *ldraw.Brick, lookup PartLookup) lego.Part {
 	blColour := lookup.GetColour(ldColour)
 
 	return lego.Part{
-		ID:   id,
+		Key:  lego.CreatePartKey(id, blColour),
 		Name: name,
 		Colour: lego.Colour{
 			ID: blColour,

@@ -4,7 +4,7 @@ type LDrawPart string
 type PartName string
 
 type Part struct {
-	ID      LDrawPart
+	Key     PartKey
 	Aliases PartAliases
 
 	Name   PartName

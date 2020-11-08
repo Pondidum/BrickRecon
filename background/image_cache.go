@@ -27,7 +27,7 @@ type ImageCacheCreated struct {
 type PartImageRequested struct {
 	eventstore.EventMeta
 
-	Part lego.Part
+	Part *lego.Part
 }
 
 type PartFetchAttemptsExceeded struct {
@@ -81,9 +81,9 @@ type ImageCache struct {
 
 	location string
 
-	done     map[string]bool
-	pending  map[string]lego.Part
-	attempts map[string]int
+	done     map[lego.PartKey]bool
+	pending  map[lego.PartKey]*lego.Part
+	attempts map[lego.PartKey]int
 
 	writeFile func(filename string, content []byte) error
 	listFiles func() ([]string, error)
@@ -121,9 +121,9 @@ func NewImageCache(es eventstore.EventStore, location string, context context.Co
 func blankImageCache(location string) *ImageCache {
 	ic := &ImageCache{
 		location: location,
-		done:     map[string]bool{},
-		pending:  map[string]lego.Part{},
-		attempts: map[string]int{},
+		done:     map[lego.PartKey]bool{},
+		pending:  map[lego.PartKey]*lego.Part{},
+		attempts: map[lego.PartKey]int{},
 
 		writeFile: func(filename string, content []byte) error {
 			return ioutil.WriteFile(path.Join(location, filename), content, 0666)
@@ -175,7 +175,7 @@ func (ic *ImageCache) ReadFromCache() error {
 			continue
 		}
 
-		if ic.containsPart(name) {
+		if ic.containsPart(lego.CreatePartKey(partID, lego.BrickLinkColour(colourID))) {
 			continue
 		}
 
@@ -188,18 +188,16 @@ func (ic *ImageCache) ReadFromCache() error {
 	return nil
 }
 
-func (ic *ImageCache) AddPart(part lego.Part) {
+func (ic *ImageCache) AddPart(part *lego.Part) {
 
-	key := key(part.ID, part.Colour.ID)
-
-	if ic.containsPart(key) {
+	if ic.containsPart(part.Key) {
 		return
 	}
 
 	ic.Apply(&PartImageRequested{Part: part})
 }
 
-func (ic *ImageCache) containsPart(key string) bool {
+func (ic *ImageCache) containsPart(key lego.PartKey) bool {
 
 	if _, found := ic.pending[key]; found {
 		return true
@@ -215,7 +213,7 @@ func (ic *ImageCache) containsPart(key string) bool {
 func (ic *ImageCache) Run(ctx context.Context) {
 
 	for key, part := range ic.pending {
-		fsm := ic.newImageFsm(part.ID, part.Colour.ID)
+		fsm := ic.newImageFsm(part.Aliases.LDrawID, part.Colour.ID)
 		fsm.attempts = ic.attempts[key]
 
 		fsm.Run(ctx)
@@ -238,11 +236,10 @@ func (ic *ImageCache) on(event eventstore.Event) {
 		ic.onFinished(e.PartID, e.ColourID)
 
 	case *PartImageRequested:
-		key := key(e.Part.ID, e.Part.Colour.ID)
-		ic.pending[key] = e.Part
+		ic.pending[e.Part.Key] = e.Part
 
 	case *PartAttempted:
-		key := key(e.PartID, e.ColourID)
+		key := lego.CreatePartKey(e.PartID, e.ColourID)
 		ic.attempts[key]++
 
 	case *PartFetchAttemptsExceeded:
@@ -258,7 +255,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 }
 
 func (ic *ImageCache) onFinished(partID lego.LDrawPart, colourID lego.BrickLinkColour) {
-	key := key(partID, colourID)
+	key := lego.CreatePartKey(partID, colourID)
 
 	ic.done[key] = true
 	delete(ic.attempts, key)

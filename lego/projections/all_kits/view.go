@@ -19,7 +19,7 @@ type KitView struct {
 }
 
 type PartView struct {
-	ID         lego.LDrawPart
+	Key        lego.PartKey
 	Name       lego.PartName
 	ColourID   lego.BrickLinkColour
 	ColourName lego.ColourName

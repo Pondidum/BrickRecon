@@ -29,7 +29,7 @@ func BlankProject() *Project {
 	return &project
 }
 
-func NewProject(name ProjectName, parts []Part) *Project {
+func NewProject(name ProjectName, parts []*Part) *Project {
 
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
@@ -108,7 +108,7 @@ func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQ
 	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
 }
 
-func (prj *Project) ReplaceParts(parts []Part) map[PartKey]int {
+func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
 	other := NewPartsList()
 	for _, part := range parts {
 		other.Add(part)
@@ -121,7 +121,7 @@ func (prj *Project) ReplaceParts(parts []Part) map[PartKey]int {
 	}
 
 	event := &PartsChanged{
-		Additions: []Part{},
+		Additions: []*Part{},
 		Removals:  map[PartKey]int{},
 	}
 
@@ -146,7 +146,7 @@ func (prj *Project) Parts() []*ProjectPart {
 	return prj.parts.All()
 }
 
-func (prj *Project) Diff(parts []Part) map[PartKey]int {
+func (prj *Project) Diff(parts []*Part) map[PartKey]int {
 	other := NewPartsList()
 	for _, part := range parts {
 		other.Add(part)

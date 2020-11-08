@@ -36,13 +36,13 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 	return view
 }
 
-func toPartView(parts []lego.Part) []PartView {
+func toPartView(parts []*lego.Part) []PartView {
 
 	views := make([]PartView, len(parts))
 
 	for i, part := range parts {
 		views[i] = PartView{
-			ID:         part.ID,
+			Key:        part.Key,
 			Name:       part.Name,
 			ColourID:   part.Colour.ID,
 			ColourName: part.Colour.Name,

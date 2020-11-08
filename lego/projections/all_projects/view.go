@@ -41,13 +41,12 @@ func (e *EventDescription) With(key string, value interface{}) *EventDescription
 }
 
 type ProjectPartView struct {
+	Key        lego.PartKey
 	ID         lego.LDrawPart
 	Name       lego.PartName
 	ColourID   lego.BrickLinkColour
 	ColourName lego.ColourName
 	ColourHex  lego.HexColour
-
-	Key lego.PartKey
 
 	Quantity  int
 	Inventory int

@@ -45,7 +45,7 @@ func sanitiseKitName(name string) lego.KitName {
 	return lego.KitName(name)
 }
 
-func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]lego.Part, error) {
+func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*lego.Part, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
 	if err != nil {
@@ -64,7 +64,7 @@ func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]lego.Part, error) {
 
 	chunks := split(inventory, 100)
 
-	parts := []lego.Part{}
+	parts := []*lego.Part{}
 
 	for _, items := range chunks {
 
@@ -223,7 +223,7 @@ func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
 	return dto, nil
 }
 
-func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) lego.Part {
+func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) *lego.Part {
 	ldrawID, found := additional.IDs["ldraw"]
 
 	if !found {
@@ -233,14 +233,15 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	colour := partColour(colours, additional.ColourID)
 
 	name := sanitisePartName(additional.Name, ldrawID, colour)
+	id := lego.LDrawPart(ldrawID)
 
-	return lego.Part{
-		ID:       lego.LDrawPart(ldrawID),
+	return &lego.Part{
+		Key:      lego.CreatePartKey(id, colour.ID),
 		Name:     lego.PartName(name),
 		Quantity: int(item.Quantity),
 		Colour:   colour,
 		Aliases: lego.PartAliases{
-			LDrawID: lego.LDrawPart(ldrawID),
+			LDrawID: id,
 			Boid:    item.Boid,
 		},
 	}

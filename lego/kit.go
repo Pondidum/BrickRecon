@@ -15,7 +15,7 @@ type Kit struct {
 	KitNumber KitNumber
 	Name      string
 
-	parts []Part
+	parts []*Part
 }
 
 func BlankKit() *Kit {
@@ -25,7 +25,7 @@ func BlankKit() *Kit {
 	return &kit
 }
 
-func ImportKit(number KitNumber, name KitName, parts []Part) *Kit {
+func ImportKit(number KitNumber, name KitName, parts []*Part) *Kit {
 	kit := BlankKit()
 	kit.Apply(&KitCreated{
 		ID:        uuid.NewV4(),
@@ -54,7 +54,7 @@ type KitCreated struct {
 	ID        uuid.UUID
 	KitNumber KitNumber
 	KitName   KitName
-	Parts     []Part
+	Parts     []*Part
 }
 
 var KitEvents = []eventstore.Initialiser{

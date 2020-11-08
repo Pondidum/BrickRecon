@@ -11,15 +11,15 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-func toProjectPartView(part lego.Part) *ProjectPartView {
+func toProjectPartView(part *lego.Part) *ProjectPartView {
 	return &ProjectPartView{
-		ID:         part.ID,
+		ID:         part.Aliases.LDrawID,
 		Name:       part.Name,
 		ColourID:   part.Colour.ID,
 		ColourName: part.Colour.Name,
 		ColourHex:  part.Colour.Hex,
 		Quantity:   part.Quantity,
-		Key:        lego.CreatePartKey(part.ID, part.Colour.ID),
+		Key:        part.Key,
 	}
 }
 
@@ -122,7 +122,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	return view
 }
 
-func addParts(project *ProjectView, parts []lego.Part) {
+func addParts(project *ProjectView, parts []*lego.Part) {
 	for _, part := range parts {
 		project.Parts = append(project.Parts, toProjectPartView(part))
 		project.Colours = appendNewColours(project.Colours, part)
@@ -143,7 +143,7 @@ func removeParts(project *ProjectView, parts map[lego.PartKey]int) {
 	}
 }
 
-func appendNewColours(unique []*ColourView, part lego.Part) []*ColourView {
+func appendNewColours(unique []*ColourView, part *lego.Part) []*ColourView {
 
 	for _, view := range unique {
 		if view.ID == part.Colour.ID {
@@ -250,7 +250,7 @@ func createKitView(event *lego.KitCreated) KitView {
 	kp := make(map[lego.PartKey]int, len(event.Parts))
 
 	for _, p := range event.Parts {
-		kp[lego.CreatePartKey(p.ID, p.Colour.ID)] = p.Quantity
+		kp[p.Key] = p.Quantity
 	}
 
 	return KitView{

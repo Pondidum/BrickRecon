@@ -12,7 +12,7 @@ func TestSerializationFormat(t *testing.T) {
 
 	parts := []*lego.ProjectPart{
 		{
-			Part: lego.Part{
+			Part: &lego.Part{
 				Aliases:  lego.PartAliases{BrickLinkID: lego.BrickLinkPart("2540")},
 				Colour:   lego.Colour{Aliases: lego.ColourAliases{BrickLinkID: lego.BrickLinkColour(85)}},
 				Quantity: 9,
@@ -20,7 +20,7 @@ func TestSerializationFormat(t *testing.T) {
 			Inventory: 3,
 		},
 		{
-			Part: lego.Part{
+			Part: &lego.Part{
 				Aliases:  lego.PartAliases{BrickLinkID: lego.BrickLinkPart("11477")},
 				Colour:   lego.Colour{Aliases: lego.ColourAliases{BrickLinkID: lego.BrickLinkColour(59)}},
 				Quantity: 2,

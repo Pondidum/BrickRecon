@@ -12,7 +12,7 @@ import (
 type PartsAddedMessage struct {
 	distributor.Message
 
-	Parts []lego.Part
+	Parts []*lego.Part
 }
 
 func ImageCacheHandler(es eventstore.EventStore) func(context.Context, distributor.Message) {

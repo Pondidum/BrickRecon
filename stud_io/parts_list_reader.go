@@ -22,12 +22,12 @@ const (
 	weight
 )
 
-func ReadPartsList(content io.Reader) ([]lego.Part, error) {
+func ReadPartsList(content io.Reader) ([]*lego.Part, error) {
 
 	reader := csv.NewReader(content)
 	reader.Comma = '\t'
 
-	parts := []lego.Part{}
+	parts := []*lego.Part{}
 
 	// read the header
 	_, err := reader.Read()
@@ -74,27 +74,28 @@ func isSummaryHeader(fields []string) bool {
 	return len(fields) > 0 && fields[brickLinkID] == "Total qty"
 }
 
-func parsePart(fields []string) (lego.Part, error) {
+func parsePart(fields []string) (*lego.Part, error) {
 
 	var err error
 
-	part := lego.Part{
+	part := &lego.Part{
 		Name:    lego.PartName(fields[partName]),
 		Aliases: parsePartAliases(fields),
-		ID:      lego.LDrawPart(fields[ldrawID]),
 	}
 
 	if part.Colour, err = parseColour(fields); err != nil {
-		return lego.Part{}, err
+		return nil, err
 	}
 
 	if part.Quantity, err = strconv.Atoi(fields[quantity]); err != nil {
-		return lego.Part{}, convertError("part.Quantity", fields[quantity])
+		return nil, convertError("part.Quantity", fields[quantity])
 	}
 
 	if part.Weight, err = strconv.ParseFloat(fields[weight], 64); err != nil {
-		return lego.Part{}, convertError("part.Weight", fields[weight])
+		return nil, convertError("part.Weight", fields[weight])
 	}
+
+	part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.ID)
 
 	return part, err
 }

@@ -12,8 +12,8 @@ func TestAddingInventory(t *testing.T) {
 	colourID := BrickLinkColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []Part{
-		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+	project := NewProject("Test Project", []*Part{
+		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -46,8 +46,8 @@ func TestRemovingInventory(t *testing.T) {
 	colourID := BrickLinkColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []Part{
-		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+	project := NewProject("Test Project", []*Part{
+		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
 	project.AddInventory(key, 4)
@@ -81,8 +81,8 @@ func TestUpdatingInventory(t *testing.T) {
 	colourID := BrickLinkColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []Part{
-		{ID: partID, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+	project := NewProject("Test Project", []*Part{
+		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -108,13 +108,13 @@ func TestUpdatingInventory(t *testing.T) {
 }
 
 func TestChangingParts(t *testing.T) {
-	parts := []Part{
+	parts := []*Part{
 		createPart("123|10", 5),
 		createPart("456|15", 5),
 		createPart("789|10", 5),
 	}
 
-	replacementParts := []Part{
+	replacementParts := []*Part{
 		createPart("123|10", 10),
 		createPart("456|15", 5),
 	}
@@ -130,10 +130,10 @@ func TestChangingParts(t *testing.T) {
 	assert.Equal(t, 5, second.Quantity)
 }
 
-func createPart(key string, quantity int) Part {
-	id, colour := ParsePartKey(PartKey(key))
-	return Part{
-		ID:       LDrawPart(id),
+func createPart(key string, quantity int) *Part {
+	_, colour := ParsePartKey(PartKey(key))
+	return &Part{
+		Key:      PartKey(key),
 		Colour:   Colour{ID: BrickLinkColour(colour)},
 		Quantity: quantity,
 	}

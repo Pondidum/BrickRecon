@@ -24,8 +24,8 @@ func TestReadingDiskCache(t *testing.T) {
 
 	ic.ReadFromCache()
 
-	assert.True(t, ic.done["3024-85"])
-	assert.True(t, ic.done["3024-11"])
+	assert.True(t, ic.done["3024|85"])
+	assert.True(t, ic.done["3024|11"])
 }
 
 func TestReadingDiskCacheDoesntEmitEventsForAlreadyProcessedParts(t *testing.T) {
@@ -60,8 +60,8 @@ func TestReadingDiskCacheDoesntEmitEventsForAlreadyPendingParts(t *testing.T) {
 	assert.NoError(t, ic.writeFile("3024-85.png", []byte("image one")))
 	assert.NoError(t, ic.writeFile("3024-11.png", []byte("image two")))
 
-	ic.pending["3024-85"] = lego.Part{}
-	ic.pending["3024-11"] = lego.Part{}
+	ic.pending["3024|85"] = &lego.Part{}
+	ic.pending["3024|11"] = &lego.Part{}
 
 	ic.ReadFromCache()
 
