@@ -12,6 +12,7 @@ type EventMeta struct {
 	AggregateRootID uuid.UUID `json:"meta_aggregate_id"`
 	Sequence        int       `json:"meta_sequence"`
 	Type            string    `json:"meta_type"`
+	EventVersion    int       `json:"meta_version"`
 }
 
 func (e *EventMeta) Meta() *EventMeta { return e }

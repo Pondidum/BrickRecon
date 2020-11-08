@@ -6,6 +6,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type EventMiddleware func(context.Context, Event) Event
+
 type Backend interface {
 	NewEventReader(registry *EventRegistry, aggregateID uuid.UUID) (EventReader, error)
 	NewEventWriter() EventWriter

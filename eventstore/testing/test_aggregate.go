@@ -6,6 +6,22 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type LoggingAggregate struct {
+	*eventstore.Aggregator
+
+	Applied []eventstore.Event
+}
+
+func (a *LoggingAggregate) on(e eventstore.Event) {
+	a.Applied = append(a.Applied, e)
+}
+
+func BlankLoggingAggregate() *LoggingAggregate {
+	a := LoggingAggregate{}
+	a.Aggregator = eventstore.NewAggregator(a.on)
+	return &a
+}
+
 type TestAggregate struct {
 	*eventstore.Aggregator
 
@@ -63,4 +79,12 @@ type TestEvent struct {
 
 	Name      string
 	SetNumber int
+}
+
+type MigrationTestEvent struct {
+	eventstore.EventMeta
+
+	Key    string
+	Part   int
+	Colour int
 }

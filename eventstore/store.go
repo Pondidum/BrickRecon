@@ -17,16 +17,19 @@ type Projector func(state interface{}, event Event) interface{}
 type EventStore interface {
 	RegisterEvent(ctx context.Context, creator Initialiser) error
 	RegisterEvents(ctx context.Context, creator []Initialiser) error
+	RegisterEventMiddleware(ctx context.Context, middleware EventMiddleware) error
 
 	RegisterProjection(ctx context.Context, projection Projection)
 	ReadView(ctx context.Context, name string, view interface{}) error
+	RebuildProjections(ctx context.Context) error
+
 	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
-	RebuildProjections(ctx context.Context) error
 }
 
 type eventStore struct {
 	registry    *EventRegistry
+	middleware  []EventMiddleware
 	projections map[string]Projection
 
 	backend Backend
@@ -37,6 +40,7 @@ type Initialiser func() interface{}
 func NewEventStore(backend Backend) EventStore {
 	return &eventStore{
 		registry:    NewRegistry(),
+		middleware:  []EventMiddleware{},
 		projections: map[string]Projection{},
 		backend:     backend,
 	}
@@ -54,6 +58,11 @@ func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) er
 
 func (es *eventStore) RegisterEvents(ctx context.Context, creators []Initialiser) error {
 	return es.registry.RegisterMany(ctx, creators)
+}
+
+func (es *eventStore) RegisterEventMiddleware(ctx context.Context, middleware EventMiddleware) error {
+	es.middleware = append(es.middleware, middleware)
+	return nil
 }
 
 func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {
@@ -95,13 +104,15 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggrega
 	for er.Read() {
 		hasEvents = true
 
-		r, err := er.Event()
+		e, err := er.Event()
 		if err != nil {
 			return err
 		}
 
-		aggregator.onEvent(r)
-		aggregator.sequence = r.Meta().Sequence
+		e = es.applyMiddleware(ctx, e)
+
+		aggregator.onEvent(e)
+		aggregator.sequence = e.Meta().Sequence
 	}
 
 	beeline.AddField(ctx, "es.aggregate_sequence", aggregator.sequence)
@@ -231,6 +242,8 @@ func (es *eventStore) processAggregateProjections(ctx context.Context, id uuid.U
 			return err
 		}
 
+		e = es.applyMiddleware(ctx, e)
+
 		events = append(events, e)
 	}
 
@@ -241,6 +254,14 @@ func (es *eventStore) processAggregateProjections(ctx context.Context, id uuid.U
 	}
 
 	return nil
+}
+
+func (es *eventStore) applyMiddleware(ctx context.Context, event Event) Event {
+	for _, mw := range es.middleware {
+		event = mw(ctx, event)
+	}
+
+	return event
 }
 
 func eventName(event interface{}) string {
