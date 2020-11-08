@@ -50,7 +50,30 @@ func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.Eve
 	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
 	es.RegisterProjection(b.ctx, &colours.ColoursProjection{})
 
+	es.RegisterEventMiddleware(b.ctx, b.upgradeEvent)
+
 	return es
+}
+
+func (b *AppBuilder) upgradeEvent(ctx context.Context, e eventstore.Event) eventstore.Event {
+
+	switch event := e.(type) {
+
+	case *lego.ProjectInventoryRemoved:
+		if event.EventVersion == 0 {
+			event.Part = lego.CreatePartKey(event.PartID, event.ColourID)
+			event.EventVersion = 1
+		}
+
+	case *lego.ProjectInventoryAdded:
+		if event.EventVersion == 0 {
+			event.Part = lego.CreatePartKey(event.PartID, event.ColourID)
+			event.EventVersion = 1
+		}
+
+	}
+
+	return e
 }
 
 func (b *AppBuilder) CreateBus(es eventstore.EventStore) *distributor.Distributor {

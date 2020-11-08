@@ -167,7 +167,7 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 		return pc.Error(err)
 	}
 
-	project.AddKitContents(kit.Number, kit.Name, kitPartQuantities(kit.Parts))
+	project.AddKitContents(kit.Number, kit.Name, kit.Parts)
 
 	if err := c.Store.Save(ctx, project); err != nil {
 		return pc.Error(err)
@@ -198,20 +198,6 @@ func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Reques
 	}
 
 	return preen.ControllerRedirect("project_export", "name", string(project.Name))
-}
-
-func kitPartQuantities(quantities map[lego.PartKey]int) []lego.PartQuantity {
-
-	parts := make([]lego.PartQuantity, len(quantities))
-	i := 0
-	for key, q := range quantities {
-		part, colour := lego.ParsePartKey(key)
-
-		parts[i] = lego.PartQuantity{PartID: part, ColourID: colour, Quantity: q}
-		i++
-	}
-
-	return parts
 }
 
 func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Project, error) {

@@ -82,23 +82,23 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 		audit(project, e, "%v parts changed", len(e.Additions)+len(e.Removals))
 
 	case *lego.ProjectInventoryAdded:
-		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
+		part, _ := findPart(project.Parts, e.Part)
 		part.Inventory += e.Quantity
 
 		calculateStats(project)
 		audit(project, e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.ProjectInventoryRemoved:
-		part, _ := findPart(project.Parts, e.PartID, e.ColourID)
+		part, _ := findPart(project.Parts, e.Part)
 		part.Inventory -= e.Quantity
 
 		calculateStats(project)
 		audit(project, e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.KitAddedToProject:
-		for _, pq := range e.Parts {
-			part, _ := findPart(project.Parts, pq.PartID, pq.ColourID)
-			part.Inventory += pq.Quantity
+		for key, quantity := range e.Parts {
+			part, _ := findPart(project.Parts, key)
+			part.Inventory += quantity
 		}
 
 		calculateStats(project)
@@ -132,8 +132,7 @@ func addParts(project *ProjectView, parts []*lego.Part) {
 func removeParts(project *ProjectView, parts map[lego.PartKey]int) {
 
 	for key, amount := range parts {
-		partID, colourID := lego.ParsePartKey(key)
-		part, index := findPart(project.Parts, partID, colourID)
+		part, index := findPart(project.Parts, key)
 
 		part.Quantity -= amount
 
@@ -210,10 +209,10 @@ func projectByID(all map[lego.ProjectName]*ProjectView, id eventstore.AggregateI
 	return nil
 }
 
-func findPart(parts []*ProjectPartView, partID lego.LDrawPart, colourID lego.BrickLinkColour) (*ProjectPartView, int) {
+func findPart(parts []*ProjectPartView, key lego.PartKey) (*ProjectPartView, int) {
 
 	for i, part := range parts {
-		if part.ID == partID && part.ColourID == colourID {
+		if part.Key == key {
 			return part, i
 		}
 	}

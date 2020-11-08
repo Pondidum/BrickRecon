@@ -16,8 +16,8 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 		EventMeta: eventstore.EventMeta{AggregateRootID: eventstore.NewAggregateID(), Timestamp: time.Now()},
 		KitName:   lego.KitName("test kit"),
 		KitNumber: lego.KitNumber("1234-2"),
-		Parts: []lego.PartQuantity{
-			{PartID: lego.LDrawPart("123"), ColourID: lego.BrickLinkColour(23), Quantity: 5},
+		Parts: map[lego.PartKey]int{
+			lego.PartKey("123|23"): 5,
 		},
 	}
 

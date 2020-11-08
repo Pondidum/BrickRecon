@@ -22,7 +22,6 @@ func TestEventMigration(t *testing.T) {
 		case *MigrationTestEvent:
 			event.EventVersion = 1
 			event.Key = fmt.Sprintf("%v:%v", event.Part, event.Colour)
-			return event
 		}
 
 		return e

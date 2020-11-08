@@ -51,7 +51,13 @@ func (prj *Project) AddInventory(part PartKey, quantity int) error {
 	}
 
 	partID, colourID := ParsePartKey(part)
-	prj.Apply(&ProjectInventoryAdded{PartID: partID, ColourID: colourID, Quantity: quantity})
+	prj.Apply(&ProjectInventoryAdded{
+		EventMeta: eventstore.EventMeta{EventVersion: 1},
+		Part:      part,
+		PartID:    partID,
+		ColourID:  colourID,
+		Quantity:  quantity,
+	})
 
 	return nil
 }
@@ -67,7 +73,13 @@ func (prj *Project) RemoveInventory(part PartKey, quantity int) error {
 	}
 
 	partID, colourID := ParsePartKey(part)
-	prj.Apply(&ProjectInventoryRemoved{PartID: partID, ColourID: colourID, Quantity: quantity})
+	prj.Apply(&ProjectInventoryRemoved{
+		EventMeta: eventstore.EventMeta{EventVersion: 1},
+		Part:      part,
+		PartID:    partID,
+		ColourID:  colourID,
+		Quantity:  quantity,
+	})
 
 	return nil
 }
@@ -86,18 +98,30 @@ func (prj *Project) UpdateInventory(inventoryState map[PartKey]int) error {
 		diff := quantity - current.Inventory
 
 		if diff < 0 {
-			prj.Apply(&ProjectInventoryRemoved{PartID: partID, ColourID: colourID, Quantity: diff * -1})
+			prj.Apply(&ProjectInventoryRemoved{
+				EventMeta: eventstore.EventMeta{EventVersion: 1},
+				Part:      key,
+				PartID:    partID,
+				ColourID:  colourID,
+				Quantity:  diff * -1,
+			})
 		}
 
 		if diff > 0 {
-			prj.Apply(&ProjectInventoryAdded{PartID: partID, ColourID: colourID, Quantity: diff})
+			prj.Apply(&ProjectInventoryAdded{
+				EventMeta: eventstore.EventMeta{EventVersion: 1},
+				Part:      key,
+				PartID:    partID,
+				ColourID:  colourID,
+				Quantity:  diff,
+			})
 		}
 	}
 
 	return nil
 }
 
-func (prj *Project) AddKitContents(number KitNumber, name KitName, parts []PartQuantity) {
+func (prj *Project) AddKitContents(number KitNumber, name KitName, parts map[PartKey]int) {
 
 	if len(parts) == 0 {
 		return
@@ -202,14 +226,14 @@ func (prj *Project) on(event eventstore.Event) {
 		}
 
 	case *ProjectInventoryAdded:
-		prj.parts.AddInventory(CreatePartKey(e.PartID, e.ColourID), e.Quantity)
+		prj.parts.AddInventory(e.Part, e.Quantity)
 
 	case *ProjectInventoryRemoved:
-		prj.parts.AddInventory(CreatePartKey(e.PartID, e.ColourID), -e.Quantity)
+		prj.parts.AddInventory(e.Part, -e.Quantity)
 
 	case *KitAddedToProject:
-		for _, pq := range e.Parts {
-			prj.parts.AddInventory(CreatePartKey(pq.PartID, pq.ColourID), pq.Quantity)
+		for part, quantity := range e.Parts {
+			prj.parts.AddInventory(part, quantity)
 		}
 
 	case *PartsChanged:
