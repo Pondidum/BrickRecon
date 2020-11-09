@@ -10,8 +10,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type HttpClient interface {
@@ -21,7 +19,7 @@ type HttpClient interface {
 type ImageCacheCreated struct {
 	eventstore.EventMeta
 
-	ID uuid.UUID
+	ID eventstore.AggregateID
 }
 
 type PartImageRequested struct {
@@ -89,7 +87,7 @@ type ImageCache struct {
 	listFiles func() ([]string, error)
 }
 
-var cacheID uuid.UUID = uuid.Must(uuid.FromString("b83e7c15-24d7-4f18-8de7-34de416eb9de"))
+var cacheID = eventstore.AggregateID("b83e7c15-24d7-4f18-8de7-34de416eb9de")
 
 func NewImageCache(es eventstore.EventStore, location string, context context.Context) (*ImageCache, error) {
 
@@ -150,7 +148,7 @@ func blankImageCache(location string) *ImageCache {
 	return ic
 }
 
-func createImageCache(id uuid.UUID, location string) *ImageCache {
+func createImageCache(id eventstore.AggregateID, location string) *ImageCache {
 	ic := blankImageCache(location)
 	ic.Apply(&ImageCacheCreated{ID: id})
 

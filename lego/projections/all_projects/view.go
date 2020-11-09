@@ -1,10 +1,9 @@
 package all_projects
 
 import (
+	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type AllProjectsView struct {
@@ -14,7 +13,7 @@ type AllProjectsView struct {
 }
 
 type ProjectView struct {
-	ID   uuid.UUID
+	ID   eventstore.AggregateID
 	Name lego.ProjectName
 
 	Parts   []*ProjectPartView

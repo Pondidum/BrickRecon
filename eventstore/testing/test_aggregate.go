@@ -2,8 +2,6 @@ package testing
 
 import (
 	"brickrecon/eventstore"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type LoggingAggregate struct {
@@ -36,7 +34,7 @@ func BlankTestAggregate() *TestAggregate {
 
 func NewTestAggregate(name string) *TestAggregate {
 	a := BlankTestAggregate()
-	a.Apply(&TestAggregateCreated{NewID: uuid.NewV4(), Name: name})
+	a.Apply(&TestAggregateCreated{NewID: eventstore.NewAggregateID(), Name: name})
 
 	return a
 }
@@ -64,7 +62,7 @@ func (a *TestAggregate) on(event eventstore.Event) {
 type TestAggregateCreated struct {
 	eventstore.EventMeta
 
-	NewID uuid.UUID
+	NewID eventstore.AggregateID
 	Name  string
 }
 

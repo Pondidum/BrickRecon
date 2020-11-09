@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
@@ -8,8 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type ProjectModel struct {
@@ -289,7 +288,7 @@ func withLinks(pc *preen.PreenContext, events []*all_projects.EventDescription) 
 }
 
 type ProjectWithKit struct {
-	ID   uuid.UUID
+	ID   eventstore.AggregateID
 	Name lego.ProjectName
 
 	Parts   []*PartWithKitPart

@@ -6,15 +6,21 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
+type AggregateID string
+
+func NewAggregateID() AggregateID {
+	return AggregateID(uuid.NewV4().String())
+}
+
 type EventMiddleware func(context.Context, Event) Event
 
 type Backend interface {
-	NewEventReader(registry *EventRegistry, aggregateID uuid.UUID) (EventReader, error)
+	NewEventReader(registry *EventRegistry, aggregateID AggregateID) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
 	DestroyViews() error
 
-	AllAggregates() ([]uuid.UUID, error)
+	AllAggregates() ([]AggregateID, error)
 }
 
 type EventReader interface {
@@ -24,7 +30,7 @@ type EventReader interface {
 }
 
 type EventWriter interface {
-	WriteEvents(ctx context.Context, aggregateID uuid.UUID, changes []Event) (int, error)
+	WriteEvents(ctx context.Context, aggregateID AggregateID, changes []Event) (int, error)
 }
 
 type View interface {

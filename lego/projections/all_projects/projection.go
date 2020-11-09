@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/mitchellh/mapstructure"
-	uuid "github.com/satori/go.uuid"
 )
 
 func toProjectPartView(part *lego.Part) *ProjectPartView {
@@ -201,7 +200,7 @@ func calculateStats(project *ProjectView) {
 	project.Stats.PercentComplete = int(float64(totalInventory) / float64(totalQuantity) * 100)
 }
 
-func projectByID(all map[lego.ProjectName]*ProjectView, id uuid.UUID) *ProjectView {
+func projectByID(all map[lego.ProjectName]*ProjectView, id eventstore.AggregateID) *ProjectView {
 	for _, p := range all {
 		if p.ID == id {
 			return p

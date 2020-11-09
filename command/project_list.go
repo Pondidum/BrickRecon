@@ -61,7 +61,7 @@ func (c *ProjectListCommand) Run(args []string) int {
 		rows = append(rows, fmt.Sprintf("%s | %d | %s",
 			string(project.Name),
 			len(project.Parts),
-			project.ID.String(),
+			project.ID,
 		))
 	}
 

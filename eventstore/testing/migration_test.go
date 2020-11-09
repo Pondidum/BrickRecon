@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,7 +28,7 @@ func TestEventMigration(t *testing.T) {
 		return e
 	})
 
-	id := uuid.NewV4()
+	id := eventstore.NewAggregateID()
 	a := eventstore.NewAggregator(func(e eventstore.Event) {})
 	a.SetID(id)
 	a.Apply(&MigrationTestEvent{Part: 123, Colour: 456})

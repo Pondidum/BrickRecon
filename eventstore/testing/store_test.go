@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -59,7 +58,7 @@ func TestProjections(t *testing.T) {
 		})
 
 	a := eventstore.NewAggregator(func(e eventstore.Event) {})
-	a.SetID(uuid.NewV4())
+	a.SetID(eventstore.NewAggregateID())
 	a.Apply(&TestEvent{Name: "One"})
 
 	assert.NoError(t, es.SaveAggregate(context.Background(), a))
@@ -123,7 +122,7 @@ func TestWhenAggregateIsntFound(t *testing.T) {
 	store.SaveAggregate(context.Background(), NewTestAggregate("test"))
 
 	// not the same ID
-	id := uuid.NewV4()
+	id := eventstore.NewAggregateID()
 
 	a := BlankTestAggregate()
 	err := store.LoadAggregate(context.Background(), id, a)
@@ -136,7 +135,7 @@ func TestWhenReadingFromEmptyStore(t *testing.T) {
 	defer cleanup()
 
 	store := eventstore.NewEventStore(be)
-	id := uuid.NewV4()
+	id := eventstore.NewAggregateID()
 	a := BlankTestAggregate()
 	err := store.LoadAggregate(context.Background(), id, a)
 

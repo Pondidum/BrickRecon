@@ -4,8 +4,6 @@ import (
 	"brickrecon/eventstore"
 	"errors"
 	"fmt"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type ProjectName string
@@ -32,7 +30,7 @@ func BlankProject() *Project {
 func NewProject(name ProjectName, parts []*Part) *Project {
 
 	project := BlankProject()
-	project.Apply(&ProjectCreated{ID: uuid.NewV4(), Name: name})
+	project.Apply(&ProjectCreated{ID: eventstore.NewAggregateID(), Name: name})
 	project.Apply(&ProjectPartsAdded{Parts: parts})
 
 	return project

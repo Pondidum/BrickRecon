@@ -9,7 +9,6 @@ import (
 	"path"
 
 	"github.com/honeycombio/beeline-go"
-	uuid "github.com/satori/go.uuid"
 )
 
 type DirectoryPath string
@@ -22,7 +21,7 @@ func NewAggregateEventWriter(root DirectoryPath) *AggregateEventWriter {
 	return &AggregateEventWriter{root}
 }
 
-func (ew *AggregateEventWriter) WriteEvents(ctx context.Context, aggregateID uuid.UUID, changes []eventstore.Event) (int, error) {
+func (ew *AggregateEventWriter) WriteEvents(ctx context.Context, aggregateID eventstore.AggregateID, changes []eventstore.Event) (int, error) {
 
 	block := bytes.Buffer{}
 	newline := []byte("\n")
@@ -39,7 +38,7 @@ func (ew *AggregateEventWriter) WriteEvents(ctx context.Context, aggregateID uui
 		block.Write(newline)
 	}
 
-	filepath := path.Join(string(ew.root), aggregateID.String())
+	filepath := path.Join(string(ew.root), string(aggregateID))
 
 	beeline.AddField(ctx, "es.event_file", filepath)
 

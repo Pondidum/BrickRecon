@@ -2,14 +2,12 @@ package lego
 
 import (
 	"brickrecon/eventstore"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type ProjectCreated struct {
 	eventstore.EventMeta
 
-	ID   uuid.UUID
+	ID   eventstore.AggregateID
 	Name ProjectName
 }
 

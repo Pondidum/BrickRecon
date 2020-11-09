@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type AggregateBackend struct {
@@ -29,8 +27,8 @@ func NewAggregateBackend(root string) (*AggregateBackend, error) {
 	return be, nil
 }
 
-func (be *AggregateBackend) NewEventReader(registry *eventstore.EventRegistry, aggregateID uuid.UUID) (eventstore.EventReader, error) {
-	return NewAggregateEventReader(context.Background(), registry, be.eventsPath, aggregateID.String())
+func (be *AggregateBackend) NewEventReader(registry *eventstore.EventRegistry, aggregateID eventstore.AggregateID) (eventstore.EventReader, error) {
+	return NewAggregateEventReader(context.Background(), registry, be.eventsPath, string(aggregateID))
 }
 
 func (be *AggregateBackend) NewEventWriter() eventstore.EventWriter {
@@ -52,22 +50,17 @@ func (be *AggregateBackend) DestroyViews() error {
 	return be.createRoot()
 }
 
-func (be *AggregateBackend) AllAggregates() ([]uuid.UUID, error) {
+func (be *AggregateBackend) AllAggregates() ([]eventstore.AggregateID, error) {
 
 	entries, err := ioutil.ReadDir(string(be.eventsPath))
 	if err != nil {
 		return nil, err
 	}
 
-	ids := make([]uuid.UUID, len(entries))
+	ids := make([]eventstore.AggregateID, len(entries))
 
 	for i, info := range entries {
-		id, err := uuid.FromString(info.Name())
-		if err != nil {
-			return nil, err
-		}
-
-		ids[i] = id
+		ids[i] = eventstore.AggregateID(info.Name())
 	}
 
 	return ids, nil

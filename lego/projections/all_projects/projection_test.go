@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +13,7 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 
 	project := &ProjectView{Events: []*EventDescription{}}
 	event := &lego.KitAddedToProject{
-		EventMeta: eventstore.EventMeta{AggregateRootID: uuid.NewV4(), Timestamp: time.Now()},
+		EventMeta: eventstore.EventMeta{AggregateRootID: eventstore.NewAggregateID(), Timestamp: time.Now()},
 		KitName:   lego.KitName("test kit"),
 		KitNumber: lego.KitNumber("1234-2"),
 		Parts: []lego.PartQuantity{
@@ -52,7 +51,7 @@ func TestAddingKits(t *testing.T) {
 
 func TestAddingProjectParts(t *testing.T) {
 
-	projectID := uuid.NewV4()
+	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
 	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
@@ -77,7 +76,7 @@ func TestAddingProjectParts(t *testing.T) {
 
 func TestAddingMultipleProjectParts(t *testing.T) {
 
-	projectID := uuid.NewV4()
+	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
 	partOne := partFromKey(lego.PartKey("123|85"), 1)
 	partTwo := partFromKey(lego.PartKey("456|10"), 2)
@@ -101,7 +100,7 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 	kitNumber := lego.KitNumber("134-1")
 	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
-	projectID := uuid.NewV4()
+	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
 	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
@@ -123,7 +122,7 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 	kitNumber := lego.KitNumber("134-1")
 	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
-	projectID := uuid.NewV4()
+	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
 	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
@@ -154,7 +153,7 @@ func apply(events ...eventstore.Event) *AllProjectsView {
 	return view
 }
 
-func createProject(projectID uuid.UUID, projectName lego.ProjectName) *lego.ProjectCreated {
+func createProject(projectID eventstore.AggregateID, projectName lego.ProjectName) *lego.ProjectCreated {
 	event := &lego.ProjectCreated{
 		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
 		ID:        projectID,
@@ -164,7 +163,7 @@ func createProject(projectID uuid.UUID, projectName lego.ProjectName) *lego.Proj
 	return event
 }
 
-func createProjectParts(projectID uuid.UUID, parts ...*lego.Part) *lego.ProjectPartsAdded {
+func createProjectParts(projectID eventstore.AggregateID, parts ...*lego.Part) *lego.ProjectPartsAdded {
 	event := &lego.ProjectPartsAdded{
 		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
 

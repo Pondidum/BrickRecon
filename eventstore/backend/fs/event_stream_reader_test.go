@@ -27,7 +27,7 @@ func TestDeserialization(t *testing.T) {
 		os.RemoveAll(temp)
 	}()
 
-	aggregateID := uuid.Must(uuid.FromString("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6"))
+	aggregateID := eventstore.AggregateID("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6")
 	reader, err := createTestReader(temp, aggregateID)
 	assert.NoError(t, err)
 
@@ -41,7 +41,6 @@ func TestDeserialization(t *testing.T) {
 
 	assert.NoError(t, err)
 
-	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
 	assert.Equal(t, expectedEventID, event.Meta().ID)
 	assert.Equal(t, expectedAggregateID, event.Meta().AggregateRootID)
 	assert.Equal(t, "TestEvent", event.Meta().Type)
@@ -50,7 +49,7 @@ func TestDeserialization(t *testing.T) {
 }
 
 func TestReadingAggregateEvents(t *testing.T) {
-	aggregateID := uuid.FromStringOrNil("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6")
+	aggregateID := eventstore.AggregateID("bf3faa6d-5b3f-403d-bf4f-9f7ceff972f6")
 
 	seenEvents, err := readEvents(aggregateID)
 
@@ -65,8 +64,8 @@ func TestReadingAggregateEvents(t *testing.T) {
 	)
 }
 
-func createTestReader(temp string, id uuid.UUID) (*AggregateEventReader, error) {
-	eventsFile := path.Join(temp, id.String())
+func createTestReader(temp string, id eventstore.AggregateID) (*AggregateEventReader, error) {
+	eventsFile := path.Join(temp, string(id))
 	ioutil.WriteFile(eventsFile, []byte(testEvents), 0666)
 
 	registry := eventstore.NewRegistry()
@@ -75,13 +74,13 @@ func createTestReader(temp string, id uuid.UUID) (*AggregateEventReader, error) 
 		context.Background(),
 		registry,
 		DirectoryPath(temp),
-		id.String(),
+		string(id),
 	)
 
 	return reader, err
 }
 
-func readEvents(id uuid.UUID) ([]string, error) {
+func readEvents(id eventstore.AggregateID) ([]string, error) {
 
 	temp, _ := ioutil.TempDir(".", "er")
 	defer func() {
