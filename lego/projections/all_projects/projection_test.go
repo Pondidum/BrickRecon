@@ -64,10 +64,11 @@ func TestAddingProjectParts(t *testing.T) {
 
 	expectedParts := []*ProjectPartView{
 		&ProjectPartView{
-			Key:      lego.PartKey("567|85"),
-			ID:       lego.LDrawPart("567"),
-			ColourID: lego.BrickLinkColour(85),
-			Quantity: 7,
+			Key:       lego.PartKey("567|85"),
+			ID:        lego.LDrawPart("567"),
+			ColourID:  lego.BrickLinkColour(85),
+			ImagePath: "567-85.png",
+			Quantity:  7,
 		},
 	}
 
