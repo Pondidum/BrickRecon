@@ -1,9 +1,8 @@
 package all_kits
 
 import (
+	"brickrecon/eventstore"
 	"brickrecon/lego"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type AllKitsView struct {
@@ -11,7 +10,7 @@ type AllKitsView struct {
 }
 
 type KitView struct {
-	ID     uuid.UUID
+	ID     eventstore.AggregateID
 	Name   lego.KitName
 	Number lego.KitNumber
 
@@ -20,6 +19,7 @@ type KitView struct {
 
 type PartView struct {
 	Key        lego.PartKey
+	ID         lego.LDrawPart
 	Name       lego.PartName
 	ColourID   lego.BrickLinkColour
 	ColourName lego.ColourName

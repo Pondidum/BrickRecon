@@ -2,12 +2,10 @@ package eventstore
 
 import (
 	"fmt"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type AggregateNotFoundError struct {
-	ID uuid.UUID
+	ID AggregateID
 }
 
 func (e *AggregateNotFoundError) Error() string {

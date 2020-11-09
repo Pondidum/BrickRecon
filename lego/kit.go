@@ -28,7 +28,7 @@ func BlankKit() *Kit {
 func ImportKit(number KitNumber, name KitName, parts []*Part) *Kit {
 	kit := BlankKit()
 	kit.Apply(&KitCreated{
-		ID:        uuid.NewV4(),
+		ID:        eventstore.AggregateID(uuid.NewV4().String()),
 		KitNumber: number,
 		KitName:   name,
 		Parts:     parts,
@@ -51,7 +51,7 @@ func (kit *Kit) on(event eventstore.Event) {
 type KitCreated struct {
 	eventstore.EventMeta
 
-	ID        uuid.UUID
+	ID        eventstore.AggregateID
 	KitNumber KitNumber
 	KitName   KitName
 	Parts     []*Part

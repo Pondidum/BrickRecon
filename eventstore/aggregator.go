@@ -1,9 +1,7 @@
 package eventstore
 
-import uuid "github.com/satori/go.uuid"
-
 type Aggregator struct {
-	id       uuid.UUID
+	id       AggregateID
 	changes  []Event
 	sequence int
 
@@ -29,11 +27,11 @@ func (a *Aggregator) Apply(event Event) {
 	a.onEvent(event)
 }
 
-func (a *Aggregator) AggregateID() uuid.UUID {
+func (a *Aggregator) AggregateID() AggregateID {
 	return a.id
 }
 
-func (a *Aggregator) SetID(aggregateID uuid.UUID) {
+func (a *Aggregator) SetID(aggregateID AggregateID) {
 	a.id = aggregateID
 }
 

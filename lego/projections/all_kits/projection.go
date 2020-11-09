@@ -43,6 +43,7 @@ func toPartView(parts []*lego.Part) []PartView {
 	for i, part := range parts {
 		views[i] = PartView{
 			Key:        part.Key,
+			ID:         part.Aliases.LDrawID,
 			Name:       part.Name,
 			ColourID:   part.Colour.ID,
 			ColourName: part.Colour.Name,

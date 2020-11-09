@@ -23,7 +23,7 @@ type EventStore interface {
 	ReadView(ctx context.Context, name string, view interface{}) error
 	RebuildProjections(ctx context.Context) error
 
-	LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error
+	LoadAggregate(ctx context.Context, id AggregateID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
 }
 
@@ -82,14 +82,14 @@ func (es *eventStore) ReadView(ctx context.Context, name string, view interface{
 	return err
 }
 
-func (es *eventStore) LoadAggregate(ctx context.Context, id uuid.UUID, a Aggregate) error {
+func (es *eventStore) LoadAggregate(ctx context.Context, id AggregateID, a Aggregate) error {
 	var err error
 	ctx, fn := buildSpan(ctx, "load_aggregate")
 	defer func() {
 		fn(err)
 	}()
 
-	beeline.AddField(ctx, "es.aggregate_id", id.String())
+	beeline.AddField(ctx, "es.aggregate_id", id)
 
 	er, err := es.backend.NewEventReader(es.registry, id)
 	if err != nil {
@@ -136,7 +136,7 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	aggregate := a.aggregator()
 	events := aggregate.changes
 
-	beeline.AddField(ctx, "es.aggregate_id", aggregate.id.String())
+	beeline.AddField(ctx, "es.aggregate_id", aggregate.id)
 	beeline.AddField(ctx, "es.aggregate_old_sequence", aggregate.sequence)
 	beeline.AddField(ctx, "es.aggregate_changes", len(events))
 
@@ -217,14 +217,14 @@ func (es *eventStore) RebuildProjections(ctx context.Context) error {
 	return nil
 }
 
-func (es *eventStore) processAggregateProjections(ctx context.Context, id uuid.UUID) error {
+func (es *eventStore) processAggregateProjections(ctx context.Context, id AggregateID) error {
 	var err error
-	ctx, fn := buildSpan(ctx, "process_aggregate_"+id.String())
+	ctx, fn := buildSpan(ctx, "process_aggregate_"+string(id))
 	defer func() {
 		fn(err)
 	}()
 
-	beeline.AddField(ctx, "es.aggregate_id", id.String())
+	beeline.AddField(ctx, "es.aggregate_id", id)
 
 	reader, err := es.backend.NewEventReader(es.registry, id)
 
