@@ -3,6 +3,7 @@ package all_kits
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"fmt"
 )
 
 var ProjectionName string = "kits"
@@ -48,6 +49,7 @@ func toPartView(parts []*lego.Part) []PartView {
 			ColourID:   part.Colour.ID,
 			ColourName: part.Colour.Name,
 			ColourHex:  part.Colour.Hex,
+			ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.LDrawID, part.Colour.ID),
 			Quantity:   part.Quantity,
 		}
 	}

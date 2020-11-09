@@ -47,6 +47,8 @@ type ProjectPartView struct {
 	ColourName lego.ColourName
 	ColourHex  lego.HexColour
 
+	ImagePath string
+
 	Quantity  int
 	Inventory int
 }

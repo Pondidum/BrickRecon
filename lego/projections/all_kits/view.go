@@ -25,5 +25,7 @@ type PartView struct {
 	ColourName lego.ColourName
 	ColourHex  lego.HexColour
 
+	ImagePath string
+
 	Quantity int
 }

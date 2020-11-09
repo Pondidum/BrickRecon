@@ -17,6 +17,7 @@ func toProjectPartView(part *lego.Part) *ProjectPartView {
 		ColourID:   part.Colour.ID,
 		ColourName: part.Colour.Name,
 		ColourHex:  part.Colour.Hex,
+		ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.LDrawID, part.Colour.ID),
 		Quantity:   part.Quantity,
 		Key:        part.Key,
 	}
