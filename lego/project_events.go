@@ -20,16 +20,18 @@ type ProjectPartsAdded struct {
 type ProjectInventoryAdded struct {
 	eventstore.EventMeta
 
+	Part     PartKey
 	PartID   LDrawPart
-	ColourID BrickLinkColour
+	ColourID LDrawColour
 	Quantity int
 }
 
 type ProjectInventoryRemoved struct {
 	eventstore.EventMeta
 
+	Part     PartKey
 	PartID   LDrawPart
-	ColourID BrickLinkColour
+	ColourID LDrawColour
 	Quantity int
 }
 
@@ -38,7 +40,7 @@ type KitAddedToProject struct {
 
 	KitNumber KitNumber
 	KitName   KitName
-	Parts     []PartQuantity
+	Parts     map[PartKey]int
 }
 
 type WantedListExported struct {

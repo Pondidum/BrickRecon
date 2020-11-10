@@ -9,11 +9,11 @@ import (
 func TestAddingInventory(t *testing.T) {
 
 	partID := LDrawPart("1234b")
-	colourID := BrickLinkColour(5678)
+	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
 	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+		{Key: key, Name: "Test Part", Quantity: 5},
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -43,11 +43,11 @@ func TestAddingInventory(t *testing.T) {
 func TestRemovingInventory(t *testing.T) {
 
 	partID := LDrawPart("1234b")
-	colourID := BrickLinkColour(5678)
+	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
 	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+		{Key: key, Name: "Test Part", Quantity: 5},
 	})
 
 	project.AddInventory(key, 4)
@@ -78,11 +78,11 @@ func TestRemovingInventory(t *testing.T) {
 func TestUpdatingInventory(t *testing.T) {
 
 	partID := LDrawPart("1234b")
-	colourID := BrickLinkColour(5678)
+	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
 	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Colour: Colour{ID: colourID}, Quantity: 5},
+		{Key: key, Name: "Test Part", Quantity: 5},
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -131,10 +131,8 @@ func TestChangingParts(t *testing.T) {
 }
 
 func createPart(key string, quantity int) *Part {
-	_, colour := ParsePartKey(PartKey(key))
 	return &Part{
 		Key:      PartKey(key),
-		Colour:   Colour{ID: BrickLinkColour(colour)},
 		Quantity: quantity,
 	}
 }

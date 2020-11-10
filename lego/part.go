@@ -15,6 +15,7 @@ type Part struct {
 }
 
 type PartQuantity struct {
+	Part     PartKey
 	PartID   LDrawPart
 	ColourID BrickLinkColour
 	Quantity int

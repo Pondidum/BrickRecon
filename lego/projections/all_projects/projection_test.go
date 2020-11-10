@@ -16,8 +16,8 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 		EventMeta: eventstore.EventMeta{AggregateRootID: eventstore.NewAggregateID(), Timestamp: time.Now()},
 		KitName:   lego.KitName("test kit"),
 		KitNumber: lego.KitNumber("1234-2"),
-		Parts: []lego.PartQuantity{
-			{PartID: lego.LDrawPart("123"), ColourID: lego.BrickLinkColour(23), Quantity: 5},
+		Parts: map[lego.PartKey]int{
+			lego.PartKey("123|23"): 5,
 		},
 	}
 
@@ -36,9 +36,9 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 func TestAddingKits(t *testing.T) {
 
 	event := &lego.KitCreated{KitName: "test", KitNumber: "134-1", Parts: []*lego.Part{
-		{Key: lego.CreatePartKey(lego.LDrawPart("1"), lego.BrickLinkColour(85)), Quantity: 5},
-		{Key: lego.CreatePartKey(lego.LDrawPart("1"), lego.BrickLinkColour(17)), Quantity: 1},
-		{Key: lego.CreatePartKey(lego.LDrawPart("5"), lego.BrickLinkColour(2)), Quantity: 2},
+		{Key: lego.PartKey("1|85"), Quantity: 5},
+		{Key: lego.PartKey("1|17"), Quantity: 1},
+		{Key: lego.PartKey("5|2"), Quantity: 2},
 	}}
 
 	view := apply(
@@ -53,7 +53,8 @@ func TestAddingProjectParts(t *testing.T) {
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
-	projectPart := partFromKey(lego.PartKey("567|85"), 7)
+	projectPart := partFromKey(lego.PartKey("567|72"), 7)
+	projectPart.Colour.Aliases.BrickLinkID = lego.BrickLinkColour(85)
 
 	view := apply(
 		createProject(projectID, projectName),
@@ -64,10 +65,11 @@ func TestAddingProjectParts(t *testing.T) {
 
 	expectedParts := []*ProjectPartView{
 		&ProjectPartView{
-			Key:      lego.PartKey("567|85"),
-			ID:       lego.LDrawPart("567"),
-			ColourID: lego.BrickLinkColour(85),
-			Quantity: 7,
+			Key:       lego.PartKey("567|72"),
+			ID:        lego.LDrawPart("567"),
+			ColourID:  lego.LDrawColour(72),
+			ImagePath: "567-85.png",
+			Quantity:  7,
 		},
 	}
 
@@ -88,8 +90,8 @@ func TestAddingMultipleProjectParts(t *testing.T) {
 	)
 
 	expectedColours := []*ColourView{
-		{ID: lego.BrickLinkColour(85)},
-		{ID: lego.BrickLinkColour(10)},
+		{ID: lego.LDrawColour(85)},
+		{ID: lego.LDrawColour(10)},
 	}
 
 	assert.Equal(t, expectedColours, view.Projects[projectName].Colours)
@@ -186,8 +188,8 @@ func partFromKey(key lego.PartKey, quantity int) *lego.Part {
 
 	return &lego.Part{
 		Key:      key,
-		Aliases:  lego.PartAliases{LDrawID: id},
-		Colour:   lego.Colour{ID: colour},
+		Aliases:  lego.PartAliases{LDrawID: id, BrickLinkID: lego.BrickLinkPart(id)},
+		Colour:   lego.Colour{Aliases: lego.ColourAliases{LDrawID: colour}},
 		Quantity: quantity,
 	}
 }

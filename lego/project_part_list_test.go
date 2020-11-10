@@ -9,24 +9,24 @@ import (
 func TestPartListAdding(t *testing.T) {
 
 	partID := LDrawPart("1234")
-	black := BrickLinkColour(1)
-	red := BrickLinkColour(2)
+	black := LDrawColour(1)
+	red := LDrawColour(2)
 
 	model := NewPartsList()
 	assert.Len(t, model.parts, 0)
 
 	// add a part
 	model.Add(&Part{
-		Key:      CreatePartKey(partID, black),
-		Colour:   Colour{ID: black, Name: "Black"},
+		Key: CreatePartKey(partID, black),
+
 		Quantity: 1,
 	})
 	assert.Len(t, model.parts, 1)
 
 	// duplicate part should increase quantity
 	model.Add(&Part{
-		Key:      CreatePartKey(partID, black),
-		Colour:   Colour{ID: black, Name: "Black"},
+		Key: CreatePartKey(partID, black),
+
 		Quantity: 17,
 	})
 	assert.Len(t, model.parts, 1)
@@ -34,8 +34,8 @@ func TestPartListAdding(t *testing.T) {
 
 	// duplicate part with differnt colour
 	model.Add(&Part{
-		Key:      CreatePartKey(partID, red),
-		Colour:   Colour{ID: red, Name: "Red"},
+		Key: CreatePartKey(partID, red),
+
 		Quantity: 1,
 	})
 	assert.Len(t, model.parts, 2)
@@ -121,11 +121,8 @@ func partList(parts map[PartKey]int) *ProjectPartList {
 	list := NewPartsList()
 
 	for key, quantity := range parts {
-
-		_, colour := ParsePartKey(key)
 		list.Add(&Part{
 			Key:      key,
-			Colour:   Colour{ID: BrickLinkColour(colour)},
 			Quantity: quantity,
 		})
 	}

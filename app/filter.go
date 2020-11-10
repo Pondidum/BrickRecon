@@ -8,7 +8,7 @@ import (
 
 type filter struct {
 	HasColour bool
-	Colour    lego.BrickLinkColour
+	Colour    lego.LDrawColour
 
 	HasInventory bool
 	Inventory    string
@@ -23,7 +23,7 @@ func createFilter(pc *preen.PreenContext) filter {
 
 	return filter{
 		HasColour: err == nil,
-		Colour:    lego.BrickLinkColour(colour),
+		Colour:    lego.LDrawColour(colour),
 
 		HasInventory: inventoryRaw != "" && inventoryRaw != "all",
 		Inventory:    inventoryRaw,

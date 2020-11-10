@@ -46,10 +46,10 @@ func toPartView(parts []*lego.Part) []PartView {
 			Key:        part.Key,
 			ID:         part.Aliases.LDrawID,
 			Name:       part.Name,
-			ColourID:   part.Colour.ID,
+			ColourID:   part.Colour.Aliases.LDrawID,
 			ColourName: part.Colour.Name,
 			ColourHex:  part.Colour.Hex,
-			ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.LDrawID, part.Colour.ID),
+			ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.LDrawID, part.Colour.Aliases.BrickLinkID),
 			Quantity:   part.Quantity,
 		}
 	}

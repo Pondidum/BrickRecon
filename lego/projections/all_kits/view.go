@@ -21,7 +21,7 @@ type PartView struct {
 	Key        lego.PartKey
 	ID         lego.LDrawPart
 	Name       lego.PartName
-	ColourID   lego.BrickLinkColour
+	ColourID   lego.LDrawColour
 	ColourName lego.ColourName
 	ColourHex  lego.HexColour
 
