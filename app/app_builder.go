@@ -8,6 +8,7 @@ import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_kits"
 	"brickrecon/lego/projections/all_projects"
+	"brickrecon/lego/projections/colours"
 	"brickrecon/preen"
 	"context"
 	"net/http"
@@ -47,6 +48,7 @@ func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.Eve
 
 	es.RegisterProjection(b.ctx, &all_projects.ProjectsProjection{})
 	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
+	es.RegisterProjection(b.ctx, &colours.ColoursProjection{})
 
 	return es
 }
