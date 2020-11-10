@@ -4,7 +4,6 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"path"
@@ -32,14 +31,14 @@ type PartFetchAttemptsExceeded struct {
 	eventstore.EventMeta
 
 	PartID   lego.LDrawPart
-	ColourID lego.BrickLinkColour
+	ColourID lego.LDrawColour
 }
 
 type PartAttempted struct {
 	eventstore.EventMeta
 
 	PartID   lego.LDrawPart
-	ColourID lego.BrickLinkColour
+	ColourID lego.LDrawColour
 	Error    string
 }
 
@@ -47,21 +46,21 @@ type PartImageNotFound struct {
 	eventstore.EventMeta
 
 	PartID   lego.LDrawPart
-	ColourID lego.BrickLinkColour
+	ColourID lego.LDrawColour
 }
 
 type PartImageStored struct {
 	eventstore.EventMeta
 
 	PartID   lego.LDrawPart
-	ColourID lego.BrickLinkColour
+	ColourID lego.LDrawColour
 }
 
 type PartAddedFromCache struct {
 	eventstore.EventMeta
 
 	PartID   lego.LDrawPart
-	ColourID lego.BrickLinkColour
+	ColourID lego.LDrawColour
 }
 
 var ImageCacheEvents = []eventstore.Initialiser{
@@ -173,13 +172,13 @@ func (ic *ImageCache) ReadFromCache() error {
 			continue
 		}
 
-		if ic.containsPart(lego.CreatePartKey(partID, lego.BrickLinkColour(colourID))) {
+		if ic.containsPart(lego.CreatePartKey(partID, lego.LDrawColour(colourID))) {
 			continue
 		}
 
 		ic.Apply(&PartAddedFromCache{
 			PartID:   partID,
-			ColourID: lego.BrickLinkColour(colourID),
+			ColourID: lego.LDrawColour(colourID),
 		})
 	}
 
@@ -211,7 +210,7 @@ func (ic *ImageCache) containsPart(key lego.PartKey) bool {
 func (ic *ImageCache) Run(ctx context.Context) {
 
 	for key, part := range ic.pending {
-		fsm := ic.newImageFsm(part.Aliases.LDrawID, part.Colour.ID)
+		fsm := ic.newImageFsm(part.Aliases.LDrawID, part.Colour.Aliases.LDrawID)
 		fsm.attempts = ic.attempts[key]
 
 		fsm.Run(ctx)
@@ -252,7 +251,7 @@ func (ic *ImageCache) on(event eventstore.Event) {
 	}
 }
 
-func (ic *ImageCache) onFinished(partID lego.LDrawPart, colourID lego.BrickLinkColour) {
+func (ic *ImageCache) onFinished(partID lego.LDrawPart, colourID lego.LDrawColour) {
 	key := lego.CreatePartKey(partID, colourID)
 
 	ic.done[key] = true
@@ -260,7 +259,7 @@ func (ic *ImageCache) onFinished(partID lego.LDrawPart, colourID lego.BrickLinkC
 	delete(ic.pending, key)
 }
 
-func (ic *ImageCache) newImageFsm(partID lego.LDrawPart, colourID lego.BrickLinkColour) *fsm {
+func (ic *ImageCache) newImageFsm(partID lego.LDrawPart, colourID lego.LDrawColour) *fsm {
 	return &fsm{
 		partID:      partID,
 		colourID:    colourID,
@@ -269,8 +268,4 @@ func (ic *ImageCache) newImageFsm(partID lego.LDrawPart, colourID lego.BrickLink
 		httpClient: &http.Client{},
 		writeFile:  ic.writeFile,
 	}
-}
-
-func key(id lego.LDrawPart, colourID lego.BrickLinkColour) string {
-	return fmt.Sprintf("%s-%v", id, colourID)
 }

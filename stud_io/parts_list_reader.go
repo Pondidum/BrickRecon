@@ -95,7 +95,7 @@ func parsePart(fields []string) (*lego.Part, error) {
 		return nil, convertError("part.Weight", fields[weight])
 	}
 
-	part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.ID)
+	part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.Aliases.LDrawID)
 
 	return part, err
 }
@@ -128,7 +128,6 @@ func parseColour(fields []string) (lego.Colour, error) {
 	}
 
 	colour := lego.Colour{
-		ID:       aliases.BrickLinkID,
 		Aliases:  aliases,
 		Name:     lego.ColourName(fields[colourName]),
 		Hex:      lego.GetColourHex(aliases.BrickLinkID),

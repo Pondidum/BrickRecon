@@ -210,7 +210,7 @@ func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Proje
 
 type quantityModel struct {
 	Part     lego.LDrawPart
-	Colour   lego.BrickLinkColour
+	Colour   lego.LDrawColour
 	Quantity int
 }
 

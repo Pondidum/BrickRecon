@@ -22,7 +22,7 @@ type ProjectInventoryAdded struct {
 
 	Part     PartKey
 	PartID   LDrawPart
-	ColourID BrickLinkColour
+	ColourID LDrawColour
 	Quantity int
 }
 
@@ -31,7 +31,7 @@ type ProjectInventoryRemoved struct {
 
 	Part     PartKey
 	PartID   LDrawPart
-	ColourID BrickLinkColour
+	ColourID LDrawColour
 	Quantity int
 }
 

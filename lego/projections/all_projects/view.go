@@ -43,7 +43,7 @@ type ProjectPartView struct {
 	Key        lego.PartKey
 	ID         lego.LDrawPart
 	Name       lego.PartName
-	ColourID   lego.BrickLinkColour
+	ColourID   lego.LDrawColour
 	ColourName lego.ColourName
 	ColourHex  lego.HexColour
 
@@ -62,7 +62,7 @@ type KitView struct {
 }
 
 type ColourView struct {
-	ID   lego.BrickLinkColour
+	ID   lego.LDrawColour
 	Name lego.ColourName
 	Hex  lego.HexColour
 }

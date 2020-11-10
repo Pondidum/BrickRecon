@@ -17,24 +17,24 @@ func TestEventMigration(t *testing.T) {
 		added := &lego.ProjectInventoryAdded{
 			EventMeta: eventstore.EventMeta{},
 			PartID:    lego.LDrawPart("123"),
-			ColourID:  lego.BrickLinkColour(456),
+			ColourID:  lego.LDrawColour(67),
 		}
 
 		NewAppBuilder(ctx).upgradeEvent(ctx, added)
 		assert.Equal(t, 1, added.EventVersion)
-		assert.Equal(t, lego.PartKey("123|456"), added.Part)
+		assert.Equal(t, lego.PartKey("123|80"), added.Part)
 	})
 
 	t.Run("ProjectInventoryRemoved", func(t *testing.T) {
 		added := &lego.ProjectInventoryRemoved{
 			EventMeta: eventstore.EventMeta{},
 			PartID:    lego.LDrawPart("123"),
-			ColourID:  lego.BrickLinkColour(456),
+			ColourID:  lego.LDrawColour(67),
 		}
 
 		NewAppBuilder(ctx).upgradeEvent(ctx, added)
 		assert.Equal(t, 1, added.EventVersion)
-		assert.Equal(t, lego.PartKey("123|456"), added.Part)
+		assert.Equal(t, lego.PartKey("123|80"), added.Part)
 	})
 
 }

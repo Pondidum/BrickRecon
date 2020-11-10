@@ -8,7 +8,6 @@ type LDrawColour int
 type BrickOwlColour int
 
 type Colour struct {
-	ID      BrickLinkColour
 	Aliases ColourAliases
 
 	Name     ColourName
