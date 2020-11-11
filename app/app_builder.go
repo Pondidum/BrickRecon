@@ -8,6 +8,7 @@ import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_kits"
 	"brickrecon/lego/projections/all_projects"
+	"brickrecon/lego/projections/allparts"
 	"brickrecon/lego/projections/colours"
 	"brickrecon/preen"
 	"context"
@@ -44,11 +45,13 @@ func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.Eve
 
 	es.RegisterEvents(b.ctx, lego.ProjectEvents)
 	es.RegisterEvents(b.ctx, lego.KitEvents)
+	es.RegisterEvents(b.ctx, lego.PartEvents)
 	es.RegisterEvents(b.ctx, background.ImageCacheEvents)
 
 	es.RegisterProjection(b.ctx, &all_projects.ProjectsProjection{})
 	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
 	es.RegisterProjection(b.ctx, &colours.ColoursProjection{})
+	es.RegisterProjection(b.ctx, &allparts.AllPartsProjection{})
 
 	es.RegisterEventMiddleware(b.ctx, b.upgradeEvent)
 
