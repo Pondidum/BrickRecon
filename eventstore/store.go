@@ -46,12 +46,6 @@ func NewEventStore(backend Backend) EventStore {
 	}
 }
 
-type Projection interface {
-	Name() string
-	CreateState() interface{}
-	Project(state interface{}, event Event) interface{}
-}
-
 func (es *eventStore) RegisterEvent(ctx context.Context, creator Initialiser) error {
 	return es.registry.Register(ctx, creator)
 }
@@ -174,19 +168,9 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 func (es *eventStore) runProjections(ctx context.Context, events []Event) error {
 
 	var err error
-	for name, projection := range es.projections {
 
-		view := es.backend.NewView(name)
-		state := projection.CreateState()
-		if err := view.ReadView(ctx, state); err != nil {
-			return err
-		}
-
-		for _, e := range events {
-			state = projection.Project(state, e)
-		}
-
-		err = view.WriteView(ctx, state, 0)
+	for _, projection := range es.projections {
+		err = runProjection(ctx, es.backend, events, projection)
 	}
 
 	return err
