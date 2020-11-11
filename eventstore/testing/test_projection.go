@@ -9,7 +9,7 @@ type TestProjectionState struct {
 type testProjection struct {
 	name    string
 	init    eventstore.Initialiser
-	project eventstore.Projector
+	project func(state interface{}, event eventstore.Event) interface{}
 }
 
 func (p *testProjection) Name() string {

@@ -10,8 +10,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type Projector func(state interface{}, event Event) interface{}
-
 // ------------
 
 type EventStore interface {
