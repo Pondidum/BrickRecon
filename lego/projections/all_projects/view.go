@@ -1,42 +1,14 @@
 package all_projects
 
 import (
-	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"time"
+	"fmt"
 )
 
 type AllProjectsView struct {
 	Names    []lego.ProjectName
 	Projects map[lego.ProjectName]*ProjectView
 	Kits     map[lego.KitNumber]KitView
-}
-
-type ProjectView struct {
-	ID   eventstore.AggregateID
-	Name lego.ProjectName
-
-	Parts   []*ProjectPartView
-	Kits    map[lego.KitNumber]KitView
-	Colours []*ColourView
-
-	Stats *ProjectStatsView
-
-	BrickLinkXml string
-
-	Events []*EventDescription
-}
-
-type EventDescription struct {
-	Timestamp   time.Time
-	Type        string
-	Description string
-	Additional  map[string]interface{}
-}
-
-func (e *EventDescription) With(key string, value interface{}) *EventDescription {
-	e.Additional[key] = value
-	return e
 }
 
 type ProjectPartView struct {
@@ -51,6 +23,19 @@ type ProjectPartView struct {
 
 	Quantity  int
 	Inventory int
+}
+
+func newPartViewFromPart(part *lego.Part) *ProjectPartView {
+	return &ProjectPartView{
+		ID:         part.Aliases.LDrawID,
+		Name:       part.Name,
+		ColourID:   part.Colour.Aliases.LDrawID,
+		ColourName: part.Colour.Name,
+		ColourHex:  part.Colour.Hex,
+		ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.BrickLinkID, part.Colour.Aliases.BrickLinkID),
+		Quantity:   part.Quantity,
+		Key:        part.Key,
+	}
 }
 
 type KitView struct {

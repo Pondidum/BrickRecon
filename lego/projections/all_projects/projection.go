@@ -3,38 +3,25 @@ package all_projects
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"fmt"
-	"reflect"
-	"sort"
-
-	"github.com/mitchellh/mapstructure"
 )
-
-func toProjectPartView(part *lego.Part) *ProjectPartView {
-	if part.Key == "" {
-		panic(fmt.Sprintf("Part '%s' has no key", part.Name))
-	}
-	return &ProjectPartView{
-		ID:         part.Aliases.LDrawID,
-		Name:       part.Name,
-		ColourID:   part.Colour.Aliases.LDrawID,
-		ColourName: part.Colour.Name,
-		ColourHex:  part.Colour.Hex,
-		ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.BrickLinkID, part.Colour.Aliases.BrickLinkID),
-		Quantity:   part.Quantity,
-		Key:        part.Key,
-	}
-}
 
 var ProjectionName string = "projects"
 
-type ProjectsProjection struct{}
+func NewProjectsProjection(es eventstore.EventStore) *projectsProjection {
+	return &projectsProjection{
+		store: es,
+	}
+}
 
-func (p *ProjectsProjection) Name() string {
+type projectsProjection struct {
+	store eventstore.EventStore
+}
+
+func (p *projectsProjection) Name() string {
 	return ProjectionName
 }
 
-func (p *ProjectsProjection) CreateState() interface{} {
+func (p *projectsProjection) CreateState() interface{} {
 	return &AllProjectsView{
 		Names:    []lego.ProjectName{},
 		Projects: map[lego.ProjectName]*ProjectView{},
@@ -42,7 +29,7 @@ func (p *ProjectsProjection) CreateState() interface{} {
 	}
 }
 
-func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) interface{} {
+func (p *projectsProjection) Project(state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
 	project := projectByID(view.Projects, event.Meta().AggregateRootID)
@@ -50,56 +37,42 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	switch e := event.(type) {
 
 	case *lego.ProjectCreated:
-		project = &ProjectView{
-			ID:      e.AggregateRootID,
-			Name:    e.Name,
-			Kits:    map[lego.KitNumber]KitView{},
-			Colours: []*ColourView{},
-			Stats:   &ProjectStatsView{},
-		}
-
-		audit(project, event, "Project created")
+		project = newProjectView(e.AggregateRootID, e.Name)
+		project.audit(event, "Project created")
 
 		view.Names = append(view.Names, e.Name)
 		view.Projects[e.Name] = project
 
 	case *lego.ProjectPartsAdded:
-		addParts(project, e.Parts)
+		project.addParts(p.store, e.Parts)
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
 		}
 
-		calculateStats(project)
-		audit(project, e, "%v parts added", len(e.Parts))
+		project.audit(e, "%v parts added", len(e.Parts))
 
 	case *lego.PartsChanged:
-		addParts(project, e.Additions)
-		removeParts(project, e.Removals)
+		project.addParts(p.store, e.Additions)
+		project.removeParts(e.Removals)
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
 		}
 
-		calculateStats(project)
-		audit(project, e, "%v parts changed", len(e.Additions)+len(e.Removals))
+		project.audit(e, "%v parts changed", len(e.Additions)+len(e.Removals))
 
 	case *lego.ProjectInventoryAdded:
-		part, found := findPart(project.Parts, e.Part)
-		if found < 0 {
-			panic(fmt.Sprintf("Couldn't find %v in project %s", e.Part, project.Name))
-		}
+		part, _ := findPart(project.Parts, e.Part)
 		part.Inventory += e.Quantity
 
-		calculateStats(project)
-		audit(project, e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
+		project.audit(e, "Added %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.ProjectInventoryRemoved:
 		part, _ := findPart(project.Parts, e.Part)
 		part.Inventory -= e.Quantity
 
-		calculateStats(project)
-		audit(project, e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
+		project.audit(e, "Removed %v %s %s (%s)", e.Quantity, part.ColourName, part.Name, part.ID)
 
 	case *lego.KitAddedToProject:
 		for key, quantity := range e.Parts {
@@ -107,8 +80,7 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 			part.Inventory += quantity
 		}
 
-		calculateStats(project)
-		audit(project, e, "%s (Kit %s) applied", e.KitName, e.KitNumber)
+		project.audit(e, "%s (Kit %s) applied", e.KitName, e.KitNumber)
 
 	case *lego.KitCreated:
 		kit := createKitView(e)
@@ -122,88 +94,14 @@ func (p *ProjectsProjection) Project(state interface{}, event eventstore.Event) 
 	case *lego.WantedListExported:
 		project.BrickLinkXml = e.Markup
 
-		audit(project, e, "WantedList XML generated")
+		project.audit(e, "WantedList XML generated")
+	}
+
+	if project != nil {
+		project.calculateStats()
 	}
 
 	return view
-}
-
-func addParts(project *ProjectView, parts []*lego.Part) {
-	for _, part := range parts {
-		project.Parts = append(project.Parts, toProjectPartView(part))
-		project.Colours = appendNewColours(project.Colours, part)
-	}
-}
-
-func removeParts(project *ProjectView, parts map[lego.PartKey]int) {
-
-	for key, amount := range parts {
-		part, index := findPart(project.Parts, key)
-
-		part.Quantity -= amount
-
-		if part.Quantity <= 0 {
-			project.Parts = append(project.Parts[:index], project.Parts[index+1:]...)
-		}
-	}
-}
-
-func appendNewColours(unique []*ColourView, part *lego.Part) []*ColourView {
-
-	for _, view := range unique {
-		if view.ID == part.Colour.Aliases.LDrawID {
-			return unique
-		}
-	}
-
-	unique = append(unique, &ColourView{
-		ID:   part.Colour.Aliases.LDrawID,
-		Name: part.Colour.Name,
-		Hex:  part.Colour.Hex,
-	})
-
-	sort.Slice(unique, func(i, j int) bool {
-		return unique[i].Name < unique[j].Name
-	})
-	return unique
-}
-
-func audit(project *ProjectView, event eventstore.Event, format string, args ...interface{}) {
-
-	desc := &EventDescription{
-		Timestamp:   event.Meta().Timestamp,
-		Type:        event.Meta().Type,
-		Description: fmt.Sprintf(format, args...),
-		Additional:  map[string]interface{}{},
-	}
-
-	decoder, _ := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		DecodeHook: func(src reflect.Type, dest reflect.Type, in interface{}) (interface{}, error) {
-			return in, nil
-		},
-		Result: &desc.Additional,
-	})
-
-	decoder.Decode(event)
-	// mapstructure.Decode(event, &desc.Additional)
-	delete(desc.Additional, "EventMeta")
-	delete(desc.Additional, "ID")
-
-	project.Events = append(project.Events, desc)
-}
-
-func calculateStats(project *ProjectView) {
-	totalQuantity := 0
-	totalInventory := 0
-
-	for _, part := range project.Parts {
-		totalQuantity += part.Quantity
-		totalInventory += part.Inventory
-	}
-
-	project.Stats.TotalPartsQuantity = totalQuantity
-	project.Stats.TotalPartsInventory = totalInventory
-	project.Stats.PercentComplete = int(float64(totalInventory) / float64(totalQuantity) * 100)
 }
 
 func projectByID(all map[lego.ProjectName]*ProjectView, id eventstore.AggregateID) *ProjectView {

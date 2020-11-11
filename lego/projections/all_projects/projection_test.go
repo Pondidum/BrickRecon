@@ -21,7 +21,7 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 		},
 	}
 
-	audit(project, event, "Test message")
+	project.audit(event, "Test message")
 
 	expected := map[string]interface{}{
 		"KitName":   event.KitName,
@@ -143,7 +143,7 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 func apply(events ...eventstore.Event) *AllProjectsView {
 
-	p := &ProjectsProjection{}
+	p := NewProjectsProjection(nil)
 	state := p.CreateState()
 
 	for _, e := range events {
