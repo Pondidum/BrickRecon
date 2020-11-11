@@ -21,7 +21,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}",
       "env": {},
-      "args": ["project", "create", "chain-gun", "./lego/chain-gun.csv"]
+      "args": ["project", "create", "debug", "./lego/chain-gun.csv"]
     },
 
     {
