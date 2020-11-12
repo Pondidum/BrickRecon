@@ -26,9 +26,9 @@ type EventStore interface {
 }
 
 type eventStore struct {
-	registry    *EventRegistry
-	middleware  []EventMiddleware
-	projections map[string]Projection
+	registry   *EventRegistry
+	middleware []EventMiddleware
+	projector  *Projector
 
 	backend Backend
 }
@@ -37,10 +37,10 @@ type Initialiser func() interface{}
 
 func NewEventStore(backend Backend) EventStore {
 	return &eventStore{
-		registry:    NewRegistry(),
-		middleware:  []EventMiddleware{},
-		projections: map[string]Projection{},
-		backend:     backend,
+		registry:   NewRegistry(),
+		middleware: []EventMiddleware{},
+		projector:  NewProjector(backend),
+		backend:    backend,
 	}
 }
 
@@ -58,7 +58,7 @@ func (es *eventStore) RegisterEventMiddleware(ctx context.Context, middleware Ev
 }
 
 func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {
-	es.projections[projection.Name()] = projection
+	es.projector.registerProjection(ctx, projection)
 }
 
 func (es *eventStore) ReadView(ctx context.Context, name string, view interface{}) error {
@@ -158,18 +158,7 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 	beeline.AddField(ctx, "es.aggregate_sequence", aggregate.sequence)
 
-	err = es.runProjections(ctx, events)
-
-	return err
-}
-
-func (es *eventStore) runProjections(ctx context.Context, events []Event) error {
-
-	var err error
-
-	for _, projection := range es.projections {
-		err = runProjection(ctx, es.backend, events, projection)
-	}
+	err = es.projector.runAllProjections(ctx, events)
 
 	return err
 }
@@ -231,7 +220,7 @@ func (es *eventStore) processAggregateProjections(ctx context.Context, id Aggreg
 
 	beeline.AddField(ctx, "es.aggregate_events", len(events))
 
-	if err := es.runProjections(ctx, events); err != nil {
+	if err := es.projector.runAllProjections(ctx, events); err != nil {
 		return err
 	}
 

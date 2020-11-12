@@ -1,6 +1,8 @@
 package eventstore
 
-import "context"
+import (
+	"context"
+)
 
 type Projection interface {
 	Name() string
@@ -8,8 +10,35 @@ type Projection interface {
 	Project(state interface{}, event Event) interface{}
 }
 
-func runProjection(ctx context.Context, backend Backend, events []Event, projection Projection) error {
-	view := backend.NewView(projection.Name())
+type Projector struct {
+	projections map[string]Projection
+	backend     Backend
+}
+
+func NewProjector(backend Backend) *Projector {
+	return &Projector{
+		projections: map[string]Projection{},
+		backend:     backend,
+	}
+}
+
+func (p *Projector) registerProjection(ctx context.Context, projection Projection) {
+	p.projections[projection.Name()] = projection
+}
+
+func (p *Projector) runAllProjections(ctx context.Context, events []Event) error {
+	var err error
+
+	for _, projection := range p.projections {
+		err = p.runProjection(ctx, projection, events)
+	}
+
+	return err
+}
+
+func (p *Projector) runProjection(ctx context.Context, projection Projection, events []Event) error {
+
+	view := p.backend.NewView(projection.Name())
 	state := projection.CreateState()
 
 	if err := view.ReadView(ctx, state); err != nil {
@@ -21,5 +50,4 @@ func runProjection(ctx context.Context, backend Backend, events []Event, project
 	}
 
 	return view.WriteView(ctx, state, 0)
-
 }
