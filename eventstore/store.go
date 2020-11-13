@@ -23,6 +23,8 @@ type EventStore interface {
 
 	LoadAggregate(ctx context.Context, id AggregateID, a Aggregate) error
 	SaveAggregate(ctx context.Context, a Aggregate) error
+
+	RunStatelessProjection(ctx context.Context, projection StatelessProjection) error
 }
 
 type eventStore struct {
@@ -59,6 +61,10 @@ func (es *eventStore) RegisterEventMiddleware(ctx context.Context, middleware Ev
 
 func (es *eventStore) RegisterProjection(ctx context.Context, projection Projection) {
 	es.projector.registerProjection(ctx, projection)
+}
+
+func (es *eventStore) RegisterStatelessProjection(ctx context.Context, projection StatelessProjection) {
+	es.projector.registerStatelessProjection(ctx, projection)
 }
 
 func (es *eventStore) ReadView(ctx context.Context, name string, view interface{}) error {
@@ -163,6 +169,29 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 	return err
 }
 
+func (es *eventStore) RunStatelessProjection(ctx context.Context, projection StatelessProjection) error {
+
+	aggregates, err := es.backend.AllAggregates()
+	if err != nil {
+		beeline.AddField(ctx, "es.err_reading_aggregates", err)
+		return err
+	}
+
+	beeline.AddField(ctx, "es.aggregate_count", len(aggregates))
+
+	for _, id := range aggregates {
+
+		events, err := es.eventsForAggregate(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		es.projector.runStatelessProjection(ctx, projection, events)
+	}
+
+	return nil
+}
+
 func (es *eventStore) RebuildProjections(ctx context.Context) error {
 
 	be := es.backend
@@ -180,27 +209,27 @@ func (es *eventStore) RebuildProjections(ctx context.Context) error {
 
 	for _, id := range aggregates {
 
-		if err := es.processAggregateProjections(ctx, id); err != nil {
+		events, err := es.eventsForAggregate(ctx, id)
+		if err != nil {
 			return err
 		}
+
+		if err := es.projector.runAllProjections(ctx, events); err != nil {
+			return err
+		}
+
 	}
 
 	return nil
 }
 
-func (es *eventStore) processAggregateProjections(ctx context.Context, id AggregateID) error {
-	var err error
-	ctx, fn := buildSpan(ctx, "process_aggregate_"+string(id))
-	defer func() {
-		fn(err)
-	}()
+func (es *eventStore) eventsForAggregate(ctx context.Context, id AggregateID) ([]Event, error) {
 
 	beeline.AddField(ctx, "es.aggregate_id", id)
 
 	reader, err := es.backend.NewEventReader(es.registry, id)
-
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer reader.Close()
@@ -210,7 +239,7 @@ func (es *eventStore) processAggregateProjections(ctx context.Context, id Aggreg
 	for reader.Read() {
 		e, err := reader.Event()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		e = es.applyMiddleware(ctx, e)
@@ -220,11 +249,7 @@ func (es *eventStore) processAggregateProjections(ctx context.Context, id Aggreg
 
 	beeline.AddField(ctx, "es.aggregate_events", len(events))
 
-	if err := es.projector.runAllProjections(ctx, events); err != nil {
-		return err
-	}
-
-	return nil
+	return events, nil
 }
 
 func (es *eventStore) applyMiddleware(ctx context.Context, event Event) Event {
