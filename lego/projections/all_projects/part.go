@@ -1,16 +1,14 @@
 package all_projects
 
 import (
-	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"context"
 )
 
-func newPartView(es eventstore.EventStore, key lego.PartKey, quantity int) *ProjectPartView {
+type PartLoader func(lego.PartKey) *lego.PartAggregate
 
-	part := lego.BlankPart()
-	es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
+func newPartView(load PartLoader, key lego.PartKey, quantity int) *ProjectPartView {
 
+	part := load(key)
 	hex := lego.HexColour("")
 
 	if colour, found := lego.LookupColourLDraw(part.Colour); found {

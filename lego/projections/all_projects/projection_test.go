@@ -68,6 +68,7 @@ func TestAddingProjectParts(t *testing.T) {
 			Key:       lego.PartKey("567|72"),
 			ID:        lego.LDrawPart("567"),
 			ColourID:  lego.LDrawColour(72),
+			ColourHex: "595D60",
 			ImagePath: "567-85.png",
 			Quantity:  7,
 		},
@@ -144,6 +145,18 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 func apply(events ...eventstore.Event) *AllProjectsView {
 
 	p := NewProjectsProjection(nil)
+	p.partLoader = func(k lego.PartKey) *lego.PartAggregate {
+		part := lego.BlankPart()
+
+		if k == lego.PartKey("567|72") {
+			part.Number = lego.LDrawPart("567")
+			part.Colour = lego.LDrawColour(72)
+			part.ImagePath = "567-85.png"
+		}
+
+		return part
+	}
+
 	state := p.CreateState()
 
 	for _, e := range events {

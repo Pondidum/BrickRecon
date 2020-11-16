@@ -3,18 +3,23 @@ package all_projects
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"context"
 )
 
 var ProjectionName string = "projects"
 
 func NewProjectsProjection(es eventstore.EventStore) *projectsProjection {
 	return &projectsProjection{
-		store: es,
+		partLoader: func(key lego.PartKey) *lego.PartAggregate {
+			part := lego.BlankPart()
+			es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
+			return part
+		},
 	}
 }
 
 type projectsProjection struct {
-	store eventstore.EventStore
+	partLoader PartLoader
 }
 
 func (p *projectsProjection) Name() string {
@@ -44,7 +49,7 @@ func (p *projectsProjection) Project(state interface{}, event eventstore.Event) 
 		view.Projects[e.Name] = project
 
 	case *lego.ProjectPartsAdded:
-		project.addParts(p.store, e.Parts)
+		project.addParts(p.partLoader, e.Parts)
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
@@ -53,7 +58,7 @@ func (p *projectsProjection) Project(state interface{}, event eventstore.Event) 
 		project.audit(e, "%v parts added", len(e.Parts))
 
 	case *lego.PartsChanged:
-		project.addParts(p.store, e.Additions)
+		project.addParts(p.partLoader, e.Additions)
 		project.removeParts(e.Removals)
 
 		for _, kit := range view.Kits {

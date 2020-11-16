@@ -43,9 +43,9 @@ func newProjectView(id eventstore.AggregateID, name lego.ProjectName) *ProjectVi
 	}
 }
 
-func (project *ProjectView) addParts(store eventstore.EventStore, parts []*lego.Part) {
+func (project *ProjectView) addParts(load PartLoader, parts []*lego.Part) {
 	for _, part := range parts {
-		view := newPartView(store, part.Key, part.Quantity)
+		view := newPartView(load, part.Key, part.Quantity)
 		project.Parts = append(project.Parts, view)
 		project.Colours = appendNewColours(project.Colours, part)
 	}
