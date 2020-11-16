@@ -28,7 +28,7 @@ func readColourView() (*ColoursView, error) {
 
 var lookup *ColoursView
 
-func LookupLDrawColour(bricklink int) *ColourView {
+func LookupColourBricklink(bricklink int) *ColourView {
 	if lookup == nil {
 		v, err := readColourView()
 		if err != nil {
@@ -38,6 +38,20 @@ func LookupLDrawColour(bricklink int) *ColourView {
 	}
 
 	return lookup.ByBrickLink[BrickLinkColour(bricklink)]
+}
+
+func LookupColourLDraw(ldraw LDrawColour) (*ColourView, bool) {
+	if lookup == nil {
+		v, err := readColourView()
+		if err != nil {
+			panic(err)
+		}
+		lookup = v
+	}
+
+	colour, found := lookup.ByLDraw[ldraw]
+
+	return colour, found
 }
 
 var colourJson = `

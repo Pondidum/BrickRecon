@@ -11,6 +11,12 @@ func newPartView(es eventstore.EventStore, key lego.PartKey, quantity int) *Proj
 	part := lego.BlankPart()
 	es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
 
+	hex := lego.HexColour("")
+
+	if colour, found := lego.LookupColourLDraw(part.Colour); found {
+		hex = colour.Hex
+	}
+
 	return &ProjectPartView{
 		Key:        key,
 		ID:         part.Number,
@@ -19,7 +25,7 @@ func newPartView(es eventstore.EventStore, key lego.PartKey, quantity int) *Proj
 		ColourName: part.ColourName,
 		ImagePath:  part.ImagePath,
 		Quantity:   quantity,
-		// ColourHex:  lego.GetColourHex(),
+		ColourHex:  hex,
 	}
 
 }

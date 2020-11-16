@@ -65,13 +65,13 @@ func (b *AppBuilder) upgradeEvent(ctx context.Context, e eventstore.Event) event
 	case *lego.ProjectInventoryRemoved:
 		if event.EventVersion == 0 {
 
-			event.Part = lego.CreatePartKey(event.PartID, lego.LookupLDrawColour(int(event.ColourID)).LDrawID)
+			event.Part = lego.CreatePartKey(event.PartID, lego.LookupColourBricklink(int(event.ColourID)).LDrawID)
 			event.EventVersion = 1
 		}
 
 	case *lego.ProjectInventoryAdded:
 		if event.EventVersion == 0 {
-			event.Part = lego.CreatePartKey(event.PartID, lego.LookupLDrawColour(int(event.ColourID)).LDrawID)
+			event.Part = lego.CreatePartKey(event.PartID, lego.LookupColourBricklink(int(event.ColourID)).LDrawID)
 			event.EventVersion = 1
 		}
 
@@ -93,7 +93,7 @@ func (b *AppBuilder) upgradeEvent(ctx context.Context, e eventstore.Event) event
 
 			for oldKey, quantity := range event.Removals {
 				id, oldColour := lego.ParsePartKey(oldKey)
-				newKey := lego.CreatePartKey(id, lego.LookupLDrawColour(int(oldColour)).LDrawID)
+				newKey := lego.CreatePartKey(id, lego.LookupColourBricklink(int(oldColour)).LDrawID)
 				replacement[newKey] = quantity
 			}
 

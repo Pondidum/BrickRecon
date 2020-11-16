@@ -31,7 +31,10 @@ func NewProject(name ProjectName, parts []*Part) *Project {
 
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: eventstore.NewAggregateID(), Name: name})
-	project.Apply(&ProjectPartsAdded{Parts: parts})
+	project.Apply(&ProjectPartsAdded{
+		EventMeta: eventstore.EventMeta{EventVersion: 1},
+		Parts:     parts,
+	})
 
 	return project
 }
@@ -143,6 +146,7 @@ func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
 	}
 
 	event := &PartsChanged{
+		EventMeta: eventstore.EventMeta{EventVersion: 1},
 		Additions: []*Part{},
 		Removals:  map[PartKey]int{},
 	}
