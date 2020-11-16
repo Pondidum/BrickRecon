@@ -22,12 +22,12 @@
   <tbody class="reactable-data" id="parts">
 
     {{ range .Project.Parts }}
-    <tr data-part-name="{{ .Name }}">
+    <tr data-part-name="{{ .Name }}" data-part-key="{{ .Key }}">
       <td width="66">
         <img
           loading="{{ if _user.Authenticated }}eager{{else}}lazy{{end}}"
           src="/static/img/parts/{{ .ImagePath }}"
-          alt="part {{ .ID }}"
+          alt="{{ .Key }}"
           width="66px"
         >
       </td>
