@@ -1,7 +1,6 @@
 package app
 
 import (
-	"brickrecon/background"
 	"brickrecon/distributor"
 	"brickrecon/eventstore"
 	"brickrecon/eventstore/backend/fs"
@@ -9,7 +8,6 @@ import (
 	"brickrecon/lego/projections/all_kits"
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/lego/projections/allparts"
-	"brickrecon/lego/projections/colours"
 	"brickrecon/preen"
 	"context"
 	"net/http"
@@ -46,71 +44,17 @@ func (b *AppBuilder) CreateEventStore(backend eventstore.Backend) eventstore.Eve
 	es.RegisterEvents(b.ctx, lego.ProjectEvents)
 	es.RegisterEvents(b.ctx, lego.KitEvents)
 	es.RegisterEvents(b.ctx, lego.PartEvents)
-	es.RegisterEvents(b.ctx, background.ImageCacheEvents)
 
 	es.RegisterProjection(b.ctx, all_projects.NewProjectsProjection(es))
 	es.RegisterProjection(b.ctx, &all_kits.KitsProjection{})
-	es.RegisterProjection(b.ctx, &colours.ColoursProjection{})
 	es.RegisterProjection(b.ctx, &allparts.AllPartsProjection{})
 
-	es.RegisterEventMiddleware(b.ctx, b.upgradeEvent)
-
 	return es
-}
-
-func (b *AppBuilder) upgradeEvent(ctx context.Context, e eventstore.Event) eventstore.Event {
-
-	switch event := e.(type) {
-
-	case *lego.ProjectInventoryRemoved:
-		if event.EventVersion == 0 {
-
-			event.Part = lego.CreatePartKey(event.PartID, lego.LookupColourBricklink(int(event.ColourID)).LDrawID)
-			event.EventVersion = 1
-		}
-
-	case *lego.ProjectInventoryAdded:
-		if event.EventVersion == 0 {
-			event.Part = lego.CreatePartKey(event.PartID, lego.LookupColourBricklink(int(event.ColourID)).LDrawID)
-			event.EventVersion = 1
-		}
-
-	case *lego.ProjectPartsAdded:
-		if event.EventVersion == 0 {
-			for _, part := range event.Parts {
-				part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.Aliases.LDrawID)
-			}
-			event.EventVersion = 1
-		}
-
-	case *lego.PartsChanged:
-		if event.EventVersion == 0 {
-			for _, part := range event.Additions {
-				part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.Aliases.LDrawID)
-			}
-
-			replacement := map[lego.PartKey]int{}
-
-			for oldKey, quantity := range event.Removals {
-				id, oldColour := lego.ParsePartKey(oldKey)
-				newKey := lego.CreatePartKey(id, lego.LookupColourBricklink(int(oldColour)).LDrawID)
-				replacement[newKey] = quantity
-			}
-
-			event.Removals = replacement
-			event.EventVersion = 1
-		}
-	}
-
-	return e
 }
 
 func (b *AppBuilder) CreateBus(es eventstore.EventStore) *distributor.Distributor {
 
 	bus := distributor.NewDistributor()
-
-	bus.RegisterFor(&background.PartsAddedMessage{}, background.ImageCacheHandler(es))
-
 	return bus
 }
 

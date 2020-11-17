@@ -14,10 +14,7 @@ func (p *AllPartsProjection) Name() string {
 }
 
 func (p *AllPartsProjection) CreateState() interface{} {
-	return &AllPartsView{
-		KnownParts: map[lego.PartKey]bool{},
-		HasImage:   map[lego.PartKey]bool{},
-	}
+	return NewAllPartsView()
 }
 
 func (p *AllPartsProjection) Project(state interface{}, event eventstore.Event) interface{} {

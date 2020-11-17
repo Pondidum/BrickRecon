@@ -13,9 +13,6 @@ type Project struct {
 
 	Name  ProjectName
 	parts *ProjectPartList
-
-	exportedRecently bool
-	lastExportMarkup string
 }
 
 func BlankProject() *Project {
@@ -29,11 +26,15 @@ func BlankProject() *Project {
 
 func NewProject(name ProjectName, parts []*Part) *Project {
 
+	keys := make(map[PartKey]int, len(parts))
+	for _, p := range parts {
+		keys[p.Key] = p.Quantity
+	}
+
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: eventstore.NewAggregateID(), Name: name})
 	project.Apply(&ProjectPartsAdded{
-		EventMeta: eventstore.EventMeta{EventVersion: 1},
-		Parts:     parts,
+		Parts: keys,
 	})
 
 	return project
@@ -53,12 +54,9 @@ func (prj *Project) AddInventory(part PartKey, quantity int) error {
 		return fmt.Errorf("No part with id %s found", part)
 	}
 
-	partID, colourID := ParsePartKey(part)
 	prj.Apply(&ProjectInventoryAdded{
 		EventMeta: eventstore.EventMeta{EventVersion: 1},
 		Part:      part,
-		PartID:    partID,
-		ColourID:  colourID,
 		Quantity:  quantity,
 	})
 
@@ -75,12 +73,9 @@ func (prj *Project) RemoveInventory(part PartKey, quantity int) error {
 		return fmt.Errorf("No part with id %s found", part)
 	}
 
-	partID, colourID := ParsePartKey(part)
 	prj.Apply(&ProjectInventoryRemoved{
 		EventMeta: eventstore.EventMeta{EventVersion: 1},
 		Part:      part,
-		PartID:    partID,
-		ColourID:  colourID,
 		Quantity:  quantity,
 	})
 
@@ -104,8 +99,6 @@ func (prj *Project) UpdateInventory(inventoryState map[PartKey]int) error {
 			prj.Apply(&ProjectInventoryRemoved{
 				EventMeta: eventstore.EventMeta{EventVersion: 1},
 				Part:      key,
-				PartID:    partID,
-				ColourID:  colourID,
 				Quantity:  diff * -1,
 			})
 		}
@@ -114,8 +107,6 @@ func (prj *Project) UpdateInventory(inventoryState map[PartKey]int) error {
 			prj.Apply(&ProjectInventoryAdded{
 				EventMeta: eventstore.EventMeta{EventVersion: 1},
 				Part:      key,
-				PartID:    partID,
-				ColourID:  colourID,
 				Quantity:  diff,
 			})
 		}
@@ -147,7 +138,7 @@ func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
 
 	event := &PartsChanged{
 		EventMeta: eventstore.EventMeta{EventVersion: 1},
-		Additions: []*Part{},
+		Additions: map[PartKey]int{},
 		Removals:  map[PartKey]int{},
 	}
 
@@ -157,9 +148,7 @@ func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
 		}
 
 		if change > 0 {
-			part, _ := other.FindPart(key)
-			part.Quantity = change
-			event.Additions = append(event.Additions, part.Part)
+			event.Additions[key] = change
 		}
 	}
 
@@ -168,7 +157,7 @@ func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
 	return changes
 }
 
-func (prj *Project) Parts() []*ProjectPart {
+func (prj *Project) Parts() map[PartKey]*ProjectPart {
 	return prj.parts.All()
 }
 
@@ -181,42 +170,7 @@ func (prj *Project) Diff(parts []*Part) map[PartKey]int {
 	return prj.parts.Diff(other)
 }
 
-func (prj *Project) ExportWantedList(exporter Exporter) (string, error) {
-
-	if prj.exportedRecently {
-		return prj.lastExportMarkup, nil
-	}
-
-	wanted := []*ProjectPart{}
-
-	for _, part := range prj.parts.parts {
-		if part.IsFulfilled() == false {
-			wanted = append(wanted, part)
-		}
-	}
-
-	markup, err := exporter.Export(wanted)
-	if err != nil {
-		return "", err
-	}
-
-	prj.Apply(&WantedListExported{
-		Type:   exporter.GetExporterType(),
-		Markup: markup,
-	})
-
-	return markup, nil
-}
-
-type Exporter interface {
-	GetExporterType() string
-
-	Export(parts []*ProjectPart) (string, error)
-}
-
 func (prj *Project) on(event eventstore.Event) {
-
-	prj.exportedRecently = false
 
 	switch e := event.(type) {
 
@@ -225,8 +179,8 @@ func (prj *Project) on(event eventstore.Event) {
 		prj.Name = e.Name
 
 	case *ProjectPartsAdded:
-		for _, p := range e.Parts {
-			prj.parts.Add(p)
+		for key, quantity := range e.Parts {
+			prj.parts.AddPart(key, quantity)
 		}
 
 	case *ProjectInventoryAdded:
@@ -246,14 +200,10 @@ func (prj *Project) on(event eventstore.Event) {
 				prj.parts.Remove(key, amount)
 			}
 
-			for _, part := range e.Additions {
-				prj.parts.Add(part)
+			for key, amount := range e.Additions {
+				prj.parts.AddPart(key, amount)
 			}
 		}
-
-	case *WantedListExported:
-		prj.exportedRecently = true
-		prj.lastExportMarkup = e.Markup
 
 	}
 

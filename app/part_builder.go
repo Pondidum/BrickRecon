@@ -20,7 +20,7 @@ type PartBuilder struct {
 
 func NewPartBuilder(ctx context.Context, store eventstore.EventStore) (*PartBuilder, error) {
 
-	var view allparts.AllPartsView
+	view := allparts.NewAllPartsView()
 	if err := store.ReadView(ctx, allparts.ProjectionName, &view); err != nil {
 		return nil, err
 	}

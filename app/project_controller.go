@@ -5,7 +5,6 @@ import (
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_projects"
 	"brickrecon/preen"
-	"brickrecon/stud_io"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -52,7 +51,6 @@ func (c ProjectController) PostActions() preen.PostActionMap {
 		"increase":         c.increaseQuantity,
 		"decrease":         c.decreaseQuantity,
 		"applykit":         c.applyKit,
-		"exportWanted":     c.exportWanted,
 		"updateQuantities": c.updateQuantities,
 	}
 }
@@ -177,27 +175,6 @@ func (c ProjectController) applyKit(pc *preen.PreenContext, req *http.Request) i
 		Project: projectWithKit(c.Store, pc, req),
 	}
 
-}
-
-func (c ProjectController) exportWanted(pc *preen.PreenContext, req *http.Request) interface{} {
-	ctx := req.Context()
-
-	project, err := c.projectAggregate(pc)
-	if err != nil {
-		return pc.Error(err)
-	}
-
-	exporter := &stud_io.WantedListXmlExporter{}
-
-	if _, err := project.ExportWantedList(exporter); err != nil {
-		return pc.Error(err)
-	}
-
-	if err := c.Store.Save(ctx, project); err != nil {
-		return pc.Error(err)
-	}
-
-	return preen.ControllerRedirect("project_export", "name", string(project.Name))
 }
 
 func (c ProjectController) projectAggregate(pc *preen.PreenContext) (*lego.Project, error) {

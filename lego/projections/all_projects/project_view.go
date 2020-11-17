@@ -21,8 +21,6 @@ type ProjectView struct {
 
 	Stats *ProjectStatsView
 
-	BrickLinkXml string
-
 	Events []*EventDescription
 }
 
@@ -43,11 +41,11 @@ func newProjectView(id eventstore.AggregateID, name lego.ProjectName) *ProjectVi
 	}
 }
 
-func (project *ProjectView) addParts(load PartLoader, parts []*lego.Part) {
-	for _, part := range parts {
-		view := newPartView(load, part.Key, part.Quantity)
+func (project *ProjectView) addParts(load PartLoader, parts map[lego.PartKey]int) {
+	for key, quantity := range parts {
+		view := newPartView(load, key, quantity)
 		project.Parts = append(project.Parts, view)
-		project.Colours = appendNewColours(project.Colours, part)
+		project.Colours = appendNewColours(project.Colours, view)
 	}
 }
 
@@ -78,18 +76,18 @@ func (project *ProjectView) calculateStats() {
 	project.Stats.PercentComplete = int(float64(totalInventory) / float64(totalQuantity) * 100)
 }
 
-func appendNewColours(unique []*ColourView, part *lego.Part) []*ColourView {
+func appendNewColours(unique []*ColourView, part *ProjectPartView) []*ColourView {
 
 	for _, view := range unique {
-		if view.ID == part.Colour.Aliases.LDrawID {
+		if view.ID == part.ColourID {
 			return unique
 		}
 	}
 
 	unique = append(unique, &ColourView{
-		ID:   part.Colour.Aliases.LDrawID,
-		Name: part.Colour.Name,
-		Hex:  part.Colour.Hex,
+		ID:   part.ColourID,
+		Name: part.ColourName,
+		Hex:  part.ColourHex,
 	})
 
 	sort.Slice(unique, func(i, j int) bool {

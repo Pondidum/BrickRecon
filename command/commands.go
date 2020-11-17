@@ -32,9 +32,6 @@ func Commands(ui cli.Ui) map[string]cli.CommandFactory {
 		"kit import": func() (cli.Command, error) {
 			return &KitImportCommand{Meta: meta}, nil
 		},
-		"imagecache run": func() (cli.Command, error) {
-			return &ImageCacheRunCommand{Meta: meta}, nil
-		},
 		"eventstore view rebuild": func() (cli.Command, error) {
 			return &EventStoreViewsRebuildCommand{Meta: meta}, nil
 		},

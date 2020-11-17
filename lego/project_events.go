@@ -14,15 +14,13 @@ type ProjectCreated struct {
 type ProjectPartsAdded struct {
 	eventstore.EventMeta
 
-	Parts []*Part
+	Parts map[PartKey]int
 }
 
 type ProjectInventoryAdded struct {
 	eventstore.EventMeta
 
 	Part     PartKey
-	PartID   LDrawPart
-	ColourID LDrawColour
 	Quantity int
 }
 
@@ -30,8 +28,6 @@ type ProjectInventoryRemoved struct {
 	eventstore.EventMeta
 
 	Part     PartKey
-	PartID   LDrawPart
-	ColourID LDrawColour
 	Quantity int
 }
 
@@ -43,17 +39,10 @@ type KitAddedToProject struct {
 	Parts     map[PartKey]int
 }
 
-type WantedListExported struct {
-	eventstore.EventMeta
-
-	Type   string
-	Markup string
-}
-
 type PartsChanged struct {
 	eventstore.EventMeta
 
-	Additions []*Part
+	Additions map[PartKey]int
 	Removals  map[PartKey]int
 }
 
@@ -63,6 +52,5 @@ var ProjectEvents = []eventstore.Initialiser{
 	func() interface{} { return &ProjectInventoryAdded{} },
 	func() interface{} { return &ProjectInventoryRemoved{} },
 	func() interface{} { return &KitAddedToProject{} },
-	func() interface{} { return &WantedListExported{} },
 	func() interface{} { return &PartsChanged{} },
 }

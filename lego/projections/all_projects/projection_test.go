@@ -53,12 +53,12 @@ func TestAddingProjectParts(t *testing.T) {
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
-	projectPart := partFromKey(lego.PartKey("567|72"), 7)
-	projectPart.Colour.Aliases.BrickLinkID = lego.BrickLinkColour(85)
 
 	view := apply(
 		createProject(projectID, projectName),
-		createProjectParts(projectID, projectPart),
+		createProjectParts(projectID, map[lego.PartKey]int{
+			lego.PartKey("567|72"): 7,
+		}),
 	)
 
 	assert.Contains(t, view.Projects, projectName)
@@ -69,7 +69,6 @@ func TestAddingProjectParts(t *testing.T) {
 			ID:        lego.LDrawPart("567"),
 			ColourID:  lego.LDrawColour(72),
 			ColourHex: "595D60",
-			ImagePath: "567-85.png",
 			Quantity:  7,
 		},
 	}
@@ -81,13 +80,14 @@ func TestAddingMultipleProjectParts(t *testing.T) {
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
-	partOne := partFromKey(lego.PartKey("123|85"), 1)
-	partTwo := partFromKey(lego.PartKey("456|10"), 2)
-	partThree := partFromKey(lego.PartKey("789|85"), 3)
 
 	view := apply(
 		createProject(projectID, projectName),
-		createProjectParts(projectID, partOne, partTwo, partThree),
+		createProjectParts(projectID, map[lego.PartKey]int{
+			lego.PartKey("123|85"): 1,
+			lego.PartKey("456|10"): 2,
+			lego.PartKey("789|85"): 3,
+		}),
 	)
 
 	expectedColours := []*ColourView{
@@ -105,11 +105,12 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
-	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
 	view := apply(
 		createProject(projectID, projectName),
-		createProjectParts(projectID, projectPart),
+		createProjectParts(projectID, map[lego.PartKey]int{
+			lego.PartKey("567|85"): 7,
+		}),
 		createKit(kitNumber, kitPart),
 	)
 
@@ -127,12 +128,13 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
-	projectPart := partFromKey(lego.PartKey("567|85"), 7)
 
 	view := apply(
 		createKit(kitNumber, kitPart),
 		createProject(projectID, projectName),
-		createProjectParts(projectID, projectPart),
+		createProjectParts(projectID, map[lego.PartKey]int{
+			lego.PartKey("567|85"): 7,
+		}),
 	)
 
 	assert.Contains(t, view.Projects, projectName)
@@ -148,11 +150,9 @@ func apply(events ...eventstore.Event) *AllProjectsView {
 	p.partLoader = func(k lego.PartKey) *lego.PartAggregate {
 		part := lego.BlankPart()
 
-		if k == lego.PartKey("567|72") {
-			part.Number = lego.LDrawPart("567")
-			part.Colour = lego.LDrawColour(72)
-			part.ImagePath = "567-85.png"
-		}
+		n, c := lego.ParsePartKey(k)
+		part.Number = n
+		part.Colour = c
 
 		return part
 	}
@@ -178,11 +178,10 @@ func createProject(projectID eventstore.AggregateID, projectName lego.ProjectNam
 	return event
 }
 
-func createProjectParts(projectID eventstore.AggregateID, parts ...*lego.Part) *lego.ProjectPartsAdded {
+func createProjectParts(projectID eventstore.AggregateID, parts map[lego.PartKey]int) *lego.ProjectPartsAdded {
 	event := &lego.ProjectPartsAdded{
 		EventMeta: eventstore.EventMeta{AggregateRootID: projectID},
-
-		Parts: parts,
+		Parts:     parts,
 	}
 
 	return event

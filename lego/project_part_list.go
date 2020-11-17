@@ -7,8 +7,7 @@ type ProjectPartList struct {
 }
 
 type ProjectPart struct {
-	*Part
-
+	Quantity  int
 	Inventory int
 }
 
@@ -32,26 +31,23 @@ func NewPartsList() *ProjectPartList {
 	return &list
 }
 
-func (l *ProjectPartList) All() []*ProjectPart {
-	parts := []*ProjectPart{}
-
-	for _, p := range l.parts {
-		parts = append(parts, p)
-	}
-
-	return parts
+func (l *ProjectPartList) All() map[PartKey]*ProjectPart {
+	return l.parts
 }
 
 func (m *ProjectPartList) Add(part *Part) {
+	m.AddPart(part.Key, part.Quantity)
+}
 
-	existing, found := m.FindPart(part.Key)
+func (m *ProjectPartList) AddPart(key PartKey, quantity int) {
+	existing, found := m.FindPart(key)
 
 	if found {
-		existing.Quantity += part.Quantity
+		existing.Quantity += quantity
 		return
 	}
 
-	m.parts[part.Key] = &ProjectPart{Part: part, Inventory: 0}
+	m.parts[key] = &ProjectPart{Quantity: quantity, Inventory: 0}
 }
 
 func (m *ProjectPartList) Remove(key PartKey, quantity int) {

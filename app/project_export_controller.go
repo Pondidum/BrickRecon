@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/bricklink"
 	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
@@ -31,11 +32,39 @@ func (c ProjectExportController) View() string {
 
 func (c ProjectExportController) Get(pc *preen.PreenContext, req *http.Request) interface{} {
 
+	ctx := req.Context()
+
 	projectName := lego.ProjectName(pc.RouteValue("name"))
-	project, _ := c.Store.ReadProjectView(req.Context(), projectName)
+
+	project, err := c.Store.ReadProject(ctx, projectName)
+	if err != nil {
+		return pc.Error(err)
+	}
+
+	// move this to a projection later
+	wantedParts := []*bricklink.WantedListPart{}
+	for key, amounts := range project.Parts() {
+		part, err := c.Store.ReadPart(ctx, key)
+		if err != nil {
+			return pc.Error(err)
+		}
+
+		wantedParts = append(wantedParts, &bricklink.WantedListPart{
+			ID:        part.BrickLink.PartNumber,
+			Colour:    part.BrickLink.Colour,
+			Quantity:  amounts.Quantity,
+			Inventory: amounts.Inventory,
+		})
+	}
+
+	exporter := &bricklink.WantedListXmlExporter{}
+	markup, err := exporter.Export(wantedParts)
+	if err != nil {
+		return pc.Error(err)
+	}
 
 	return ProjectExportModel{
-		WantedList:  project.BrickLinkXml,
+		WantedList:  markup,
 		ProjectName: projectName,
 	}
 

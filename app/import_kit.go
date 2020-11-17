@@ -1,7 +1,6 @@
 package app
 
 import (
-	"brickrecon/background"
 	"brickrecon/brickowl"
 	"brickrecon/lego"
 	"context"
@@ -31,6 +30,19 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 	beeline.AddField(ctx, "kit_name", name)
 	beeline.AddField(ctx, "parts_count", len(parts))
 
+	builder, err := NewPartBuilder(ctx, store.EventStore)
+	if err != nil {
+		beeline.AddField(ctx, "builder_error", err)
+		return nil, err
+	}
+	for _, part := range parts {
+		err := builder.StorePart(ctx, part)
+
+		if err != nil {
+			beeline.AddField(ctx, string(part.Key)+"_error", err)
+		}
+	}
+
 	kit := lego.ImportKit(kitNumber, name, parts)
 
 	if err := store.Save(ctx, kit); err != nil {
@@ -38,9 +50,5 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 		return nil, err
 	}
 
-	wait := store.SendMessage(ctx, &background.PartsAddedMessage{
-		Parts: parts,
-	})
-
-	return wait, nil
+	return func() {}, nil
 }

@@ -33,9 +33,7 @@
       <form method="POST">
         <a class="btn btn-sm btn-outline-secondary" href="{{ addquery _page.URL "edit" "true" }}" role="button">Edit</a>
 
-        <button type="submit" class="btn btn-sm btn-outline-secondary" name="action" value="exportWanted">
-          Export
-        </button>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ linkto "project_export" "name" .Project.Name }}" role="button">Export</a>
       </form>
     </div>
 

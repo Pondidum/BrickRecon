@@ -1,7 +1,6 @@
 package app
 
 import (
-	"brickrecon/background"
 	"brickrecon/lego"
 	"brickrecon/stud_io"
 	"context"
@@ -42,9 +41,5 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 		return nil, err
 	}
 
-	wait := store.SendMessage(ctx, &background.PartsAddedMessage{
-		Parts: parts,
-	})
-
-	return wait, nil
+	return func() {}, nil
 }

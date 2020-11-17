@@ -96,10 +96,6 @@ func (p *projectsProjection) Project(state interface{}, event eventstore.Event) 
 			calculateKitFulfillment(project, kit)
 		}
 
-	case *lego.WantedListExported:
-		project.BrickLinkXml = e.Markup
-
-		project.audit(e, "WantedList XML generated")
 	}
 
 	if project != nil {
