@@ -24,17 +24,11 @@ func BlankProject() *Project {
 	return &project
 }
 
-func NewProject(name ProjectName, parts []*Part) *Project {
-
-	keys := make(map[PartKey]int, len(parts))
-	for _, p := range parts {
-		keys[p.Key] = p.Quantity
-	}
-
+func NewProject(name ProjectName, parts map[PartKey]int) *Project {
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: eventstore.NewAggregateID(), Name: name})
 	project.Apply(&ProjectPartsAdded{
-		Parts: keys,
+		Parts: parts,
 	})
 
 	return project

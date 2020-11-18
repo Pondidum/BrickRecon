@@ -12,8 +12,8 @@ func TestAddingInventory(t *testing.T) {
 	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Quantity: 5},
+	project := NewProject("Test Project", map[PartKey]int{
+		key: 5,
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -46,8 +46,8 @@ func TestRemovingInventory(t *testing.T) {
 	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Quantity: 5},
+	project := NewProject("Test Project", map[PartKey]int{
+		key: 5,
 	})
 
 	project.AddInventory(key, 4)
@@ -81,8 +81,8 @@ func TestUpdatingInventory(t *testing.T) {
 	colourID := LDrawColour(5678)
 	key := CreatePartKey(partID, colourID)
 
-	project := NewProject("Test Project", []*Part{
-		{Key: key, Name: "Test Part", Quantity: 5},
+	project := NewProject("Test Project", map[PartKey]int{
+		key: 5,
 	})
 
 	thePart, _ := project.FindPart(key)
@@ -108,10 +108,10 @@ func TestUpdatingInventory(t *testing.T) {
 }
 
 func TestChangingParts(t *testing.T) {
-	parts := []*Part{
-		createPart("123|10", 5),
-		createPart("456|15", 5),
-		createPart("789|10", 5),
+	parts := map[PartKey]int{
+		PartKey("123|10"): 5,
+		PartKey("456|15"): 5,
+		PartKey("789|10"): 5,
 	}
 
 	replacementParts := map[PartKey]int{

@@ -26,7 +26,10 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err
 	}
+
+	keys := map[lego.PartKey]int{}
 	for _, part := range parts {
+		keys[part.Key] = part.Quantity
 		err := builder.FromWantedList(ctx, part)
 
 		if err != nil {
@@ -34,7 +37,7 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 		}
 	}
 
-	project := lego.NewProject(projectName, parts)
+	project := lego.NewProject(projectName, keys)
 
 	if err := store.Save(ctx, project); err != nil {
 		beeline.AddField(ctx, "save_project_error", err)
