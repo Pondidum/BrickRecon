@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/actions"
 	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
@@ -32,7 +33,7 @@ func (c KitImportController) Post(pc *preen.PreenContext, req *http.Request) int
 	ctx := req.Context()
 	kitNumber := req.FormValue("kitNumber")
 
-	_, err := ImportKit(ctx, c.Store, lego.KitNumber(kitNumber))
+	_, err := actions.ImportKit(ctx, c.Store.EventStore, lego.KitNumber(kitNumber))
 
 	if err != nil {
 		return pc.Error(err)
