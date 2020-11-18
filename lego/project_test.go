@@ -114,9 +114,9 @@ func TestChangingParts(t *testing.T) {
 		createPart("789|10", 5),
 	}
 
-	replacementParts := []*Part{
-		createPart("123|10", 10),
-		createPart("456|15", 5),
+	replacementParts := map[PartKey]int{
+		PartKey("123|10"): 10,
+		PartKey("456|15"): 5,
 	}
 
 	project := NewProject("Test Project", parts)

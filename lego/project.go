@@ -124,13 +124,9 @@ func (prj *Project) AddKitContents(number KitNumber, name KitName, parts map[Par
 	prj.Apply((&KitAddedToProject{KitNumber: number, KitName: name, Parts: parts}))
 }
 
-func (prj *Project) ReplaceParts(parts []*Part) map[PartKey]int {
-	other := NewPartsList()
-	for _, part := range parts {
-		other.Add(part)
-	}
+func (prj *Project) ReplaceParts(parts map[PartKey]int) map[PartKey]int {
 
-	changes := prj.parts.Diff(other)
+	changes := prj.parts.Diff(parts)
 
 	if len(changes) == 0 {
 		return changes
@@ -161,13 +157,8 @@ func (prj *Project) Parts() map[PartKey]*ProjectPart {
 	return prj.parts.All()
 }
 
-func (prj *Project) Diff(parts []*Part) map[PartKey]int {
-	other := NewPartsList()
-	for _, part := range parts {
-		other.Add(part)
-	}
-
-	return prj.parts.Diff(other)
+func (prj *Project) Diff(parts map[PartKey]int) map[PartKey]int {
+	return prj.parts.Diff(parts)
 }
 
 func (prj *Project) on(event eventstore.Event) {
@@ -180,7 +171,7 @@ func (prj *Project) on(event eventstore.Event) {
 
 	case *ProjectPartsAdded:
 		for key, quantity := range e.Parts {
-			prj.parts.AddPart(key, quantity)
+			prj.parts.Add(key, quantity)
 		}
 
 	case *ProjectInventoryAdded:
@@ -201,7 +192,7 @@ func (prj *Project) on(event eventstore.Event) {
 			}
 
 			for key, amount := range e.Additions {
-				prj.parts.AddPart(key, amount)
+				prj.parts.Add(key, amount)
 			}
 		}
 

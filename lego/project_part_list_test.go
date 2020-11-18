@@ -16,28 +16,16 @@ func TestPartListAdding(t *testing.T) {
 	assert.Len(t, model.parts, 0)
 
 	// add a part
-	model.Add(&Part{
-		Key: CreatePartKey(partID, black),
-
-		Quantity: 1,
-	})
+	model.Add(CreatePartKey(partID, black), 1)
 	assert.Len(t, model.parts, 1)
 
 	// duplicate part should increase quantity
-	model.Add(&Part{
-		Key: CreatePartKey(partID, black),
-
-		Quantity: 17,
-	})
+	model.Add(CreatePartKey(partID, black), 17)
 	assert.Len(t, model.parts, 1)
 	assert.Equal(t, 18, model.parts[CreatePartKey(partID, black)].Quantity)
 
 	// duplicate part with differnt colour
-	model.Add(&Part{
-		Key: CreatePartKey(partID, red),
-
-		Quantity: 1,
-	})
+	model.Add(CreatePartKey(partID, red), 1)
 	assert.Len(t, model.parts, 2)
 	assert.Equal(t, 18, model.parts[CreatePartKey(partID, black)].Quantity)
 	assert.Equal(t, 1, model.parts[CreatePartKey(partID, red)].Quantity)
@@ -51,12 +39,11 @@ func TestDiffingPartLists(t *testing.T) {
 			"123|10": 5,
 		})
 
-		updated := partList(map[PartKey]int{
+		updated := map[PartKey]int{
 			"123|10": 5,
-		})
+		}
 
 		assert.Empty(t, start.Diff(updated))
-		assert.Empty(t, updated.Diff(start))
 	})
 
 	t.Run("Part Quantity Increase", func(t *testing.T) {
@@ -64,9 +51,9 @@ func TestDiffingPartLists(t *testing.T) {
 			"123|10": 5,
 		})
 
-		updated := partList(map[PartKey]int{
+		updated := map[PartKey]int{
 			"123|10": 8,
-		})
+		}
 
 		assert.Equal(t, map[PartKey]int{
 			PartKey("123|10"): 3,
@@ -78,9 +65,9 @@ func TestDiffingPartLists(t *testing.T) {
 			"123|10": 5,
 		})
 
-		updated := partList(map[PartKey]int{
+		updated := map[PartKey]int{
 			"123|10": 1,
-		})
+		}
 
 		assert.Equal(t, map[PartKey]int{
 			PartKey("123|10"): -4,
@@ -92,7 +79,7 @@ func TestDiffingPartLists(t *testing.T) {
 			"123|10": 5,
 		})
 
-		updated := partList(map[PartKey]int{})
+		updated := map[PartKey]int{}
 
 		assert.Equal(t, map[PartKey]int{
 			PartKey("123|10"): -5,
@@ -104,10 +91,10 @@ func TestDiffingPartLists(t *testing.T) {
 			"123|10": 5,
 		})
 
-		updated := partList(map[PartKey]int{
+		updated := map[PartKey]int{
 			"123|10": 5,
 			"456|14": 2,
-		})
+		}
 
 		assert.Equal(t, map[PartKey]int{
 			PartKey("456|14"): 2,
@@ -121,10 +108,7 @@ func partList(parts map[PartKey]int) *ProjectPartList {
 	list := NewPartsList()
 
 	for key, quantity := range parts {
-		list.Add(&Part{
-			Key:      key,
-			Quantity: quantity,
-		})
+		list.Add(key, quantity)
 	}
 
 	return list

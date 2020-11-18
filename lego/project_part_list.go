@@ -35,11 +35,7 @@ func (l *ProjectPartList) All() map[PartKey]*ProjectPart {
 	return l.parts
 }
 
-func (m *ProjectPartList) Add(part *Part) {
-	m.AddPart(part.Key, part.Quantity)
-}
-
-func (m *ProjectPartList) AddPart(key PartKey, quantity int) {
+func (m *ProjectPartList) Add(key PartKey, quantity int) {
 	existing, found := m.FindPart(key)
 
 	if found {
@@ -85,26 +81,26 @@ func (m *ProjectPartList) FindPart(partKey PartKey) (*ProjectPart, bool) {
 	return part, found
 }
 
-func (m *ProjectPartList) Diff(other *ProjectPartList) map[PartKey]int {
+func (m *ProjectPartList) Diff(other map[PartKey]int) map[PartKey]int {
 
 	deltas := map[PartKey]int{}
 
-	for key, op := range other.parts {
+	for key, otherQuantity := range other {
 		if p, found := m.parts[key]; found {
 
-			quantityChange := op.Quantity - p.Quantity
+			quantityChange := otherQuantity - p.Quantity
 
 			if quantityChange != 0 {
 				deltas[key] = quantityChange
 			}
 		} else {
-			deltas[key] = op.Quantity
+			deltas[key] = otherQuantity
 		}
 	}
 
 	for key, p := range m.parts {
 
-		if _, found := other.parts[key]; !found {
+		if _, found := other[key]; !found {
 			deltas[key] = p.Quantity * -1
 		}
 	}

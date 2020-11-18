@@ -4,6 +4,7 @@ import (
 	"brickrecon/app"
 	"brickrecon/lego"
 	"brickrecon/stud_io"
+	"context"
 	"fmt"
 	"os"
 
@@ -61,19 +62,7 @@ func (c *ProjectReplaceCommand) Run(args []string) int {
 	projectName := lego.ProjectName(flags.Arg(0))
 	filepath := flags.Arg(1)
 
-	partsFile, err := os.Open(filepath)
-	if err != nil {
-		c.UI.Error(err.Error())
-		return 1
-	}
-	defer partsFile.Close()
-
-	parts, err := stud_io.ReadPartsList(partsFile)
-	if err != nil {
-		beeline.AddField(ctx, "read_parts_error", err)
-		c.UI.Error(err.Error())
-		return 1
-	}
+	parts, err := c.readPartsFile(ctx, filepath)
 
 	store, err := app.NewAppBuilder(ctx).CreateAppStore()
 	if err != nil {
@@ -107,6 +96,28 @@ func (c *ProjectReplaceCommand) Run(args []string) int {
 	beeline.AddField(ctx, "complete", true)
 
 	return 0
+}
+
+func (c *ProjectReplaceCommand) readPartsFile(ctx context.Context, filepath string) (map[lego.PartKey]int, error) {
+
+	partsFile, err := os.Open(filepath)
+	if err != nil {
+		return nil, err
+	}
+	defer partsFile.Close()
+
+	parts, err := stud_io.ReadPartsList(partsFile)
+	if err != nil {
+		beeline.AddField(ctx, "read_parts_error", err)
+		return nil, err
+	}
+
+	keys := map[lego.PartKey]int{}
+	for _, part := range parts {
+		keys[part.Key] = part.Quantity
+	}
+
+	return keys, nil
 }
 
 func (c *ProjectReplaceCommand) outputTable(diff map[lego.PartKey]int) {
