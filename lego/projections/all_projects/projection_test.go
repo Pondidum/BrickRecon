@@ -153,8 +153,8 @@ func apply(events ...eventstore.Event) *AllProjectsView {
 		part := lego.BlankPart()
 
 		n, c := lego.ParsePartKey(k)
-		part.Number = n
-		part.Colour = c
+		part.PartID = n
+		part.ColourID = c
 
 		return part
 	}

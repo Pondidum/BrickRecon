@@ -45,7 +45,7 @@ func sanitiseKitName(name string) lego.KitName {
 	return lego.KitName(name)
 }
 
-func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*lego.Part, error) {
+func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, error) {
 
 	setBoid, err := bo.getSetBoid(setNumber)
 	if err != nil {
@@ -64,7 +64,7 @@ func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*lego.Part, error) 
 
 	chunks := split(inventory, 100)
 
-	parts := []*lego.Part{}
+	parts := []*BrickOwlPart{}
 
 	for _, items := range chunks {
 
@@ -223,31 +223,54 @@ func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
 	return dto, nil
 }
 
-func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) *lego.Part {
+func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) *BrickOwlPart {
 	ldrawID, found := additional.IDs["ldraw"]
 
 	if !found {
 		ldrawID, found = additional.IDs["design_id"]
 	}
 
-	colour := partColour(colours, additional.ColourID)
+	colourInfo := colours[additional.ColourID]
 
-	name := sanitisePartName(additional.Name, ldrawID, colour)
+	name := sanitisePartName(additional.Name, ldrawID, colourInfo)
 	id := lego.LDrawPart(ldrawID)
+	ldColour := lego.LDrawColour(colourInfo.LDrawIDs[0])
 
-	return &lego.Part{
-		Key:      lego.CreatePartKey(id, colour.Aliases.LDrawID),
-		Name:     lego.PartName(name),
+	return &BrickOwlPart{
+		Key:         lego.CreatePartKey(id, ldColour),
+		Name:        lego.PartName(name),
+		LDrawID:     id,
+		BrickLinkID: lego.BrickLinkPart(ldrawID),
+		Boid:        item.Boid,
+
+		ColourName:      colourInfo.Name,
+		ColourHex:       colourInfo.Hex,
+		BrickLinkColour: lego.BrickLinkColour(colourInfo.BrickLinkIDs[0]),
+		LDrawColour:     ldColour,
+		ColourBoid:      lego.BrickOwlColour(additional.ColourID),
+
 		Quantity: int(item.Quantity),
-		Colour:   colour,
-		Aliases: lego.PartAliases{
-			LDrawID: id,
-			Boid:    item.Boid,
-		},
 	}
 }
 
-func sanitisePartName(name string, id string, colour lego.Colour) string {
+type BrickOwlPart struct {
+	Key  lego.PartKey
+	Name lego.PartName
+
+	LDrawID     lego.LDrawPart
+	BrickLinkID lego.BrickLinkPart
+	Boid        lego.BrickOwlPart
+
+	ColourName      lego.ColourName
+	ColourHex       lego.HexColour
+	BrickLinkColour lego.BrickLinkColour
+	LDrawColour     lego.LDrawColour
+	ColourBoid      lego.BrickOwlColour
+
+	Quantity int
+}
+
+func sanitisePartName(name string, id string, colour colourItem) string {
 
 	name = strings.TrimPrefix(name, "LEGO ")
 	name = strings.TrimPrefix(name, string(colour.Name))
@@ -260,22 +283,6 @@ func sanitisePartName(name string, id string, colour lego.Colour) string {
 	name = strings.TrimSpace(name)
 
 	return name
-}
-
-func partColour(colours map[flexInt]colourItem, colourID flexInt) lego.Colour {
-	colourInfo := colours[colourID]
-
-	colourAliases := lego.ColourAliases{
-		BrickLinkID: lego.BrickLinkColour(colourInfo.BrickLinkIDs[0]),
-		LDrawID:     lego.LDrawColour(colourInfo.LDrawIDs[0]),
-		Boid:        lego.BrickOwlColour(colourID),
-	}
-
-	return lego.Colour{
-		Aliases: colourAliases,
-		Name:    colourInfo.Name,
-		Hex:     colourInfo.Hex,
-	}
 }
 
 func split(buf []inventoryItem, lim int) [][]inventoryItem {

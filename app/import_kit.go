@@ -37,8 +37,9 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 	}
 
 	keys := map[lego.PartKey]int{}
+
 	for _, owlPart := range parts {
-		builder.StorePart(ctx, owlPart)
+		builder.FromBrickOwl(ctx, owlPart)
 		keys[owlPart.Key] = owlPart.Quantity
 	}
 

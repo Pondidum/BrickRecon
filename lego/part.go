@@ -21,7 +21,6 @@ type PartQuantity struct {
 	Quantity int
 }
 
-type BrickOwlID string
 type BrickLinkPart string
 type BrickOwlPart string
 

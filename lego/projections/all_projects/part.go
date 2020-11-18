@@ -11,15 +11,15 @@ func newPartView(load PartLoader, key lego.PartKey, quantity int) *ProjectPartVi
 	part := load(key)
 	hex := lego.HexColour("")
 
-	if colour, found := lego.LookupColourLDraw(part.Colour); found {
+	if colour, found := lego.LookupColourLDraw(part.ColourID); found {
 		hex = colour.Hex
 	}
 
 	return &ProjectPartView{
 		Key:        key,
-		ID:         part.Number,
+		ID:         part.PartID,
 		Name:       part.Name,
-		ColourID:   part.Colour,
+		ColourID:   part.ColourID,
 		ColourName: part.ColourName,
 		ImagePath:  part.ImagePath,
 		Quantity:   quantity,

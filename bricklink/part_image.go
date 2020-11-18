@@ -10,7 +10,7 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func GetImage(ctx context.Context, part lego.LDrawPart, colour lego.BrickLinkColour) ([]byte, error) {
+func GetImage(ctx context.Context, part lego.BrickLinkPart, colour lego.BrickLinkColour) ([]byte, error) {
 
 	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, colour, part)
 

@@ -27,7 +27,7 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 		return nil, err
 	}
 	for _, part := range parts {
-		err := builder.StorePart(ctx, part)
+		err := builder.FromWantedList(ctx, part)
 
 		if err != nil {
 			beeline.AddField(ctx, string(part.Key)+"_error", err)

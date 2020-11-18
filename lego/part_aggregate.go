@@ -10,9 +10,9 @@ type PartAggregate struct {
 
 	Key PartKey
 
-	Number     LDrawPart
+	PartID     LDrawPart
 	Name       PartName
-	Colour     LDrawColour
+	ColourID   LDrawColour
 	ColourName ColourName
 
 	ImagePath string
@@ -22,10 +22,8 @@ type PartAggregate struct {
 }
 
 type BrickOwl struct {
-	ID BrickOwlID
-
-	PartNumber *BrickOwlPart
-	Colour     *BrickOwlColour
+	PartBoid   BrickOwlPart
+	ColourBoid BrickOwlColour
 }
 
 type BrickLink struct {
@@ -39,12 +37,25 @@ func BlankPart() *PartAggregate {
 	return part
 }
 
-func NewPartFromLDraw(key PartKey, id LDrawPart, name PartName, colour LDrawColour, colourName ColourName, colourCategory string) *PartAggregate {
+func NewPart(key PartKey) *PartAggregate {
+	partID, colourID := ParsePartKey(key)
+
 	p := BlankPart()
-	p.Apply(&PartCreated{Key: key})
-	p.Apply(&PartLDrawAdded{PartID: id, Name: name, Colour: colour, ColourName: colourName, ColourCategory: colourCategory})
+	p.Apply(&PartCreated{Key: key, PartID: partID, ColourID: colourID})
 
 	return p
+}
+
+func (p *PartAggregate) AddNames(partName PartName, colourName ColourName) {
+	p.Apply(&PartNamesAdded{PartName: partName, ColourName: colourName})
+}
+
+func (p *PartAggregate) AddBrickOwl(boid BrickOwlPart, colourBoid BrickOwlColour) {
+	p.Apply(&PartBrickOwlAdded{Part: boid, Colour: colourBoid})
+}
+
+func (p *PartAggregate) AddBrickLink(partID BrickLinkPart, colourID BrickLinkColour) {
+	p.Apply(&PartBrickLinkAdded{Part: partID, Colour: colourID})
 }
 
 func (p *PartAggregate) HasImage() bool {
@@ -65,12 +76,24 @@ func (p *PartAggregate) on(event eventstore.Event) {
 	case *PartCreated:
 		p.SetID(eventstore.AggregateID(string(e.Key)))
 		p.Key = e.Key
+		p.PartID = e.PartID
+		p.ColourID = e.ColourID
 
-	case *PartLDrawAdded:
-		p.Number = e.PartID
-		p.Name = e.Name
-		p.Colour = e.Colour
+	case *PartNamesAdded:
+		p.Name = e.PartName
 		p.ColourName = e.ColourName
+
+	case *PartBrickOwlAdded:
+		p.BrickOwl = BrickOwl{
+			PartBoid:   e.Part,
+			ColourBoid: e.Colour,
+		}
+
+	case *PartBrickLinkAdded:
+		p.BrickLink = BrickLink{
+			PartNumber: e.Part,
+			Colour:     e.Colour,
+		}
 
 	case *PartImageAdded:
 		p.ImagePath = e.Path
@@ -81,17 +104,30 @@ func (p *PartAggregate) on(event eventstore.Event) {
 type PartCreated struct {
 	eventstore.EventMeta
 
-	Key PartKey
+	Key      PartKey
+	PartID   LDrawPart
+	ColourID LDrawColour
 }
 
-type PartLDrawAdded struct {
+type PartNamesAdded struct {
 	eventstore.EventMeta
 
-	PartID         LDrawPart
-	Name           PartName
-	Colour         LDrawColour
-	ColourName     ColourName
-	ColourCategory string
+	PartName   PartName
+	ColourName ColourName
+}
+
+type PartBrickOwlAdded struct {
+	eventstore.EventMeta
+
+	Part   BrickOwlPart
+	Colour BrickOwlColour
+}
+
+type PartBrickLinkAdded struct {
+	eventstore.EventMeta
+
+	Part   BrickLinkPart
+	Colour BrickLinkColour
 }
 
 type PartImageAdded struct {
@@ -103,6 +139,8 @@ type PartImageAdded struct {
 
 var PartEvents = []eventstore.Initialiser{
 	func() interface{} { return &PartCreated{} },
-	func() interface{} { return &PartLDrawAdded{} },
+	func() interface{} { return &PartNamesAdded{} },
+	func() interface{} { return &PartBrickOwlAdded{} },
+	func() interface{} { return &PartBrickLinkAdded{} },
 	func() interface{} { return &PartImageAdded{} },
 }

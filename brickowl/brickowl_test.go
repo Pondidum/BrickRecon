@@ -46,38 +46,20 @@ func TestCreatePart(t *testing.T) {
 	assert.Equal(t, lego.PartKey("15403|71"), part.Key)
 	assert.Equal(t, lego.PartName("Plate 1 x 2 with Shooter"), part.Name)
 	assert.Equal(t, 5, part.Quantity)
-	assert.Equal(t, lego.BrickLinkColour(86), part.Colour.Aliases.BrickLinkID)
+	assert.Equal(t, lego.BrickLinkColour(86), part.BrickLinkColour)
 
-}
-
-func TestCreateColour(t *testing.T) {
-	t.Parallel()
-
-	colours := map[flexInt]colourItem{
-		flexInt(64): {
-			Name:         "Medium Stone Gray",
-			ID:           "64",
-			LDrawIDs:     []flexInt{flexInt(71)},
-			BrickLinkIDs: []flexInt{flexInt(86)},
-		},
-	}
-
-	colour := partColour(colours, flexInt(64))
-
-	assert.Equal(t, lego.ColourName("Medium Stone Gray"), colour.Name)
-	assert.Equal(t, "", colour.Category)
-	assert.Equal(t, lego.BrickOwlColour(64), colour.Aliases.Boid)
-	assert.Equal(t, lego.BrickLinkColour(86), colour.Aliases.BrickLinkID)
-	assert.Equal(t, lego.LDrawColour(71), colour.Aliases.LDrawID)
-
+	assert.Equal(t, lego.ColourName("Medium Stone Gray"), part.ColourName)
+	assert.Equal(t, lego.BrickOwlColour(64), part.ColourBoid)
+	assert.Equal(t, lego.BrickLinkColour(86), part.BrickLinkColour)
+	assert.Equal(t, lego.LDrawColour(71), part.LDrawColour)
 }
 
 func TestSanitisePartName(t *testing.T) {
 	t.Parallel()
 
-	colour := lego.Colour{
-		Aliases: lego.ColourAliases{BrickLinkID: lego.BrickLinkColour(86)},
-		Name:    "Medium Stone Gray",
+	colour := colourItem{
+		Name:         lego.ColourName("Medium Stone Gray"),
+		BrickLinkIDs: []flexInt{flexInt(86)},
 	}
 
 	cases := map[string]string{
