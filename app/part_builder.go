@@ -6,6 +6,7 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"brickrecon/lego/projections/allparts"
+	"brickrecon/stud_io"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -68,13 +69,13 @@ func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.Bric
 	})
 }
 
-func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *lego.Part) error {
+func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.ListPart) error {
 
 	return pb.storePart(ctx, readPart.Key, func() *lego.PartAggregate {
 
 		p := lego.NewPart(readPart.Key)
-		p.AddNames(readPart.Name, readPart.Colour.Name)
-		p.AddBrickLink(readPart.Aliases.BrickLinkID, readPart.Colour.Aliases.BrickLinkID)
+		p.AddNames(readPart.Name, readPart.ColourName)
+		p.AddBrickLink(readPart.BrickLinkID, readPart.BrickLinkColour)
 
 		return p
 	})

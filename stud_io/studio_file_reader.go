@@ -15,7 +15,20 @@ type PartLookup interface {
 	GetColour(colour lego.LDrawColour) lego.BrickLinkColour
 }
 
-func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]lego.Part, error) {
+type StudioPart struct {
+	Key             lego.PartKey
+	BrickLinkID     lego.BrickLinkPart
+	LDrawID         lego.LDrawPart
+	Name            lego.PartName
+	BrickLinkColour lego.BrickLinkColour
+	LDrawColour     lego.LDrawColour
+	// ColourName      lego.ColourName
+	// ColourCategory  string
+	Quantity int
+	// Weight          float64
+}
+
+func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]*StudioPart, error) {
 
 	reader, err := zip.NewReader(file, fileSize)
 	if err != nil {
@@ -40,7 +53,7 @@ func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]lego.Part
 		return nil, err
 	}
 
-	parts := make([]lego.Part, len(bricks))
+	parts := make([]*StudioPart, len(bricks))
 
 	for i, brick := range bricks {
 		parts[i] = toPart(brick, lookup)
@@ -60,7 +73,7 @@ func findModel(all []*zip.File) (*zip.File, bool) {
 	return nil, false
 }
 
-func toPart(brick *ldraw.Brick, lookup PartLookup) lego.Part {
+func toPart(brick *ldraw.Brick, lookup PartLookup) *StudioPart {
 
 	id := lego.LDrawPart(brick.LDrawID)
 	name := lookup.GetPartName(id)
@@ -68,14 +81,13 @@ func toPart(brick *ldraw.Brick, lookup PartLookup) lego.Part {
 	ldColour := lego.LDrawColour(brick.Colour)
 	blColour := lookup.GetColour(ldColour)
 
-	return lego.Part{
-		Key:  lego.CreatePartKey(id, ldColour),
-		Name: name,
-		Colour: lego.Colour{
-			Aliases: lego.ColourAliases{
-				LDrawID:     ldColour,
-				BrickLinkID: blColour,
-			}},
-		Quantity: brick.Quantity,
+	return &StudioPart{
+		Key:             lego.CreatePartKey(id, ldColour),
+		LDrawID:         id,
+		BrickLinkID:     lego.BrickLinkPart(brick.LDrawID),
+		Name:            name,
+		LDrawColour:     ldColour,
+		BrickLinkColour: blColour,
+		Quantity:        brick.Quantity,
 	}
 }

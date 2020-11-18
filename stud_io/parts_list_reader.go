@@ -22,12 +22,26 @@ const (
 	weight
 )
 
-func ReadPartsList(content io.Reader) ([]*lego.Part, error) {
+type ListPart struct {
+	Key             lego.PartKey
+	BrickLinkID     lego.BrickLinkPart
+	ElementID       string
+	LDrawID         lego.LDrawPart
+	Name            lego.PartName
+	BrickLinkColour lego.BrickLinkColour
+	LDrawColour     lego.LDrawColour
+	ColourName      lego.ColourName
+	ColourCategory  string
+	Quantity        int
+	Weight          float64
+}
+
+func ReadPartsList(content io.Reader) ([]*ListPart, error) {
 
 	reader := csv.NewReader(content)
 	reader.Comma = '\t'
 
-	parts := []*lego.Part{}
+	parts := []*ListPart{}
 
 	// read the header
 	_, err := reader.Read()
@@ -74,16 +88,17 @@ func isSummaryHeader(fields []string) bool {
 	return len(fields) > 0 && fields[brickLinkID] == "Total qty"
 }
 
-func parsePart(fields []string) (*lego.Part, error) {
+func parsePart(fields []string) (*ListPart, error) {
 
 	var err error
 
-	part := &lego.Part{
-		Name:    lego.PartName(fields[partName]),
-		Aliases: parsePartAliases(fields),
+	part := &ListPart{
+		Name: lego.PartName(fields[partName]),
 	}
 
-	if part.Colour, err = parseColour(fields); err != nil {
+	parsePartAliases(part, fields)
+
+	if err = parseColour(part, fields); err != nil {
 		return nil, err
 	}
 
@@ -95,46 +110,37 @@ func parsePart(fields []string) (*lego.Part, error) {
 		return nil, convertError("part.Weight", fields[weight])
 	}
 
-	part.Key = lego.CreatePartKey(part.Aliases.LDrawID, part.Colour.Aliases.LDrawID)
+	part.Key = lego.CreatePartKey(part.LDrawID, part.LDrawColour)
 
 	return part, err
 }
 
-func parsePartAliases(fields []string) lego.PartAliases {
-	return lego.PartAliases{
-		BrickLinkID: lego.BrickLinkPart(fields[brickLinkID]),
-		LDrawID:     lego.LDrawPart(fields[ldrawID]),
-	}
+func parsePartAliases(part *ListPart, fields []string) {
+	part.BrickLinkID = lego.BrickLinkPart(fields[brickLinkID])
+	part.LDrawID = lego.LDrawPart(fields[ldrawID])
 
 }
 
-func parseColour(fields []string) (lego.Colour, error) {
+func parseColour(part *ListPart, fields []string) error {
 
 	var err error
 
 	var bricklink, ldraw int
 
 	if bricklink, err = strconv.Atoi(fields[brickLinkColour]); err != nil {
-		return lego.Colour{}, convertError("colour.BrickLinkID", fields[brickLinkID])
+		return convertError("colour.BrickLinkID", fields[brickLinkColour])
 	}
 
 	if ldraw, err = strconv.Atoi(fields[ldrawColour]); err != nil {
-		return lego.Colour{}, convertError("colour.LDrawID", fields[ldrawColour])
+		return convertError("colour.LDrawID", fields[ldrawColour])
 	}
 
-	aliases := lego.ColourAliases{
-		BrickLinkID: lego.BrickLinkColour(bricklink),
-		LDrawID:     lego.LDrawColour(ldraw),
-	}
+	part.BrickLinkColour = lego.BrickLinkColour(bricklink)
+	part.LDrawColour = lego.LDrawColour(ldraw)
+	part.ColourName = lego.ColourName(fields[colourName])
+	part.ColourCategory = fields[colourCategory]
 
-	colour := lego.Colour{
-		Aliases:  aliases,
-		Name:     lego.ColourName(fields[colourName]),
-		Hex:      lego.GetColourHex(aliases.BrickLinkID),
-		Category: fields[colourCategory],
-	}
-
-	return colour, err
+	return nil
 }
 
 func convertError(key string, value string) error {
