@@ -129,10 +129,3 @@ func TestChangingParts(t *testing.T) {
 	assert.Equal(t, 10, first.Quantity)
 	assert.Equal(t, 5, second.Quantity)
 }
-
-func createPart(key string, quantity int) *Part {
-	return &Part{
-		Key:      PartKey(key),
-		Quantity: quantity,
-	}
-}

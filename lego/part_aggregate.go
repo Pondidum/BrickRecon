@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+type PartName string
+type LDrawPart string
+type BrickLinkPart string
+type BrickOwlPart string
+
 type PartAggregate struct {
 	*eventstore.Aggregator
 

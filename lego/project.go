@@ -25,6 +25,7 @@ func BlankProject() *Project {
 }
 
 func NewProject(name ProjectName, parts map[PartKey]int) *Project {
+
 	project := BlankProject()
 	project.Apply(&ProjectCreated{ID: eventstore.NewAggregateID(), Name: name})
 	project.Apply(&ProjectPartsAdded{
