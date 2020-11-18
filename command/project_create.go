@@ -1,6 +1,7 @@
 package command
 
 import (
+	"brickrecon/actions"
 	"brickrecon/app"
 	"brickrecon/lego"
 	"fmt"
@@ -61,7 +62,7 @@ func (c *ProjectCreateCommand) Run(args []string) int {
 		return 1
 	}
 
-	waiter, err := app.CreateProject(ctx, store, modelName, file)
+	waiter, err := actions.CreateProject(ctx, store.EventStore, modelName, file)
 
 	if err != nil {
 		c.UI.Error(err.Error())

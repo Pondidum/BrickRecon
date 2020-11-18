@@ -1,7 +1,7 @@
-package app
+package actions
 
 import (
-	"brickrecon/actions"
+	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"brickrecon/stud_io"
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func CreateProject(ctx context.Context, store *AppStore, projectName lego.ProjectName, partsFile io.Reader) (func(), error) {
+func CreateProject(ctx context.Context, store eventstore.EventStore, projectName lego.ProjectName, partsFile io.Reader) (func(), error) {
 
 	beeline.AddField(ctx, "project_name", projectName)
 
@@ -22,7 +22,7 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 
 	beeline.AddField(ctx, "parts_count", len(parts))
 
-	builder, err := actions.NewPartBuilder(ctx, store.EventStore)
+	builder, err := NewPartBuilder(ctx, store)
 	if err != nil {
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err
@@ -40,7 +40,7 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 
 	project := lego.NewProject(projectName, keys)
 
-	if err := store.Save(ctx, project); err != nil {
+	if err := store.SaveAggregate(ctx, project); err != nil {
 		beeline.AddField(ctx, "save_project_error", err)
 		return nil, err
 	}

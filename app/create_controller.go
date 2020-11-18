@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/actions"
 	"brickrecon/lego"
 	"brickrecon/preen"
 	"net/http"
@@ -40,7 +41,7 @@ func (c CreateController) Post(pc *preen.PreenContext, req *http.Request) interf
 
 	defer file.Close()
 
-	_, err = CreateProject(ctx, c.Store, modelName, file)
+	_, err = actions.CreateProject(ctx, c.Store.EventStore, modelName, file)
 
 	if err != nil {
 		return pc.Error(err)
