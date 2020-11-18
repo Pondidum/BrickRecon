@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/actions"
 	"brickrecon/brickowl"
 	"brickrecon/lego"
 	"context"
@@ -30,7 +31,7 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 	beeline.AddField(ctx, "kit_name", name)
 	beeline.AddField(ctx, "parts_count", len(parts))
 
-	builder, err := NewPartBuilder(ctx, store.EventStore)
+	builder, err := actions.NewPartBuilder(ctx, store.EventStore)
 	if err != nil {
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err

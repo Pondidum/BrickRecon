@@ -1,6 +1,7 @@
 package app
 
 import (
+	"brickrecon/actions"
 	"brickrecon/lego"
 	"brickrecon/stud_io"
 	"context"
@@ -21,7 +22,7 @@ func CreateProject(ctx context.Context, store *AppStore, projectName lego.Projec
 
 	beeline.AddField(ctx, "parts_count", len(parts))
 
-	builder, err := NewPartBuilder(ctx, store.EventStore)
+	builder, err := actions.NewPartBuilder(ctx, store.EventStore)
 	if err != nil {
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err
