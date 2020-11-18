@@ -35,10 +35,10 @@ func TestAddingAuditWithExtraData(t *testing.T) {
 
 func TestAddingKits(t *testing.T) {
 
-	event := &lego.KitCreated{KitName: "test", KitNumber: "134-1", Parts: []*lego.Part{
-		{Key: lego.PartKey("1|85"), Quantity: 5},
-		{Key: lego.PartKey("1|17"), Quantity: 1},
-		{Key: lego.PartKey("5|2"), Quantity: 2},
+	event := &lego.KitCreated{KitName: "test", KitNumber: "134-1", Parts: map[lego.PartKey]int{
+		lego.PartKey("1|85"): 5,
+		lego.PartKey("1|17"): 1,
+		lego.PartKey("5|2"):  2,
 	}}
 
 	view := apply(
@@ -101,7 +101,6 @@ func TestAddingMultipleProjectParts(t *testing.T) {
 func TestWhenKitAddedAfterProject(t *testing.T) {
 
 	kitNumber := lego.KitNumber("134-1")
-	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
@@ -111,7 +110,9 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 		createProjectParts(projectID, map[lego.PartKey]int{
 			lego.PartKey("567|85"): 7,
 		}),
-		createKit(kitNumber, kitPart),
+		createKit(kitNumber, map[lego.PartKey]int{
+			lego.PartKey("567|85"): 5,
+		}),
 	)
 
 	assert.Contains(t, view.Projects, projectName)
@@ -124,13 +125,14 @@ func TestWhenKitAddedAfterProject(t *testing.T) {
 func TestWhenProjectAddedAfterKit(t *testing.T) {
 
 	kitNumber := lego.KitNumber("134-1")
-	kitPart := partFromKey(lego.PartKey("567|85"), 5)
 
 	projectID := eventstore.NewAggregateID()
 	projectName := lego.ProjectName("test-project")
 
 	view := apply(
-		createKit(kitNumber, kitPart),
+		createKit(kitNumber, map[lego.PartKey]int{
+			lego.PartKey("567|85"): 5,
+		}),
 		createProject(projectID, projectName),
 		createProjectParts(projectID, map[lego.PartKey]int{
 			lego.PartKey("567|85"): 7,
@@ -187,21 +189,10 @@ func createProjectParts(projectID eventstore.AggregateID, parts map[lego.PartKey
 	return event
 }
 
-func createKit(kn lego.KitNumber, kitParts ...*lego.Part) *lego.KitCreated {
+func createKit(kn lego.KitNumber, kitParts map[lego.PartKey]int) *lego.KitCreated {
 	return &lego.KitCreated{
 		KitName:   "test",
 		KitNumber: kn,
 		Parts:     kitParts,
-	}
-}
-
-func partFromKey(key lego.PartKey, quantity int) *lego.Part {
-	id, colour := lego.ParsePartKey(key)
-
-	return &lego.Part{
-		Key:      key,
-		Aliases:  lego.PartAliases{LDrawID: id, BrickLinkID: lego.BrickLinkPart(id)},
-		Colour:   lego.Colour{Aliases: lego.ColourAliases{LDrawID: colour}},
-		Quantity: quantity,
 	}
 }

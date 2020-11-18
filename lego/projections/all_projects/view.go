@@ -2,7 +2,6 @@ package all_projects
 
 import (
 	"brickrecon/lego"
-	"fmt"
 )
 
 type AllProjectsView struct {
@@ -23,19 +22,6 @@ type ProjectPartView struct {
 
 	Quantity  int
 	Inventory int
-}
-
-func newPartViewFromPart(part *lego.Part) *ProjectPartView {
-	return &ProjectPartView{
-		ID:         part.Aliases.LDrawID,
-		Name:       part.Name,
-		ColourID:   part.Colour.Aliases.LDrawID,
-		ColourName: part.Colour.Name,
-		ColourHex:  part.Colour.Hex,
-		ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.BrickLinkID, part.Colour.Aliases.BrickLinkID),
-		Quantity:   part.Quantity,
-		Key:        part.Key,
-	}
 }
 
 type KitView struct {

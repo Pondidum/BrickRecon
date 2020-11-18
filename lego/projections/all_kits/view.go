@@ -14,7 +14,7 @@ type KitView struct {
 	Name   lego.KitName
 	Number lego.KitNumber
 
-	Parts []PartView
+	Parts []*PartView
 }
 
 type PartView struct {

@@ -3,12 +3,24 @@ package all_kits
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"fmt"
+	"context"
 )
 
 var ProjectionName string = "kits"
 
-type KitsProjection struct{}
+func NewKitsProjection(es eventstore.EventStore) *KitsProjection {
+	return &KitsProjection{
+		partLoader: func(key lego.PartKey) *lego.PartAggregate {
+			part := lego.BlankPart()
+			es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
+			return part
+		},
+	}
+}
+
+type KitsProjection struct {
+	partLoader PartLoader
+}
 
 func (p *KitsProjection) Name() string {
 	return ProjectionName
@@ -26,33 +38,20 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 	switch e := event.(type) {
 
 	case *lego.KitCreated:
+
+		parts := []*PartView{}
+		for key, quantity := range e.Parts {
+			parts = append(parts, newPartView(p.partLoader, key, quantity))
+		}
+
 		view.Kits[e.KitNumber] = &KitView{
 			ID:     e.AggregateRootID,
 			Name:   e.KitName,
 			Number: e.KitNumber,
-			Parts:  toPartView(e.Parts),
+			Parts:  parts,
 		}
+
 	}
 
 	return view
-}
-
-func toPartView(parts []*lego.Part) []PartView {
-
-	views := make([]PartView, len(parts))
-
-	for i, part := range parts {
-		views[i] = PartView{
-			Key:        part.Key,
-			ID:         part.Aliases.LDrawID,
-			Name:       part.Name,
-			ColourID:   part.Colour.Aliases.LDrawID,
-			ColourName: part.Colour.Name,
-			ColourHex:  part.Colour.Hex,
-			ImagePath:  fmt.Sprintf("%s-%v.png", part.Aliases.LDrawID, part.Colour.Aliases.BrickLinkID),
-			Quantity:   part.Quantity,
-		}
-	}
-
-	return views
 }

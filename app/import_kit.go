@@ -35,15 +35,14 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err
 	}
-	for _, part := range parts {
-		err := builder.StorePart(ctx, part)
 
-		if err != nil {
-			beeline.AddField(ctx, string(part.Key)+"_error", err)
-		}
+	keys := map[lego.PartKey]int{}
+	for _, owlPart := range parts {
+		builder.StorePart(ctx, owlPart)
+		keys[owlPart.Key] = owlPart.Quantity
 	}
 
-	kit := lego.ImportKit(kitNumber, name, parts)
+	kit := lego.ImportKit(kitNumber, name, keys)
 
 	if err := store.Save(ctx, kit); err != nil {
 		beeline.AddField(ctx, "save_kit_error", err)

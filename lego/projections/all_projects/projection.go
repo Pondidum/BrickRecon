@@ -153,8 +153,8 @@ func createKitView(event *lego.KitCreated) KitView {
 
 	kp := make(map[lego.PartKey]int, len(event.Parts))
 
-	for _, p := range event.Parts {
-		kp[p.Key] = p.Quantity
+	for key, quantity := range event.Parts {
+		kp[key] = quantity
 	}
 
 	return KitView{
