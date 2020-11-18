@@ -149,7 +149,7 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 func apply(events ...eventstore.Event) *AllProjectsView {
 
 	p := NewProjectsProjection(nil)
-	p.partLoader = func(k lego.PartKey) *lego.PartAggregate {
+	p.partLoader = func(k lego.PartKey) *lego.PartA {
 		part := lego.BlankPart()
 
 		n, c := lego.ParsePartKey(k)

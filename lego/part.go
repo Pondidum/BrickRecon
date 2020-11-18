@@ -10,7 +10,7 @@ type LDrawPart string
 type BrickLinkPart string
 type BrickOwlPart string
 
-type PartAggregate struct {
+type PartA struct {
 	*eventstore.Aggregator
 
 	Key PartKey
@@ -36,13 +36,13 @@ type BrickLink struct {
 	Colour     BrickLinkColour
 }
 
-func BlankPart() *PartAggregate {
-	part := &PartAggregate{}
+func BlankPart() *PartA {
+	part := &PartA{}
 	part.Aggregator = eventstore.NewAggregator(part.on)
 	return part
 }
 
-func NewPart(key PartKey) *PartAggregate {
+func NewPart(key PartKey) *PartA {
 	partID, colourID := ParsePartKey(key)
 
 	p := BlankPart()
@@ -51,23 +51,23 @@ func NewPart(key PartKey) *PartAggregate {
 	return p
 }
 
-func (p *PartAggregate) AddNames(partName PartName, colourName ColourName) {
+func (p *PartA) AddNames(partName PartName, colourName ColourName) {
 	p.Apply(&PartNamesAdded{PartName: partName, ColourName: colourName})
 }
 
-func (p *PartAggregate) AddBrickOwl(boid BrickOwlPart, colourBoid BrickOwlColour) {
+func (p *PartA) AddBrickOwl(boid BrickOwlPart, colourBoid BrickOwlColour) {
 	p.Apply(&PartBrickOwlAdded{Part: boid, Colour: colourBoid})
 }
 
-func (p *PartAggregate) AddBrickLink(partID BrickLinkPart, colourID BrickLinkColour) {
+func (p *PartA) AddBrickLink(partID BrickLinkPart, colourID BrickLinkColour) {
 	p.Apply(&PartBrickLinkAdded{Part: partID, Colour: colourID})
 }
 
-func (p *PartAggregate) HasImage() bool {
+func (p *PartA) HasImage() bool {
 	return p.ImagePath != ""
 }
 
-func (p *PartAggregate) AttachImage(sourceName string, path string) {
+func (p *PartA) AttachImage(sourceName string, path string) {
 	if strings.TrimSpace(path) == "" {
 		return
 	}
@@ -75,7 +75,7 @@ func (p *PartAggregate) AttachImage(sourceName string, path string) {
 	p.Apply(&PartImageAdded{SourcedFrom: sourceName, Path: path})
 }
 
-func (p *PartAggregate) on(event eventstore.Event) {
+func (p *PartA) on(event eventstore.Event) {
 
 	switch e := event.(type) {
 	case *PartCreated:

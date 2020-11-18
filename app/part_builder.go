@@ -58,7 +58,7 @@ func (pb *PartBuilder) storeImage(ctx context.Context, sourceName string, number
 
 func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.BrickOwlPart) error {
 
-	return pb.storePart(ctx, readPart.Key, func() *lego.PartAggregate {
+	return pb.storePart(ctx, readPart.Key, func() *lego.PartA {
 
 		p := lego.NewPart(readPart.Key)
 		p.AddNames(readPart.Name, readPart.ColourName)
@@ -71,7 +71,7 @@ func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.Bric
 
 func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.ListPart) error {
 
-	return pb.storePart(ctx, readPart.Key, func() *lego.PartAggregate {
+	return pb.storePart(ctx, readPart.Key, func() *lego.PartA {
 
 		p := lego.NewPart(readPart.Key)
 		p.AddNames(readPart.Name, readPart.ColourName)
@@ -82,7 +82,7 @@ func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.Lis
 
 }
 
-func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPart func() *lego.PartAggregate) error {
+func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPart func() *lego.PartA) error {
 	var err error
 	defer func() {
 		if err != nil {
@@ -90,7 +90,7 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 		}
 	}()
 
-	var p *lego.PartAggregate
+	var p *lego.PartA
 
 	if pb.knownParts[key] {
 

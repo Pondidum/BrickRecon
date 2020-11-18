@@ -4,7 +4,7 @@ import (
 	"brickrecon/lego"
 )
 
-type PartLoader func(lego.PartKey) *lego.PartAggregate
+type PartLoader func(lego.PartKey) *lego.PartA
 
 func newPartView(load PartLoader, key lego.PartKey, quantity int) *ProjectPartView {
 
