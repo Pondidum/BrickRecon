@@ -1,6 +1,7 @@
 package command
 
 import (
+	"brickrecon/actions"
 	"brickrecon/app"
 	"brickrecon/lego"
 	"fmt"
@@ -51,7 +52,7 @@ func (c *KitImportCommand) Run(args []string) int {
 		return 1
 	}
 
-	waiter, err := app.ImportKit(ctx, store, kitNumber)
+	waiter, err := actions.ImportKit(ctx, store.EventStore, kitNumber)
 
 	if err != nil {
 		c.UI.Error(err.Error())

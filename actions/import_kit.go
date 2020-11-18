@@ -1,7 +1,8 @@
-package app
+package actions
 
 import (
 	"brickrecon/brickowl"
+	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"context"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"github.com/honeycombio/beeline-go"
 )
 
-func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (func(), error) {
+func ImportKit(ctx context.Context, store eventstore.EventStore, kitNumber lego.KitNumber) (func(), error) {
 
 	beeline.AddField(ctx, "kit_number", kitNumber)
 
@@ -30,7 +31,7 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 	beeline.AddField(ctx, "kit_name", name)
 	beeline.AddField(ctx, "parts_count", len(parts))
 
-	builder, err := NewPartBuilder(ctx, store.EventStore)
+	builder, err := NewPartBuilder(ctx, store)
 	if err != nil {
 		beeline.AddField(ctx, "builder_error", err)
 		return nil, err
@@ -44,7 +45,7 @@ func ImportKit(ctx context.Context, store *AppStore, kitNumber lego.KitNumber) (
 
 	kit := lego.ImportKit(kitNumber, name, keys)
 
-	if err := store.Save(ctx, kit); err != nil {
+	if err := store.SaveAggregate(ctx, kit); err != nil {
 		beeline.AddField(ctx, "save_kit_error", err)
 		return nil, err
 	}
