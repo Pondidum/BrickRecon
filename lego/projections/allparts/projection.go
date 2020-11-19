@@ -28,6 +28,12 @@ func (p *AllPartsProjection) Project(state interface{}, event eventstore.Event) 
 	case *lego.PartImageAdded:
 		key := lego.PartKey(e.AggregateRootID)
 		view.HasImage[key] = true
+
+	case *lego.PartNamesAdded:
+		key := lego.PartKey(e.AggregateRootID)
+		partID, _ := lego.ParsePartKey(key)
+
+		view.Names[partID] = e.PartName
 	}
 
 	return view
