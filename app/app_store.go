@@ -4,14 +4,14 @@ import (
 	"brickrecon/distributor"
 	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"brickrecon/lego/projections/all_kits"
+	"brickrecon/lego/projections/allkits"
 	"brickrecon/lego/projections/allprojects"
 	"context"
 	"fmt"
 )
 
 type SiteModel struct {
-	AllKits   map[lego.KitNumber]*all_kits.KitView
+	AllKits   map[lego.KitNumber]*allkits.KitView
 	AllModels []lego.ProjectName
 }
 
@@ -30,8 +30,8 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 		return SiteModel{}
 	}
 
-	var kits all_kits.AllKitsView
-	if err := a.EventStore.ReadView(ctx, all_kits.ProjectionName, &kits); err != nil {
+	var kits allkits.AllKitsView
+	if err := a.EventStore.ReadView(ctx, allkits.ProjectionName, &kits); err != nil {
 		return SiteModel{}
 	}
 
@@ -83,10 +83,10 @@ func (a *AppStore) ReadProjectByID(ctx context.Context, id eventstore.AggregateI
 	return project, nil
 }
 
-func (a *AppStore) ReadKitView(ctx context.Context, kitNumber lego.KitNumber) (*all_kits.KitView, error) {
+func (a *AppStore) ReadKitView(ctx context.Context, kitNumber lego.KitNumber) (*allkits.KitView, error) {
 
-	var view all_kits.AllKitsView
-	if err := a.EventStore.ReadView(ctx, all_kits.ProjectionName, &view); err != nil {
+	var view allkits.AllKitsView
+	if err := a.EventStore.ReadView(ctx, allkits.ProjectionName, &view); err != nil {
 		return nil, err
 	}
 

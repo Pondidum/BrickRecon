@@ -2,13 +2,13 @@ package app
 
 import (
 	"brickrecon/lego"
-	"brickrecon/lego/projections/all_kits"
+	"brickrecon/lego/projections/allkits"
 	"brickrecon/preen"
 	"net/http"
 )
 
 type KitModel struct {
-	Kit *all_kits.KitView
+	Kit *allkits.KitView
 }
 
 type KitController struct {

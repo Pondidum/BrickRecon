@@ -1,4 +1,4 @@
-package all_kits
+package allkits
 
 import (
 	"brickrecon/lego"
