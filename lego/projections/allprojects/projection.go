@@ -10,7 +10,7 @@ var ProjectionName string = "projects"
 
 func NewProjectsProjection(es eventstore.EventStore) *projectsProjection {
 	return &projectsProjection{
-		partLoader: func(key lego.PartKey) *lego.PartA {
+		partLoader: func(key lego.PartKey) *lego.Part {
 			part := lego.BlankPart()
 			es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
 			return part

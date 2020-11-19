@@ -99,7 +99,7 @@ func (a *AppStore) ReadKitView(ctx context.Context, kitNumber lego.KitNumber) (*
 	return kit, nil
 }
 
-func (a *AppStore) ReadPart(ctx context.Context, key lego.PartKey) (*lego.PartA, error) {
+func (a *AppStore) ReadPart(ctx context.Context, key lego.PartKey) (*lego.Part, error) {
 
 	part := lego.BlankPart()
 	if err := a.EventStore.LoadAggregate(ctx, eventstore.AggregateID(key), part); err != nil {

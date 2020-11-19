@@ -4,16 +4,11 @@ import (
 	"brickrecon/lego"
 )
 
-type PartLoader func(lego.PartKey) *lego.PartA
+type PartLoader func(lego.PartKey) *lego.Part
 
 func newPartView(load PartLoader, key lego.PartKey, quantity int) *PartView {
 
 	part := load(key)
-	hex := lego.HexColour("")
-
-	if colour, found := lego.LookupColourLDraw(part.ColourID); found {
-		hex = colour.Hex
-	}
 
 	return &PartView{
 		Key:        key,
@@ -22,8 +17,8 @@ func newPartView(load PartLoader, key lego.PartKey, quantity int) *PartView {
 		ColourID:   part.ColourID,
 		ColourName: part.ColourName,
 		ImagePath:  part.ImagePath,
+		ColourHex:  part.ColourHex,
 		Quantity:   quantity,
-		ColourHex:  hex,
 	}
 
 }

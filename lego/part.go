@@ -10,7 +10,7 @@ type LDrawPart string
 type BrickLinkPart string
 type BrickOwlPart string
 
-type PartA struct {
+type Part struct {
 	*eventstore.Aggregator
 
 	Key PartKey
@@ -19,6 +19,7 @@ type PartA struct {
 	Name       PartName
 	ColourID   LDrawColour
 	ColourName ColourName
+	ColourHex  HexColour
 
 	ImagePath string
 
@@ -36,13 +37,13 @@ type BrickLink struct {
 	Colour     BrickLinkColour
 }
 
-func BlankPart() *PartA {
-	part := &PartA{}
+func BlankPart() *Part {
+	part := &Part{}
 	part.Aggregator = eventstore.NewAggregator(part.on)
 	return part
 }
 
-func NewPart(key PartKey) *PartA {
+func NewPart(key PartKey) *Part {
 	partID, colourID := ParsePartKey(key)
 
 	p := BlankPart()
@@ -51,23 +52,23 @@ func NewPart(key PartKey) *PartA {
 	return p
 }
 
-func (p *PartA) AddNames(partName PartName, colourName ColourName) {
+func (p *Part) AddNames(partName PartName, colourName ColourName) {
 	p.Apply(&PartNamesAdded{PartName: partName, ColourName: colourName})
 }
 
-func (p *PartA) AddBrickOwl(boid BrickOwlPart, colourBoid BrickOwlColour) {
+func (p *Part) AddBrickOwl(boid BrickOwlPart, colourBoid BrickOwlColour) {
 	p.Apply(&PartBrickOwlAdded{Part: boid, Colour: colourBoid})
 }
 
-func (p *PartA) AddBrickLink(partID BrickLinkPart, colourID BrickLinkColour) {
+func (p *Part) AddBrickLink(partID BrickLinkPart, colourID BrickLinkColour) {
 	p.Apply(&PartBrickLinkAdded{Part: partID, Colour: colourID})
 }
 
-func (p *PartA) HasImage() bool {
+func (p *Part) HasImage() bool {
 	return p.ImagePath != ""
 }
 
-func (p *PartA) AttachImage(sourceName string, path string) {
+func (p *Part) AttachImage(sourceName string, path string) {
 	if strings.TrimSpace(path) == "" {
 		return
 	}
@@ -75,7 +76,7 @@ func (p *PartA) AttachImage(sourceName string, path string) {
 	p.Apply(&PartImageAdded{SourcedFrom: sourceName, Path: path})
 }
 
-func (p *PartA) on(event eventstore.Event) {
+func (p *Part) on(event eventstore.Event) {
 
 	switch e := event.(type) {
 	case *PartCreated:
@@ -83,6 +84,7 @@ func (p *PartA) on(event eventstore.Event) {
 		p.Key = e.Key
 		p.PartID = e.PartID
 		p.ColourID = e.ColourID
+		p.ColourHex = GetColourHex(p.ColourID)
 
 	case *PartNamesAdded:
 		p.Name = e.PartName

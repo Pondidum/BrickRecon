@@ -42,7 +42,7 @@ func NewPartBuilder(ctx context.Context, store eventstore.EventStore) (*PartBuil
 
 func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.BrickOwlPart) error {
 
-	return pb.storePart(ctx, readPart.Key, func() *lego.PartA {
+	return pb.storePart(ctx, readPart.Key, func() *lego.Part {
 
 		p := lego.NewPart(readPart.Key)
 		p.AddNames(readPart.Name, readPart.ColourName)
@@ -55,7 +55,7 @@ func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.Bric
 
 func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.ListPart) error {
 
-	return pb.storePart(ctx, readPart.Key, func() *lego.PartA {
+	return pb.storePart(ctx, readPart.Key, func() *lego.Part {
 
 		p := lego.NewPart(readPart.Key)
 		p.AddNames(readPart.Name, readPart.ColourName)
@@ -66,7 +66,7 @@ func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.Lis
 
 }
 
-func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPart func() *lego.PartA) error {
+func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPart func() *lego.Part) error {
 
 	var err error
 	ctx, span := beeline.StartSpan(ctx, "store_"+string(key))
@@ -78,7 +78,7 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 		span.Send()
 	}()
 
-	var p *lego.PartA
+	var p *lego.Part
 
 	if pb.knownParts[key] {
 
@@ -118,7 +118,7 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 	return nil
 }
 
-func (pb *PartBuilder) getImage(ctx context.Context, p *lego.PartA) (string, error) {
+func (pb *PartBuilder) getImage(ctx context.Context, p *lego.Part) (string, error) {
 
 	storeName := "bricklink"
 

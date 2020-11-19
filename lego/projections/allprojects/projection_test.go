@@ -91,8 +91,8 @@ func TestAddingMultipleProjectParts(t *testing.T) {
 	)
 
 	expectedColours := []*ColourView{
-		{ID: lego.LDrawColour(85)},
-		{ID: lego.LDrawColour(10)},
+		{ID: lego.LDrawColour(85), Hex: lego.GetColourHex(lego.LDrawColour(85))},
+		{ID: lego.LDrawColour(10), Hex: lego.GetColourHex(lego.LDrawColour(10))},
 	}
 
 	assert.Equal(t, expectedColours, view.Projects[projectName].Colours)
@@ -149,12 +149,13 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 func apply(events ...eventstore.Event) *AllProjectsView {
 
 	p := NewProjectsProjection(nil)
-	p.partLoader = func(k lego.PartKey) *lego.PartA {
+	p.partLoader = func(k lego.PartKey) *lego.Part {
 		part := lego.BlankPart()
 
 		n, c := lego.ParsePartKey(k)
 		part.PartID = n
 		part.ColourID = c
+		part.ColourHex = lego.GetColourHex(c)
 
 		return part
 	}

@@ -1,5 +1,7 @@
 package lego
 
+import "encoding/json"
+
 type ColourName string
 type HexColour string
 
@@ -7,20 +9,14 @@ type BrickLinkColour int
 type LDrawColour int
 type BrickOwlColour int
 
-type Colour struct {
-	Aliases ColourAliases
+func GetColourHex(id LDrawColour) HexColour {
 
-	Name     ColourName
-	Category string
-	Hex      HexColour
-}
+	lookup := map[int]string{}
 
-type ColourAliases struct {
-	BrickLinkID BrickLinkColour
-	LDrawID     LDrawColour
-	Boid        BrickOwlColour
-}
+	err := json.Unmarshal([]byte(hexColours), &lookup)
+	if err != nil {
+		panic(err)
+	}
 
-func GetColourHex(id BrickLinkColour) HexColour {
-	return HexColour(hexColours[int(id)])
+	return HexColour(lookup[int(id)])
 }
