@@ -5,7 +5,7 @@ import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
 	"brickrecon/lego/projections/all_kits"
-	"brickrecon/lego/projections/all_projects"
+	"brickrecon/lego/projections/allprojects"
 	"context"
 	"fmt"
 )
@@ -25,8 +25,8 @@ func (a *AppStore) Save(ctx context.Context, aggregate eventstore.Aggregate) err
 }
 
 func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
-	var projects all_projects.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, all_projects.ProjectionName, &projects); err != nil {
+	var projects allprojects.AllProjectsView
+	if err := a.EventStore.ReadView(ctx, allprojects.ProjectionName, &projects); err != nil {
 		return SiteModel{}
 	}
 
@@ -41,10 +41,10 @@ func (a *AppStore) SiteModel(ctx context.Context) SiteModel {
 	}
 }
 
-func (a *AppStore) ReadProjectView(ctx context.Context, name lego.ProjectName) (*all_projects.ProjectView, error) {
+func (a *AppStore) ReadProjectView(ctx context.Context, name lego.ProjectName) (*allprojects.ProjectView, error) {
 
-	var view all_projects.AllProjectsView
-	if err := a.EventStore.ReadView(ctx, all_projects.ProjectionName, &view); err != nil {
+	var view allprojects.AllProjectsView
+	if err := a.EventStore.ReadView(ctx, allprojects.ProjectionName, &view); err != nil {
 		return nil, err
 	}
 

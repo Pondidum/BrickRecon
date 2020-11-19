@@ -1,4 +1,4 @@
-package all_projects
+package allprojects
 
 import (
 	"brickrecon/eventstore"

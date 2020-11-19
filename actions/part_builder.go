@@ -20,6 +20,7 @@ type PartBuilder struct {
 	store      eventstore.EventStore
 	knownParts map[lego.PartKey]bool
 	hasImage   map[lego.PartKey]bool
+	storeRoot  string
 }
 
 func NewPartBuilder(ctx context.Context, store eventstore.EventStore) (*PartBuilder, error) {
@@ -33,27 +34,10 @@ func NewPartBuilder(ctx context.Context, store eventstore.EventStore) (*PartBuil
 		store:      store,
 		knownParts: view.KnownParts,
 		hasImage:   view.HasImage,
+		storeRoot:  "./app/static/img/parts",
 	}
 
 	return pb, nil
-}
-
-func (pb *PartBuilder) storeImage(ctx context.Context, sourceName string, number lego.LDrawPart, colour lego.LDrawColour, image []byte) (string, error) {
-	location := "./app/static/img/parts"
-	filename := fmt.Sprintf("%s-%v.png", number, colour)
-
-	directory := path.Join(location, sourceName)
-	file := path.Join(directory, filename)
-
-	if err := os.MkdirAll(directory, os.ModePerm); err != nil {
-		return "", err
-	}
-
-	if err := ioutil.WriteFile(file, image, 0666); err != nil {
-		return "", err
-	}
-
-	return path.Join(sourceName, filename), nil
 }
 
 func (pb *PartBuilder) FromBrickOwl(ctx context.Context, readPart *brickowl.BrickOwlPart) error {
@@ -83,11 +67,15 @@ func (pb *PartBuilder) FromWantedList(ctx context.Context, readPart *stud_io.Lis
 }
 
 func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPart func() *lego.PartA) error {
+
 	var err error
+	ctx, span := beeline.StartSpan(ctx, "store_"+string(key))
+
 	defer func() {
 		if err != nil {
-			beeline.AddField(ctx, string(key)+"_error", err)
+			beeline.AddField(ctx, "err", err)
 		}
+		span.Send()
 	}()
 
 	var p *lego.PartA
@@ -114,12 +102,8 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 	}
 
 	if p.HasImage() == false {
-		image, err := bricklink.GetImage(ctx, p.BrickLink.PartNumber, p.BrickLink.Colour)
-		if err != nil {
-			return err
-		}
 
-		path, err := pb.storeImage(ctx, "bricklink", p.PartID, p.ColourID, image)
+		path, err := pb.getImage(ctx, p)
 		if err != nil {
 			return err
 		}
@@ -132,4 +116,53 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 	}
 
 	return nil
+}
+
+func (pb *PartBuilder) getImage(ctx context.Context, p *lego.PartA) (string, error) {
+
+	storeName := "bricklink"
+
+	imageRelative := path.Join(storeName, fmt.Sprintf("%s-%v.png", p.PartID, p.ColourID))
+	fullImagePath := path.Join(pb.storeRoot, imageRelative)
+
+	beeline.AddField(ctx, "image_relative", imageRelative)
+
+	if err := os.MkdirAll(path.Join(pb.storeRoot, storeName), os.ModePerm); err != nil {
+		beeline.AddField(ctx, "store_creation_err", err)
+		return "", err
+	}
+
+	inFilestore := fileExists(fullImagePath)
+	beeline.AddField(ctx, "image_in_filestore", inFilestore)
+
+	if inFilestore {
+		return imageRelative, nil
+	}
+
+	image, err := bricklink.GetImage(ctx, p.BrickLink.PartNumber, p.BrickLink.Colour)
+	if err != nil {
+		beeline.AddField(ctx, "image_fetch_err", err)
+		return "", err
+	}
+
+	beeline.AddField(ctx, "image_fetched", true)
+	beeline.AddField(ctx, "image_size", len(image))
+
+	if err := ioutil.WriteFile(fullImagePath, image, 0666); err != nil {
+		beeline.AddField(ctx, "image_write_err", err)
+		return "", err
+	}
+
+	beeline.AddField(ctx, "image_written", true)
+
+	return imageRelative, nil
+}
+
+func fileExists(filepath string) bool {
+	info, err := os.Stat(filepath)
+	if os.IsNotExist(err) {
+		return false
+	}
+
+	return info.IsDir() == false
 }

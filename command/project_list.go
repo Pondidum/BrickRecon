@@ -2,7 +2,7 @@ package command
 
 import (
 	"brickrecon/app"
-	"brickrecon/lego/projections/all_projects"
+	"brickrecon/lego/projections/allprojects"
 	"fmt"
 
 	"github.com/honeycombio/beeline-go"
@@ -47,8 +47,8 @@ func (c *ProjectListCommand) Run(args []string) int {
 		return 1
 	}
 
-	var view all_projects.AllProjectsView
-	if err := store.EventStore.ReadView(ctx, all_projects.ProjectionName, &view); err != nil {
+	var view allprojects.AllProjectsView
+	if err := store.EventStore.ReadView(ctx, allprojects.ProjectionName, &view); err != nil {
 		c.UI.Error(err.Error())
 		return 1
 	}

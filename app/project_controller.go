@@ -3,7 +3,7 @@ package app
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
-	"brickrecon/lego/projections/all_projects"
+	"brickrecon/lego/projections/allprojects"
 	"brickrecon/preen"
 	"fmt"
 	"net/http"
@@ -235,7 +235,7 @@ func projectWithKit(store *AppStore, pc *preen.PreenContext, req *http.Request) 
 	}
 }
 
-func withLinks(pc *preen.PreenContext, events []*all_projects.EventDescription) []*all_projects.EventDescription {
+func withLinks(pc *preen.PreenContext, events []*allprojects.EventDescription) []*allprojects.EventDescription {
 
 	for _, event := range events {
 		if event.Type == "KitAddedToProject" {
@@ -255,14 +255,14 @@ type ProjectWithKit struct {
 	Name lego.ProjectName
 
 	Parts   []*PartWithKitPart
-	Kits    map[lego.KitNumber]all_projects.KitView
-	Colours []*all_projects.ColourView
-	Events  []*all_projects.EventDescription
-	Stats   *all_projects.ProjectStatsView
+	Kits    map[lego.KitNumber]allprojects.KitView
+	Colours []*allprojects.ColourView
+	Events  []*allprojects.EventDescription
+	Stats   *allprojects.ProjectStatsView
 }
 
 type PartWithKitPart struct {
-	*all_projects.ProjectPartView
+	*allprojects.ProjectPartView
 
 	KitQuantity    int
 	TotalInventory int

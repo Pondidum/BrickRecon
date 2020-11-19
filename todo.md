@@ -2,7 +2,7 @@
 
 - [x] bug on rebuilding views (skips millenium falcon)
 - [ ] add view model data to honeycomb
-- [ ] abstract query params/ form bodies
+- [x] abstract query params/ form bodies
 - [x] export wanted-list
 - [x] project audit trail
 - [ ] audit trail links
@@ -13,11 +13,11 @@
 - [x] wantedlistexport: support quantity and inventory properties
 - [ ] add and remove parts from a project
 - [ ] change part colours
-- [ ] filtering parts list
+- [x] filtering parts list
   - [x] colour
   - [x] all/needed/owned
-  - [ ] text
-- [ ] sorting parts list
+  - [x] text
+- [x] sorting parts list
 - [ ] better display of adding kit to project
   - needs to show what it will add that you need somehow
 - [ ] eventstore: warn when an event is processed but not registered
@@ -30,8 +30,7 @@
   - `modelv1.ldr` seems to be a custom format of ldr
   - `model2.ldr` ldraw for actual model, but with all bricks expanded as submodels also
 - [x] eventstore: fs backend should save views non-minified
-- [ ] preen: PreenContext for Actions (access to useful functions)
-  - [ ] controllerRedirect
-  - [ ] errorModel
-  - [ ] ...
+- [x] preen: PreenContext for Actions (access to useful functions)
+  - [x] controllerRedirect
+  - [x] errorModel
 - [x] bug in export logic (see plate 1 x 2 in kazortype export)
