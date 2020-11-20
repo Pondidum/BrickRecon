@@ -18,9 +18,9 @@ type Backend interface {
 	NewEventReader(ctx context.Context, registry *EventRegistry, aggregateID AggregateID) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
-	DestroyViews() error
+	DestroyViews(ctx context.Context) error
 
-	AllAggregates() ([]AggregateID, error)
+	AllAggregates(ctx context.Context) ([]AggregateID, error)
 }
 
 type EventReader interface {

@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/honeycombio/beeline-go"
 )
 
 type AggregateBackend struct {
@@ -41,7 +43,9 @@ func (be *AggregateBackend) NewView(name string) eventstore.View {
 	}
 }
 
-func (be *AggregateBackend) DestroyViews() error {
+func (be *AggregateBackend) DestroyViews(ctx context.Context) error {
+	ctx, span := beeline.StartSpan(ctx, "destroy_views")
+	defer span.Send()
 
 	if err := os.RemoveAll(string(be.viewsPath)); err != nil {
 		return err
@@ -50,7 +54,10 @@ func (be *AggregateBackend) DestroyViews() error {
 	return be.createRoot()
 }
 
-func (be *AggregateBackend) AllAggregates() ([]eventstore.AggregateID, error) {
+func (be *AggregateBackend) AllAggregates(ctx context.Context) ([]eventstore.AggregateID, error) {
+
+	ctx, span := beeline.StartSpan(ctx, "all_aggregates")
+	defer span.Send()
 
 	entries, err := ioutil.ReadDir(string(be.eventsPath))
 	if err != nil {
@@ -65,10 +72,6 @@ func (be *AggregateBackend) AllAggregates() ([]eventstore.AggregateID, error) {
 
 	return ids, nil
 }
-
-// type aggregateID struct {
-// 	AggregateRootID uuid.UUID `json:"meta_aggregate_id"`
-// }
 
 func (be *AggregateBackend) createRoot() error {
 	if err := os.MkdirAll(string(be.eventsPath), os.ModePerm); err != nil {

@@ -89,36 +89,24 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id AggregateID, a Aggre
 
 	beeline.AddField(ctx, "es.aggregate_id", id)
 
-	er, err := es.backend.NewEventReader(ctx, es.registry, id)
+	events, err := es.eventsForAggregate(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	defer er.Close()
+	if len(events) == 0 {
+		beeline.AddField(ctx, "es.aggregate_not_found", true)
+		err = &AggregateNotFoundError{ID: id}
+	}
 
 	aggregator := a.aggregator()
-	hasEvents := false
 
-	for er.Read() {
-		hasEvents = true
-
-		e, err := er.Event()
-		if err != nil {
-			return err
-		}
-
-		e = es.applyMiddleware(ctx, e)
-
+	for _, e := range events {
 		aggregator.onEvent(e)
 		aggregator.sequence = e.Meta().Sequence
 	}
 
 	beeline.AddField(ctx, "es.aggregate_sequence", aggregator.sequence)
-
-	if !hasEvents {
-		beeline.AddField(ctx, "es.aggregate_not_found", true)
-		err = &AggregateNotFoundError{ID: id}
-	}
 
 	return err
 }
@@ -171,7 +159,7 @@ func (es *eventStore) SaveAggregate(ctx context.Context, a Aggregate) error {
 
 func (es *eventStore) RunStatelessProjection(ctx context.Context, projection StatelessProjection) error {
 
-	aggregates, err := es.backend.AllAggregates()
+	aggregates, err := es.backend.AllAggregates(ctx)
 	if err != nil {
 		beeline.AddField(ctx, "es.err_reading_aggregates", err)
 		return err
@@ -195,11 +183,11 @@ func (es *eventStore) RunStatelessProjection(ctx context.Context, projection Sta
 func (es *eventStore) RebuildProjections(ctx context.Context) error {
 
 	be := es.backend
-	if err := be.DestroyViews(); err != nil {
+	if err := be.DestroyViews(ctx); err != nil {
 		return err
 	}
 
-	aggregates, err := be.AllAggregates()
+	aggregates, err := be.AllAggregates(ctx)
 	if err != nil {
 		beeline.AddField(ctx, "es.err_reading_aggregates", err)
 		return err
@@ -224,6 +212,8 @@ func (es *eventStore) RebuildProjections(ctx context.Context) error {
 }
 
 func (es *eventStore) eventsForAggregate(ctx context.Context, id AggregateID) ([]Event, error) {
+	ctx, span := beeline.StartSpan(ctx, "read_events")
+	defer span.Send()
 
 	beeline.AddField(ctx, "es.aggregate_id", id)
 

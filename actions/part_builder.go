@@ -80,9 +80,13 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 
 	var p *lego.Part
 
-	if pb.knownParts[key] {
+	partExists := pb.knownParts[key]
+	beeline.AddField(ctx, "new_part", !partExists)
+
+	if partExists {
 
 		if pb.hasImage[key] {
+			beeline.AddField(ctx, "part_has_image", true)
 			return nil
 		}
 
@@ -101,7 +105,10 @@ func (pb *PartBuilder) storePart(ctx context.Context, key lego.PartKey, createPa
 		pb.knownParts[p.Key] = true
 	}
 
-	if p.HasImage() == false {
+	hasImage := p.HasImage()
+	beeline.AddField(ctx, "part_has_image", hasImage)
+
+	if hasImage == false {
 
 		path, err := pb.getImage(ctx, p)
 		if err != nil {
