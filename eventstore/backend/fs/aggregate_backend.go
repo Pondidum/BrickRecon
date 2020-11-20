@@ -27,8 +27,8 @@ func NewAggregateBackend(root string) (*AggregateBackend, error) {
 	return be, nil
 }
 
-func (be *AggregateBackend) NewEventReader(registry *eventstore.EventRegistry, aggregateID eventstore.AggregateID) (eventstore.EventReader, error) {
-	return NewAggregateEventReader(context.Background(), registry, be.eventsPath, string(aggregateID))
+func (be *AggregateBackend) NewEventReader(ctx context.Context, registry *eventstore.EventRegistry, aggregateID eventstore.AggregateID) (eventstore.EventReader, error) {
+	return NewAggregateEventReader(ctx, registry, be.eventsPath, string(aggregateID))
 }
 
 func (be *AggregateBackend) NewEventWriter() eventstore.EventWriter {

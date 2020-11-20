@@ -3,6 +3,7 @@ package allprojects
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"context"
 	"fmt"
 	"reflect"
 	"sort"
@@ -41,9 +42,9 @@ func newProjectView(id eventstore.AggregateID, name lego.ProjectName) *ProjectVi
 	}
 }
 
-func (project *ProjectView) addParts(load PartLoader, parts map[lego.PartKey]int) {
+func (project *ProjectView) addParts(ctx context.Context, load PartLoader, parts map[lego.PartKey]int) {
 	for key, quantity := range parts {
-		view := newPartView(load, key, quantity)
+		view := newPartView(ctx, load, key, quantity)
 		project.Parts = append(project.Parts, view)
 		project.Colours = appendNewColours(project.Colours, view)
 	}

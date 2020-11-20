@@ -3,6 +3,7 @@ package allprojects
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"context"
 	"testing"
 	"time"
 
@@ -149,7 +150,7 @@ func TestWhenProjectAddedAfterKit(t *testing.T) {
 func apply(events ...eventstore.Event) *AllProjectsView {
 
 	p := NewProjectsProjection(nil)
-	p.partLoader = func(k lego.PartKey) *lego.Part {
+	p.partLoader = func(ctx context.Context, k lego.PartKey) *lego.Part {
 		part := lego.BlankPart()
 
 		n, c := lego.ParsePartKey(k)
@@ -161,9 +162,10 @@ func apply(events ...eventstore.Event) *AllProjectsView {
 	}
 
 	state := p.CreateState()
+	ctx := context.Background()
 
 	for _, e := range events {
-		p.Project(state, e)
+		p.Project(ctx, state, e)
 	}
 
 	view := state.(*AllProjectsView)

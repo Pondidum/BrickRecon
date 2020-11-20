@@ -10,9 +10,9 @@ var ProjectionName string = "kits"
 
 func NewKitsProjection(es eventstore.EventStore) *KitsProjection {
 	return &KitsProjection{
-		partLoader: func(key lego.PartKey) *lego.Part {
+		partLoader: func(ctx context.Context, key lego.PartKey) *lego.Part {
 			part := lego.BlankPart()
-			es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
+			es.LoadAggregate(ctx, eventstore.AggregateID(key), part)
 			return part
 		},
 	}
@@ -32,7 +32,7 @@ func (p *KitsProjection) CreateState() interface{} {
 	}
 }
 
-func (p *KitsProjection) Project(state interface{}, event eventstore.Event) interface{} {
+func (p *KitsProjection) Project(ctx context.Context, state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllKitsView)
 
 	switch e := event.(type) {
@@ -41,7 +41,7 @@ func (p *KitsProjection) Project(state interface{}, event eventstore.Event) inte
 
 		parts := []*PartView{}
 		for key, quantity := range e.Parts {
-			parts = append(parts, newPartView(p.partLoader, key, quantity))
+			parts = append(parts, newPartView(ctx, p.partLoader, key, quantity))
 		}
 
 		view.Kits[e.KitNumber] = &KitView{

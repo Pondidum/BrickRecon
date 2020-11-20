@@ -10,9 +10,9 @@ var ProjectionName string = "projects"
 
 func NewProjectsProjection(es eventstore.EventStore) *projectsProjection {
 	return &projectsProjection{
-		partLoader: func(key lego.PartKey) *lego.Part {
+		partLoader: func(ctx context.Context, key lego.PartKey) *lego.Part {
 			part := lego.BlankPart()
-			es.LoadAggregate(context.Background(), eventstore.AggregateID(key), part)
+			es.LoadAggregate(ctx, eventstore.AggregateID(key), part)
 			return part
 		},
 	}
@@ -34,7 +34,7 @@ func (p *projectsProjection) CreateState() interface{} {
 	}
 }
 
-func (p *projectsProjection) Project(state interface{}, event eventstore.Event) interface{} {
+func (p *projectsProjection) Project(ctx context.Context, state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllProjectsView)
 
 	project := projectByID(view.Projects, event.Meta().AggregateRootID)
@@ -49,7 +49,7 @@ func (p *projectsProjection) Project(state interface{}, event eventstore.Event) 
 		view.Projects[e.Name] = project
 
 	case *lego.ProjectPartsAdded:
-		project.addParts(p.partLoader, e.Parts)
+		project.addParts(ctx, p.partLoader, e.Parts)
 
 		for _, kit := range view.Kits {
 			calculateKitFulfillment(project, kit)
@@ -58,7 +58,7 @@ func (p *projectsProjection) Project(state interface{}, event eventstore.Event) 
 		project.audit(e, "%v parts added", len(e.Parts))
 
 	case *lego.PartsChanged:
-		project.addParts(p.partLoader, e.Additions)
+		project.addParts(ctx, p.partLoader, e.Additions)
 		project.removeParts(e.Removals)
 
 		for _, kit := range view.Kits {

@@ -15,7 +15,7 @@ func NewAggregateID() AggregateID {
 type EventMiddleware func(context.Context, Event) Event
 
 type Backend interface {
-	NewEventReader(registry *EventRegistry, aggregateID AggregateID) (EventReader, error)
+	NewEventReader(ctx context.Context, registry *EventRegistry, aggregateID AggregateID) (EventReader, error)
 	NewEventWriter() EventWriter
 	NewView(name string) View
 	DestroyViews() error

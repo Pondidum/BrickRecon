@@ -89,7 +89,7 @@ func (es *eventStore) LoadAggregate(ctx context.Context, id AggregateID, a Aggre
 
 	beeline.AddField(ctx, "es.aggregate_id", id)
 
-	er, err := es.backend.NewEventReader(es.registry, id)
+	er, err := es.backend.NewEventReader(ctx, es.registry, id)
 	if err != nil {
 		return err
 	}
@@ -227,7 +227,7 @@ func (es *eventStore) eventsForAggregate(ctx context.Context, id AggregateID) ([
 
 	beeline.AddField(ctx, "es.aggregate_id", id)
 
-	reader, err := es.backend.NewEventReader(es.registry, id)
+	reader, err := es.backend.NewEventReader(ctx, es.registry, id)
 	if err != nil {
 		return nil, err
 	}

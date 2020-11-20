@@ -3,6 +3,7 @@ package allparts
 import (
 	"brickrecon/eventstore"
 	"brickrecon/lego"
+	"context"
 )
 
 var ProjectionName = "allparts"
@@ -17,7 +18,7 @@ func (p *AllPartsProjection) CreateState() interface{} {
 	return NewAllPartsView()
 }
 
-func (p *AllPartsProjection) Project(state interface{}, event eventstore.Event) interface{} {
+func (p *AllPartsProjection) Project(ctx context.Context, state interface{}, event eventstore.Event) interface{} {
 	view := state.(*AllPartsView)
 
 	switch e := event.(type) {

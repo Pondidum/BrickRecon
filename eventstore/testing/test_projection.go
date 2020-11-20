@@ -1,6 +1,9 @@
 package testing
 
-import "brickrecon/eventstore"
+import (
+	"brickrecon/eventstore"
+	"context"
+)
 
 type TestProjectionState struct {
 	Names map[string]bool
@@ -9,7 +12,7 @@ type TestProjectionState struct {
 type testProjection struct {
 	name    string
 	init    eventstore.Initialiser
-	project func(state interface{}, event eventstore.Event) interface{}
+	project func(ctx context.Context, state interface{}, event eventstore.Event) interface{}
 }
 
 func (p *testProjection) Name() string {
@@ -18,6 +21,6 @@ func (p *testProjection) Name() string {
 func (p *testProjection) CreateState() interface{} {
 	return p.init()
 }
-func (p *testProjection) Project(state interface{}, event eventstore.Event) interface{} {
-	return p.project(state, event)
+func (p *testProjection) Project(ctx context.Context, state interface{}, event eventstore.Event) interface{} {
+	return p.project(ctx, state, event)
 }

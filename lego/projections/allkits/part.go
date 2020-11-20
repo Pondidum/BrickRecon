@@ -2,13 +2,14 @@ package allkits
 
 import (
 	"brickrecon/lego"
+	"context"
 )
 
-type PartLoader func(lego.PartKey) *lego.Part
+type PartLoader func(ctx context.Context, key lego.PartKey) *lego.Part
 
-func newPartView(load PartLoader, key lego.PartKey, quantity int) *PartView {
+func newPartView(ctx context.Context, load PartLoader, key lego.PartKey, quantity int) *PartView {
 
-	part := load(key)
+	part := load(ctx, key)
 
 	return &PartView{
 		Key:        key,

@@ -7,7 +7,7 @@ import (
 type Projection interface {
 	Name() string
 	CreateState() interface{}
-	Project(state interface{}, event Event) interface{}
+	Project(ctx context.Context, state interface{}, event Event) interface{}
 }
 
 type StatelessProjection interface {
@@ -73,7 +73,7 @@ func (p *Projector) runStatefulProjection(ctx context.Context, projection Projec
 	}
 
 	for _, e := range events {
-		state = projection.Project(state, e)
+		state = projection.Project(ctx, state, e)
 	}
 
 	return view.WriteView(ctx, state, 0)

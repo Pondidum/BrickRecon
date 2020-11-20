@@ -47,7 +47,7 @@ func TestProjections(t *testing.T) {
 		&testProjection{
 			name: "names",
 			init: func() interface{} { return &TestProjectionState{map[string]bool{}} },
-			project: func(state interface{}, event eventstore.Event) interface{} {
+			project: func(ctx context.Context, state interface{}, event eventstore.Event) interface{} {
 				m := state.(*TestProjectionState)
 				e := event.(*TestEvent)
 
