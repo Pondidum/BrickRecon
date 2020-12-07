@@ -2,32 +2,28 @@ package brickowl
 
 import (
 	"brickrecon/lego"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
 type BrickOwlApi struct {
-	key string
+	api Owlette
 }
 
 func NewBrickOwlApi(key string) *BrickOwlApi {
-	return &BrickOwlApi{key}
+	return &BrickOwlApi{
+		api: newLowLevelApi(key),
+	}
 }
 
 func (bo *BrickOwlApi) GetSetName(setNumber lego.KitNumber) (lego.KitName, error) {
 
-	setBoid, err := bo.getSetBoid(setNumber)
+	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
 		return "", err
 	}
 
-	info, err := bo.lookup(setBoid)
+	info, err := bo.api.lookup(setBoid)
 	if err != nil {
 		return "", err
 	}
@@ -47,17 +43,17 @@ func sanitiseKitName(name string) lego.KitName {
 
 func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, error) {
 
-	setBoid, err := bo.getSetBoid(setNumber)
+	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	inventory, err := bo.getInventory(setBoid)
+	inventory, err := bo.api.getInventory(setBoid)
 	if err != nil {
 		return nil, err
 	}
 
-	colours, err := bo.loadColours()
+	colours, err := bo.api.listColours()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +71,7 @@ func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, erro
 		}
 
 		// takes max 100 items
-		partData, err := bo.lookupParts(partBoids)
+		partData, err := bo.api.lookupParts(partBoids)
 		if err != nil {
 			return nil, err
 		}
@@ -91,136 +87,6 @@ func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, erro
 	}
 
 	return parts, nil
-}
-
-func (bo *BrickOwlApi) makeRequest(url string, args map[string]string, dto interface{}) error {
-	req, err := http.NewRequest("GET", url, nil)
-
-	if err != nil {
-		return err
-	}
-
-	q := req.URL.Query()
-	q.Add("key", bo.key)
-	for name, value := range args {
-		q.Add(name, value)
-	}
-	req.URL.RawQuery = q.Encode()
-
-	client := http.Client{}
-	res, err := client.Do(req)
-
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode < 200 || res.StatusCode > 299 {
-		return fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
-	}
-
-	content, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return err
-	}
-
-	return json.Unmarshal(content, &dto)
-}
-
-func (bo *BrickOwlApi) getSetBoid(setNumber lego.KitNumber) (string, error) {
-
-	args := map[string]string{
-		"type":    "Set",
-		"id_type": "set_number",
-		"id":      string(setNumber),
-	}
-
-	var dto idlookupResponse
-
-	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/id_lookup", args, &dto); err != nil {
-		return "", err
-	}
-
-	if len(dto.Boids) == 0 {
-		return "", errors.New("No Boids found")
-	}
-
-	return dto.Boids[0], nil
-}
-
-func (bo *BrickOwlApi) getInventory(boid string) ([]inventoryItem, error) {
-
-	args := map[string]string{
-		"boid": boid,
-	}
-
-	var dto inventoryResponse
-
-	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/inventory", args, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto.Inventory, nil
-}
-
-func (bo *BrickOwlApi) lookup(boid string) (*lookupItem, error) {
-	args := map[string]string{
-		"boid": boid,
-	}
-
-	var dto lookupItem
-
-	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/lookup", args, &dto); err != nil {
-		return nil, err
-	}
-
-	return &dto, nil
-}
-
-func boidCsv(boids []lego.BrickOwlPart) string {
-	if len(boids) == 0 {
-		return ""
-	}
-	var (
-		sep = []byte(",")
-		// preallocate for len(sep) + assume at least 1 character
-		out = make([]byte, 0, (1+len(sep))*len(boids))
-	)
-	for _, s := range boids {
-		out = append(out, s...)
-		out = append(out, sep...)
-	}
-	return string(out[:len(out)-len(sep)])
-}
-
-func (bo *BrickOwlApi) lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error) {
-	if len(boids) > 100 {
-		return nil, errors.New("Max 100 ids")
-	}
-
-	args := map[string]string{
-		"boids": boidCsv(boids),
-	}
-
-	var dto bulkLookupResponse
-
-	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/bulk_lookup", args, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto.Items, nil
-}
-
-func (bo *BrickOwlApi) loadColours() (map[flexInt]colourItem, error) {
-	args := map[string]string{}
-
-	var dto map[flexInt]colourItem
-
-	if err := bo.makeRequest("https://api.brickowl.com/v1/catalog/color_list", args, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto, nil
 }
 
 func createPart(colours map[flexInt]colourItem, item inventoryItem, additional lookupItem) *BrickOwlPart {
@@ -296,80 +162,4 @@ func split(buf []inventoryItem, lim int) [][]inventoryItem {
 		chunks = append(chunks, buf[:])
 	}
 	return chunks
-}
-
-type bulkLookupResponse struct {
-	Items map[lego.BrickOwlPart]lookupItem
-}
-
-type lookupItem struct {
-	Boid     string
-	Name     string
-	Type     string
-	ColourID flexInt `json:"color_id"`
-	IDs      idMap
-}
-
-type idlookupResponse struct {
-	Boids []string
-}
-
-type inventoryResponse struct {
-	Inventory []inventoryItem
-}
-
-type inventoryItem struct {
-	Boid     lego.BrickOwlPart
-	Quantity flexInt
-}
-
-type colourItem struct {
-	ID   string
-	Name lego.ColourName
-	Hex  lego.HexColour
-
-	LDrawIDs     []flexInt `json:"ldraw_ids"`
-	BrickLinkIDs []flexInt `json:"bl_ids"`
-}
-
-type flexInt int
-
-func (fi *flexInt) UnmarshalJSON(b []byte) error {
-	if b[0] != '"' {
-		return json.Unmarshal(b, (*int)(fi))
-	}
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	i, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-	*fi = flexInt(i)
-	return nil
-}
-
-type idMap map[string]string
-
-func (idmap *idMap) UnmarshalJSON(b []byte) error {
-
-	var ids []struct {
-		ID   string
-		Type string
-	}
-
-	if err := json.Unmarshal(b, &ids); err != nil {
-		return err
-	}
-
-	m := idMap{}
-
-	for _, pair := range ids {
-		m[pair.Type] = pair.ID
-	}
-
-	*idmap = m
-
-	return nil
 }

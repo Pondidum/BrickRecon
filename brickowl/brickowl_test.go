@@ -8,23 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIdMapUnMarshal(t *testing.T) {
-	t.Parallel()
-
-	c := container{}
-	data := `{ "ids": [ { "id": "4070", "type": "design_id" }, { "id": "531429-64", "type": "boid" } ] }`
-
-	err := json.Unmarshal([]byte(data), &c)
-
-	assert.NoError(t, err)
-	assert.Contains(t, c.IDs, "design_id")
-	assert.Contains(t, c.IDs, "boid")
-}
-
-type container struct {
-	IDs idMap
-}
-
 func TestCreatePart(t *testing.T) {
 	t.Parallel()
 
@@ -73,13 +56,6 @@ func TestSanitisePartName(t *testing.T) {
 	for input, expected := range cases {
 		assert.Equal(t, expected, sanitisePartName(input, "15403b", colour))
 	}
-}
-
-func TestBoidCsv(t *testing.T) {
-	t.Parallel()
-
-	csv := boidCsv([]lego.BrickOwlPart{lego.BrickOwlPart("123"), lego.BrickOwlPart("456")})
-	assert.Equal(t, "123,456", csv)
 }
 
 func TestSanitiseKitName(t *testing.T) {
