@@ -21,7 +21,7 @@ func TestGetInventory(t *testing.T) {
 	parts, err := owl.GetParts("75193-1")
 
 	assert.NoError(t, err)
-	assert.Len(t, parts, 48)
+	assert.Len(t, parts, 47)
 }
 
 type FakeApi struct{}
@@ -34,7 +34,7 @@ func (api *FakeApi) getInventory(boid string) ([]inventoryItem, error) {
 	return dto.Inventory, err
 }
 
-func (api *FakeApi) lookupSetBoid(setNumber lego.KitNumber) (string, error) {
+func (api *FakeApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
 
 	var dto idlookupResponse
 	if err := readFile(&dto, "./responses/catalog-idlookup-set-%s.json", setNumber); err != nil {

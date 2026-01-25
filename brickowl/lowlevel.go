@@ -11,7 +11,7 @@ import (
 
 type Owlette interface {
 	getInventory(boid string) ([]inventoryItem, error)
-	lookupSetBoid(setNumber lego.KitNumber) (string, error)
+	lookupSetBoid(setNumber lego.SetId) (string, error)
 	lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error)
 	lookup(boid string) (*lookupItem, error)
 	listColours() (map[flexInt]colourItem, error)
@@ -40,7 +40,7 @@ func (api *lowLevelApi) getInventory(boid string) ([]inventoryItem, error) {
 	return dto.Inventory, nil
 }
 
-func (api *lowLevelApi) lookupSetBoid(setNumber lego.KitNumber) (string, error) {
+func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
 
 	args := map[string]string{
 		"type":    "Set",

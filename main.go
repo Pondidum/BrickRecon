@@ -4,11 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"brickrecon/command"
-
-	"github.com/honeycombio/beeline-go"
-	"github.com/mattn/go-colorable"
-	"github.com/mitchellh/cli"
+	"github.com/hashicorp/cli"
 )
 
 func main() {
@@ -17,24 +13,17 @@ func main() {
 
 func Run(args []string) int {
 
-	beeline.Init(beeline.Config{
-		WriteKey: os.Getenv("HONEYCOMB_API_KEY"),
-		STDOUT:   os.Getenv("HONEYCOMB_API_KEY") == "",
-		Dataset:  "BrickRecon",
-	})
-	defer beeline.Close()
+	// ui := &cli.ColoredUi{
+	// 	WarnColor:  cli.UiColorYellow,
+	// 	ErrorColor: cli.UiColorRed,
+	// 	Ui: &cli.BasicUi{
+	// 		Reader:      os.Stdin,
+	// 		Writer:      colorable.NewColorableStdout(),
+	// 		ErrorWriter: colorable.NewColorableStderr(),
+	// 	},
+	// }
 
-	ui := &cli.ColoredUi{
-		WarnColor:  cli.UiColorYellow,
-		ErrorColor: cli.UiColorRed,
-		Ui: &cli.BasicUi{
-			Reader:      os.Stdin,
-			Writer:      colorable.NewColorableStdout(),
-			ErrorWriter: colorable.NewColorableStderr(),
-		},
-	}
-
-	commands := command.Commands(ui)
+	commands := map[string]cli.CommandFactory{}
 
 	cli := &cli.CLI{
 		Name:                       "brickrecon",

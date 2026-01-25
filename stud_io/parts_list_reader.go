@@ -23,7 +23,6 @@ const (
 )
 
 type ListPart struct {
-	Key             lego.PartKey
 	BrickLinkID     lego.BrickLinkPart
 	ElementID       string
 	LDrawID         lego.LDrawPart
@@ -109,8 +108,6 @@ func parsePart(fields []string) (*ListPart, error) {
 	if part.Weight, err = strconv.ParseFloat(fields[weight], 64); err != nil {
 		return nil, convertError("part.Weight", fields[weight])
 	}
-
-	part.Key = lego.CreatePartKey(part.LDrawID, part.LDrawColour)
 
 	return part, err
 }

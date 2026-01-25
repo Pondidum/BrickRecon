@@ -16,7 +16,6 @@ type PartLookup interface {
 }
 
 type StudioPart struct {
-	Key             lego.PartKey
 	BrickLinkID     lego.BrickLinkPart
 	LDrawID         lego.LDrawPart
 	Name            lego.PartName
@@ -82,7 +81,6 @@ func toPart(brick *ldraw.Brick, lookup PartLookup) *StudioPart {
 	blColour := lookup.GetColour(ldColour)
 
 	return &StudioPart{
-		Key:             lego.CreatePartKey(id, ldColour),
 		LDrawID:         id,
 		BrickLinkID:     lego.BrickLinkPart(brick.LDrawID),
 		Name:            name,

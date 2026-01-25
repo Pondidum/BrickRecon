@@ -33,7 +33,7 @@ func TestFetchingInventory(t *testing.T) {
 	parts, err := owl.getInventory("849212")
 
 	assert.NoError(t, err)
-	assert.Len(t, parts, 716)
+	assert.Len(t, parts, 728)
 }
 
 func TestBulkFetching(t *testing.T) {

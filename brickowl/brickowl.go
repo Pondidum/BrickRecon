@@ -16,7 +16,7 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	}
 }
 
-func (bo *BrickOwlApi) GetSetName(setNumber lego.KitNumber) (lego.KitName, error) {
+func (bo *BrickOwlApi) GetSetName(setNumber lego.SetId) (lego.SetName, error) {
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
@@ -33,19 +33,19 @@ func (bo *BrickOwlApi) GetSetName(setNumber lego.KitNumber) (lego.KitName, error
 
 var rx = regexp.MustCompile(`\s+(Set\s*\d+$)`)
 
-func sanitiseKitName(name string) lego.KitName {
+func sanitiseKitName(name string) lego.SetName {
 
 	name = strings.TrimPrefix(name, "LEGO ")
 	name = rx.ReplaceAllString(name, "")
 
-	return lego.KitName(name)
+	return lego.SetName(name)
 }
 
 // func (bo *BrickOwlApi) GetPart(key lego.PartKey) (*BrickOwlPart, error) {
 
 // }
 
-func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, error) {
+func (bo *BrickOwlApi) GetParts(setNumber lego.SetId) ([]*BrickOwlPart, error) {
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
@@ -107,7 +107,6 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 	ldColour := lego.LDrawColour(colourInfo.LDrawIDs[0])
 
 	return &BrickOwlPart{
-		Key:         lego.CreatePartKey(id, ldColour),
 		Name:        lego.PartName(name),
 		LDrawID:     id,
 		BrickLinkID: lego.BrickLinkPart(ldrawID),
@@ -124,7 +123,6 @@ func createPart(colours map[flexInt]colourItem, item inventoryItem, additional l
 }
 
 type BrickOwlPart struct {
-	Key  lego.PartKey
 	Name lego.PartName
 
 	LDrawID     lego.LDrawPart
