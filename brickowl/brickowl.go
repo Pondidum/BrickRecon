@@ -41,6 +41,10 @@ func sanitiseKitName(name string) lego.KitName {
 	return lego.KitName(name)
 }
 
+// func (bo *BrickOwlApi) GetPart(key lego.PartKey) (*BrickOwlPart, error) {
+
+// }
+
 func (bo *BrickOwlApi) GetParts(setNumber lego.KitNumber) ([]*BrickOwlPart, error) {
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
