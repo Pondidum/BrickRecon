@@ -1,7 +1,6 @@
 package bricklink
 
 import (
-	"brickrecon/lego"
 	"strings"
 	"testing"
 
@@ -12,16 +11,14 @@ func TestSerializationFormat(t *testing.T) {
 
 	parts := []*WantedListPart{
 		{
-
-			ID:        lego.BrickLinkPart("2540"),
-			Colour:    lego.BrickLinkColour(85),
+			ID:        "2540",
+			Colour:    "85",
 			Quantity:  9,
 			Inventory: 3,
 		},
 		{
-
-			ID:        lego.BrickLinkPart("11477"),
-			Colour:    lego.BrickLinkColour(59),
+			ID:        "11477",
+			Colour:    "59",
 			Quantity:  2,
 			Inventory: 0,
 		},

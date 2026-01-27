@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
+type Boid string
+
 type Owlette interface {
-	getInventory(boid string) ([]inventoryItem, error)
-	lookupSetBoid(setNumber lego.SetId) (string, error)
-	lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error)
-	lookup(boid string) (*lookupItem, error)
-	listColours() (map[flexInt]colourItem, error)
+	getInventory(boid Boid) ([]inventoryItem, error)
+	lookupSetBoid(setNumber lego.SetId) (Boid, error)
+	lookupParts(boids []Boid) (map[Boid]lookupItem, error)
+	lookup(boid Boid) (*lookupItem, error)
 }
 
 type lowLevelApi struct {
@@ -25,10 +26,10 @@ func newLowLevelApi(key string) Owlette {
 	return &lowLevelApi{apiKey: key}
 }
 
-func (api *lowLevelApi) getInventory(boid string) ([]inventoryItem, error) {
+func (api *lowLevelApi) getInventory(boid Boid) ([]inventoryItem, error) {
 
 	args := map[string]string{
-		"boid": boid,
+		"boid": string(boid),
 	}
 
 	var dto inventoryResponse
@@ -40,7 +41,7 @@ func (api *lowLevelApi) getInventory(boid string) ([]inventoryItem, error) {
 	return dto.Inventory, nil
 }
 
-func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
+func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetId) (Boid, error) {
 
 	args := map[string]string{
 		"type":    "Set",
@@ -61,7 +62,7 @@ func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
 	return dto.Boids[0], nil
 }
 
-func (api *lowLevelApi) lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error) {
+func (api *lowLevelApi) lookupParts(boids []Boid) (map[Boid]lookupItem, error) {
 	if len(boids) > 100 {
 		return nil, errors.New("Max 100 ids")
 	}
@@ -79,9 +80,9 @@ func (api *lowLevelApi) lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOw
 	return dto.Items, nil
 }
 
-func (api *lowLevelApi) lookup(boid string) (*lookupItem, error) {
+func (api *lowLevelApi) lookup(boid Boid) (*lookupItem, error) {
 	args := map[string]string{
-		"boid": boid,
+		"boid": string(boid),
 	}
 
 	var dto lookupItem
@@ -91,18 +92,6 @@ func (api *lowLevelApi) lookup(boid string) (*lookupItem, error) {
 	}
 
 	return &dto, nil
-}
-
-func (api *lowLevelApi) listColours() (map[flexInt]colourItem, error) {
-	args := map[string]string{}
-
-	var dto map[flexInt]colourItem
-
-	if err := api.makeRequest("https://api.brickowl.com/v1/catalog/color_list", args, &dto); err != nil {
-		return nil, err
-	}
-
-	return dto, nil
 }
 
 func (bo *lowLevelApi) makeRequest(url string, args map[string]string, dto interface{}) error {
@@ -131,7 +120,7 @@ func (bo *lowLevelApi) makeRequest(url string, args map[string]string, dto inter
 		return fmt.Errorf("Unexpected statusCode: %v", res.StatusCode)
 	}
 
-	content, err := ioutil.ReadAll(res.Body)
+	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
@@ -139,7 +128,7 @@ func (bo *lowLevelApi) makeRequest(url string, args map[string]string, dto inter
 	return json.Unmarshal(content, &dto)
 }
 
-func boidCsv(boids []lego.BrickOwlPart) string {
+func boidCsv(boids []Boid) string {
 	if len(boids) == 0 {
 		return ""
 	}
@@ -156,18 +145,19 @@ func boidCsv(boids []lego.BrickOwlPart) string {
 }
 
 type bulkLookupResponse struct {
-	Items map[lego.BrickOwlPart]lookupItem
+	Items map[Boid]lookupItem
 }
 
 type lookupItem struct {
-	Boid     string
-	Name     string
-	Type     string
-	ColourID flexInt `json:"color_id"`
-	IDs      idMap
+	Boid      Boid
+	Name      string
+	Type      string
+	ColorID   flexInt `json:"color_id"`
+	ColorName string  `json:"color_name"`
+	IDs       idMap
 }
 type idlookupResponse struct {
-	Boids []string
+	Boids []Boid
 }
 
 type inventoryResponse struct {
@@ -175,15 +165,6 @@ type inventoryResponse struct {
 }
 
 type inventoryItem struct {
-	Boid     lego.BrickOwlPart
+	Boid     Boid
 	Quantity flexInt
-}
-
-type colourItem struct {
-	ID   string
-	Name lego.ColourName
-	Hex  lego.HexColour
-
-	LDrawIDs     []flexInt `json:"ldraw_ids"`
-	BrickLinkIDs []flexInt `json:"bl_ids"`
 }

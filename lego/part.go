@@ -1,36 +1,27 @@
 package lego
 
 type PartName string
-type LDrawPart string
-type BrickLinkPart string
-type BrickOwlPart string
+type PartId string
 
 type Part struct {
-	PartID     LDrawPart
-	Name       PartName
-	ColourID   LDrawColour
-	ColourName ColourName
-	ColourHex  HexColour
+	Id   PartId
+	Name PartName
 
-	ImagePath string
-
-	BrickOwl  BrickOwl
-	BrickLink BrickLink
+	Sources []Source
 }
 
-type BrickOwl struct {
-	PartBoid   BrickOwlPart
-	ColourBoid BrickOwlColour
+type Source struct {
+	SourceName string
+	PartId     string
 }
 
-type BrickLink struct {
-	PartNumber BrickLinkPart
-	Colour     BrickLinkColour
+func NewPart(partId PartId, name PartName) *Part {
+	return &Part{Id: partId, Name: name}
 }
 
-func NewPart(partId LDrawPart, name PartName) *Part {
-	return &Part{PartID: partId, Name: name}
-}
-func (p *Part) HasImage() bool {
-	return p.ImagePath != ""
+type InventoryPart struct {
+	Part
+
+	ColourId ColorId
+	Quantity int
 }

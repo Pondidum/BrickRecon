@@ -4,13 +4,13 @@ import (
 	"brickrecon/lego"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
-func GetImage(ctx context.Context, part lego.BrickLinkPart, colour lego.BrickLinkColour) ([]byte, error) {
+func GetImage(ctx context.Context, part lego.InventoryPart) ([]byte, error) {
 
-	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, colour, part)
+	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, part.ColourId, part.Id)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -28,7 +28,7 @@ func GetImage(ctx context.Context, part lego.BrickLinkPart, colour lego.BrickLin
 		return nil, fmt.Errorf("Part not found")
 	}
 
-	content, err := ioutil.ReadAll(res.Body)
+	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, err
 	}

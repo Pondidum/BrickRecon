@@ -3,7 +3,6 @@ package ldraw
 import (
 	"bufio"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -15,13 +14,13 @@ type Model struct {
 }
 
 type Part struct {
-	Colour int
-	File   string
+	ColorId string
+	File    string
 }
 
 type ModelReference struct {
-	PrimaryColour int
-	Name          string
+	PrimaryColorId string
+	Name           string
 }
 
 const metaHeaderName = "0 Name:"
@@ -101,23 +100,20 @@ func parsePartLine(model *Model, line string) error {
 
 	cells := strings.Split(strings.TrimSpace(line), " ")
 
-	colour, err := strconv.Atoi(cells[partColour])
-	if err != nil {
-		return err
-	}
+	colorId := cells[partColour]
 
 	isPart := strings.HasSuffix(line, ".dat")
 	filename := strings.TrimSuffix(strings.Join(cells[partFile:], " "), ".dat")
 
 	if isPart {
 		model.Parts = append(model.Parts, &Part{
-			Colour: colour,
-			File:   filename,
+			ColorId: colorId,
+			File:    filename,
 		})
 	} else {
 		model.Models = append(model.Models, &ModelReference{
-			PrimaryColour: colour,
-			Name:          filename,
+			PrimaryColorId: colorId,
+			Name:           filename,
 		})
 	}
 
@@ -126,20 +122,20 @@ func parsePartLine(model *Model, line string) error {
 
 type Brick struct {
 	LDrawID  string
-	Colour   int
+	ColorId  string
 	Quantity int
 }
 
 func addBrick(all map[string]*Brick, part *Part) {
 
-	key := fmt.Sprintf("%s|%v", part.File, part.Colour)
+	key := fmt.Sprintf("%s|%s", part.File, part.ColorId)
 
 	if b, found := all[key]; found {
 		b.Quantity++
 	} else {
 		all[key] = &Brick{
 			LDrawID:  part.File,
-			Colour:   part.Colour,
+			ColorId:  part.ColorId,
 			Quantity: 1,
 		}
 	}

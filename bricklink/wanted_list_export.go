@@ -1,7 +1,6 @@
 package bricklink
 
 import (
-	"brickrecon/lego"
 	"bytes"
 	"encoding/xml"
 )
@@ -12,17 +11,16 @@ type wantedList struct {
 }
 
 type wantedListItem struct {
-	Type      string               `xml:"ITEMTYPE"`
-	ID        lego.BrickLinkPart   `xml:"ITEMID"`
-	Color     lego.BrickLinkColour `xml:"COLOR"`
-	Quantity  int                  `xml:"MINQTY"`
-	Inventory int                  `xml:"QTYFILLED"`
+	Type      string `xml:"ITEMTYPE"`
+	ID        string `xml:"ITEMID"`
+	Color     string `xml:"COLOR"`
+	Quantity  int    `xml:"MINQTY"`
+	Inventory int    `xml:"QTYFILLED"`
 }
 
 type WantedListPart struct {
-	ID     lego.BrickLinkPart
-	Colour lego.BrickLinkColour
-
+	ID        string
+	Colour    string
 	Quantity  int
 	Inventory int
 }

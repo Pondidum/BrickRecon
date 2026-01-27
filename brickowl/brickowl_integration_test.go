@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -26,7 +25,9 @@ func TestGetInventory(t *testing.T) {
 
 type FakeApi struct{}
 
-func (api *FakeApi) getInventory(boid string) ([]inventoryItem, error) {
+var _ Owlette = &FakeApi{}
+
+func (api *FakeApi) getInventory(boid Boid) ([]inventoryItem, error) {
 
 	var dto inventoryResponse
 	err := readFile(&dto, "./responses/catalog-inventory-%s.json", boid)
@@ -34,7 +35,7 @@ func (api *FakeApi) getInventory(boid string) ([]inventoryItem, error) {
 	return dto.Inventory, err
 }
 
-func (api *FakeApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
+func (api *FakeApi) lookupSetBoid(setNumber lego.SetId) (Boid, error) {
 
 	var dto idlookupResponse
 	if err := readFile(&dto, "./responses/catalog-idlookup-set-%s.json", setNumber); err != nil {
@@ -44,24 +45,17 @@ func (api *FakeApi) lookupSetBoid(setNumber lego.SetId) (string, error) {
 	return dto.Boids[0], nil
 }
 
-func (api *FakeApi) lookupParts(boids []lego.BrickOwlPart) (map[lego.BrickOwlPart]lookupItem, error) {
+func (api *FakeApi) lookupParts(boids []Boid) (map[Boid]lookupItem, error) {
 	return nil, errors.New("lookupParts not implemented")
 }
 
-func (api *FakeApi) lookup(boid string) (*lookupItem, error) {
+func (api *FakeApi) lookup(boid Boid) (*lookupItem, error) {
 	return nil, errors.New("lookup not implemented")
-}
-
-func (api *FakeApi) listColours() (map[flexInt]colourItem, error) {
-	var dto map[flexInt]colourItem
-	err := readFile(&dto, "./responses/catalog-colourlist.json")
-
-	return dto, err
 }
 
 func readFile(dto interface{}, path string, args ...interface{}) error {
 
-	content, err := ioutil.ReadFile(fmt.Sprintf(path, args...))
+	content, err := os.ReadFile(fmt.Sprintf(path, args...))
 	if err != nil {
 		return err
 	}

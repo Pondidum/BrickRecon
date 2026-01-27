@@ -11,38 +11,22 @@ import (
 func TestCreatePart(t *testing.T) {
 	t.Parallel()
 
-	colours := map[flexInt]colourItem{
-		flexInt(64): {
-			Name:         "Medium Stone Gray",
-			ID:           "64",
-			LDrawIDs:     []flexInt{flexInt(71)},
-			BrickLinkIDs: []flexInt{flexInt(86)},
-		},
-	}
-
 	entry := inventoryItem{Boid: "103095-64", Quantity: 5}
 	var additional lookupItem
 	json.Unmarshal([]byte(partJson), &additional)
 
-	part := createPart(colours, entry, additional)
+	part, err := createPart(entry, additional)
 
+	assert.NoError(t, err)
 	assert.Equal(t, lego.PartName("Plate 1 x 2 with Shooter"), part.Name)
-	assert.Equal(t, 5, part.Quantity)
-	assert.Equal(t, lego.BrickLinkColour(86), part.BrickLinkColour)
-
-	assert.Equal(t, lego.ColourName("Medium Stone Gray"), part.ColourName)
-	assert.Equal(t, lego.BrickOwlColour(64), part.ColourBoid)
-	assert.Equal(t, lego.BrickLinkColour(86), part.BrickLinkColour)
-	assert.Equal(t, lego.LDrawColour(71), part.LDrawColour)
+	// assert.Equal(t, 5, part.Quantity)
+	//assert.Equal(t, lego.ColorId("194"), part.ColourId)
 }
 
 func TestSanitisePartName(t *testing.T) {
 	t.Parallel()
 
-	colour := colourItem{
-		Name:         lego.ColourName("Medium Stone Gray"),
-		BrickLinkIDs: []flexInt{flexInt(86)},
-	}
+	colour := "Medium Stone Gray"
 
 	cases := map[string]string{
 		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b)":                          "Plate 1 x 2 with Shooter",

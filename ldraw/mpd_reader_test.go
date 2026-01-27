@@ -23,7 +23,7 @@ func TestReadingFile(t *testing.T) {
 	assert.Len(t, models, 45)
 
 	assert.Len(t, models["kazutortype"].Models, 5)
-	assert.Equal(t, 16, models["kazutortype"].Models[0].PrimaryColour)
+	assert.Equal(t, "16", models["kazutortype"].Models[0].PrimaryColorId)
 	assert.Equal(t, "shoulder right", models["kazutortype"].Models[0].Name)
 
 	assert.Equal(t, 1, models["shoulder right"].Index)

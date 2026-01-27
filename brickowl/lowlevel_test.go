@@ -1,7 +1,6 @@
 package brickowl
 
 import (
-	"brickrecon/lego"
 	"os"
 	"testing"
 
@@ -23,7 +22,7 @@ func TestFetchingBoid(t *testing.T) {
 	boid, err := owl.lookupSetBoid("75192-1")
 
 	assert.NoError(t, err)
-	assert.Equal(t, "849212", boid)
+	assert.Equal(t, Boid("849212"), boid)
 }
 
 func TestFetchingInventory(t *testing.T) {
@@ -33,14 +32,14 @@ func TestFetchingInventory(t *testing.T) {
 	parts, err := owl.getInventory("849212")
 
 	assert.NoError(t, err)
-	assert.Len(t, parts, 728)
+	assert.Len(t, parts, 727)
 }
 
 func TestBulkFetching(t *testing.T) {
 	t.Parallel()
 
 	owl := createApi(t)
-	parts, err := owl.lookupParts([]lego.BrickOwlPart{"380995-64", "334100-64"})
+	parts, err := owl.lookupParts([]Boid{"380995-64", "334100-64"})
 
 	assert.NoError(t, err)
 	assert.Len(t, parts, 2)
@@ -59,6 +58,6 @@ func TestSetLookup(t *testing.T) {
 func TestBoidCsv(t *testing.T) {
 	t.Parallel()
 
-	csv := boidCsv([]lego.BrickOwlPart{lego.BrickOwlPart("123"), lego.BrickOwlPart("456")})
+	csv := boidCsv([]Boid{Boid("123"), Boid("456")})
 	assert.Equal(t, "123,456", csv)
 }

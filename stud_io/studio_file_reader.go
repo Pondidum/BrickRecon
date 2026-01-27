@@ -11,23 +11,10 @@ import (
 )
 
 type PartLookup interface {
-	GetPartName(id lego.LDrawPart) lego.PartName
-	GetColour(colour lego.LDrawColour) lego.BrickLinkColour
+	GetPartName(id lego.PartId) lego.PartName
 }
 
-type StudioPart struct {
-	BrickLinkID     lego.BrickLinkPart
-	LDrawID         lego.LDrawPart
-	Name            lego.PartName
-	BrickLinkColour lego.BrickLinkColour
-	LDrawColour     lego.LDrawColour
-	// ColourName      lego.ColourName
-	// ColourCategory  string
-	Quantity int
-	// Weight          float64
-}
-
-func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]*StudioPart, error) {
+func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]*lego.InventoryPart, error) {
 
 	reader, err := zip.NewReader(file, fileSize)
 	if err != nil {
@@ -52,10 +39,14 @@ func ReadParts(file io.ReaderAt, fileSize int64, lookup PartLookup) ([]*StudioPa
 		return nil, err
 	}
 
-	parts := make([]*StudioPart, len(bricks))
+	parts := make([]*lego.InventoryPart, len(bricks))
 
 	for i, brick := range bricks {
-		parts[i] = toPart(brick, lookup)
+		part, err := toPart(brick, lookup)
+		if err != nil {
+			return nil, err
+		}
+		parts[i] = part
 	}
 
 	return parts, nil
@@ -72,20 +63,22 @@ func findModel(all []*zip.File) (*zip.File, bool) {
 	return nil, false
 }
 
-func toPart(brick *ldraw.Brick, lookup PartLookup) *StudioPart {
+func toPart(brick *ldraw.Brick, lookup PartLookup) (*lego.InventoryPart, error) {
 
-	id := lego.LDrawPart(brick.LDrawID)
+	id := lego.PartId(brick.LDrawID)
 	name := lookup.GetPartName(id)
 
-	ldColour := lego.LDrawColour(brick.Colour)
-	blColour := lookup.GetColour(ldColour)
-
-	return &StudioPart{
-		LDrawID:         id,
-		BrickLinkID:     lego.BrickLinkPart(brick.LDrawID),
-		Name:            name,
-		LDrawColour:     ldColour,
-		BrickLinkColour: blColour,
-		Quantity:        brick.Quantity,
+	color, err := lego.GetColorId(brick.ColorId, "ldraw")
+	if err != nil {
+		return nil, err
 	}
+
+	return &lego.InventoryPart{
+		Part: lego.Part{
+			Id:   id,
+			Name: name,
+		},
+		ColourId: color,
+		Quantity: brick.Quantity,
+	}, nil
 }
