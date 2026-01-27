@@ -10,7 +10,7 @@ import (
 
 func GetImage(ctx context.Context, part lego.InventoryPart) ([]byte, error) {
 
-	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, part.ColourId, part.Id)
+	url := fmt.Sprintf(`https://img.bricklink.com/ItemImage/PN/%v/%s.png`, part.ColorId, part.Id)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {

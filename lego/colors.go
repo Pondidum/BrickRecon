@@ -10,25 +10,25 @@ import (
 
 type ColorId string
 
-//go:embed colours.json
-var colourJson []byte
+//go:embed colors.json
+var colorJson []byte
 
-var brickowlIndex map[string]*colourDto
-var bricklinkIndex map[string]*colourDto
-var ldrawIndex map[string]*colourDto
-var officialIndex map[ColorId]*colourDto
+var brickowlIndex map[string]*colorDto
+var bricklinkIndex map[string]*colorDto
+var ldrawIndex map[string]*colorDto
+var officialIndex map[ColorId]*colorDto
 
 func init() {
 
-	lookup := map[string]*colourDto{}
-	if err := json.Unmarshal(colourJson, &lookup); err != nil {
+	lookup := map[string]*colorDto{}
+	if err := json.Unmarshal(colorJson, &lookup); err != nil {
 		panic(err)
 	}
 
-	brickowlIndex = make(map[string]*colourDto, len(lookup)*2)
-	bricklinkIndex = make(map[string]*colourDto, len(lookup)*2)
-	ldrawIndex = make(map[string]*colourDto, len(lookup)*2)
-	officialIndex = make(map[ColorId]*colourDto, len(lookup)*2)
+	brickowlIndex = make(map[string]*colorDto, len(lookup)*2)
+	bricklinkIndex = make(map[string]*colorDto, len(lookup)*2)
+	ldrawIndex = make(map[string]*colorDto, len(lookup)*2)
+	officialIndex = make(map[ColorId]*colorDto, len(lookup)*2)
 
 	for owl, color := range lookup {
 
@@ -73,15 +73,15 @@ func GetColorId(id string, source string) (ColorId, error) {
 
 func GetColourHex(id ColorId) string {
 
-	colour, found := officialIndex[id]
+	color, found := officialIndex[id]
 	if !found {
 		return ""
 	}
 
-	return colour.Hex
+	return color.Hex
 }
 
-type colourDto struct {
+type colorDto struct {
 	Id   string
 	Name string
 	Hex  string

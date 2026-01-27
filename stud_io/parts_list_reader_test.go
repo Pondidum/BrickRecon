@@ -21,6 +21,6 @@ func TestPartReading(t *testing.T) {
 
 	assert.Equal(t, lego.PartId("2412b"), part.Id)
 	assert.Equal(t, lego.PartName("Tile, Modified 1 x 2 Grille with Bottom Groove / Lip"), part.Name)
-	assert.Equal(t, lego.ColorId("26"), part.ColourId)
+	assert.Equal(t, lego.ColorId("26"), part.ColorId)
 	assert.Equal(t, 4, part.Quantity)
 }

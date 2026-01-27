@@ -22,6 +22,6 @@ func NewPart(partId PartId, name PartName) *Part {
 type InventoryPart struct {
 	Part
 
-	ColourId ColorId
+	ColorId  ColorId
 	Quantity int
 }

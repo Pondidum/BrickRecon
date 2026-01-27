@@ -20,13 +20,13 @@ func TestCreatePart(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, lego.PartName("Plate 1 x 2 with Shooter"), part.Name)
 	// assert.Equal(t, 5, part.Quantity)
-	//assert.Equal(t, lego.ColorId("194"), part.ColourId)
+	//assert.Equal(t, lego.ColorId("194"), part.ColorId)
 }
 
 func TestSanitisePartName(t *testing.T) {
 	t.Parallel()
 
-	colour := "Medium Stone Gray"
+	color := "Medium Stone Gray"
 
 	cases := map[string]string{
 		"LEGO Medium Stone Gray Plate 1 x 2 with Shooter (15403b)":                          "Plate 1 x 2 with Shooter",
@@ -37,7 +37,7 @@ func TestSanitisePartName(t *testing.T) {
 	}
 
 	for input, expected := range cases {
-		assert.Equal(t, expected, sanitisePartName(input, "15403b", colour))
+		assert.Equal(t, expected, sanitisePartName(input, "15403b", color))
 	}
 }
 

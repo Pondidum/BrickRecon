@@ -78,7 +78,7 @@ func toPart(brick *ldraw.Brick, lookup PartLookup) (*lego.InventoryPart, error) 
 			Id:   id,
 			Name: name,
 		},
-		ColourId: color,
+		ColorId:  color,
 		Quantity: brick.Quantity,
 	}, nil
 }

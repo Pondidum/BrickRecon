@@ -14,10 +14,10 @@ const (
 	elementID
 	ldrawID
 	partName
-	brickLinkColour
-	ldrawColour
-	colourName
-	colourCategory
+	brickLinkColor
+	ldrawColor
+	colorName
+	colorCategory
 	quantity
 	weight
 )
@@ -74,7 +74,7 @@ func isSummaryHeader(fields []string) bool {
 }
 
 func parsePart(fields []string) (*lego.InventoryPart, error) {
-	colorId, err := lego.GetColorId(fields[ldrawColour], "ldraw")
+	colorId, err := lego.GetColorId(fields[ldrawColor], "ldraw")
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func parsePart(fields []string) (*lego.InventoryPart, error) {
 			Name: lego.PartName(fields[partName]),
 		},
 
-		ColourId: colorId,
+		ColorId:  colorId,
 		Quantity: quantity,
 	}, nil
 }

@@ -86,8 +86,8 @@ func (bo *BrickOwlApi) GetParts(setNumber lego.SetId) ([]*lego.InventoryPart, er
 					return nil, err
 				}
 				parts = append(parts, &lego.InventoryPart{
-					Part:     part,
-					ColourId: color,
+					Part:    part,
+					ColorId: color,
 
 					Quantity: int(item.Quantity),
 				})
@@ -117,10 +117,10 @@ func createPart(item inventoryItem, additional lookupItem) (lego.Part, error) {
 	}, nil
 }
 
-func sanitisePartName(name string, id string, colourName string) string {
+func sanitisePartName(name string, id string, colorName string) string {
 
 	name = strings.TrimPrefix(name, "LEGO ")
-	name = strings.TrimPrefix(name, colourName)
+	name = strings.TrimPrefix(name, colorName)
 
 	braceIndex := strings.LastIndex(name, "(")
 	if braceIndex > 0 {
