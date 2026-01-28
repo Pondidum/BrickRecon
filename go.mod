@@ -6,6 +6,7 @@ toolchain go1.24.2
 
 require (
 	github.com/XSAM/otelsql v0.41.0
+	github.com/google/uuid v1.6.0
 	github.com/hashicorp/cli v1.1.7
 	github.com/mattn/go-sqlite3 v1.14.24
 	github.com/spf13/pflag v1.0.5
@@ -29,7 +30,6 @@ require (
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.3 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-multierror v1.0.0 // indirect
