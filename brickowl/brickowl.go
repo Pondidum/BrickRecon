@@ -2,10 +2,16 @@ package brickowl
 
 import (
 	"brickrecon/lego"
+	"brickrecon/tracing"
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
+
+	"go.opentelemetry.io/otel"
 )
+
+var tr = otel.Tracer("brickowl")
 
 type BrickOwlApi struct {
 	api Owlette
@@ -17,19 +23,32 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	}
 }
 
-func (bo *BrickOwlApi) GetSetName(setNumber lego.SetNumber) (lego.SetName, error) {
+func (bo *BrickOwlApi) GetSet(ctx context.Context, setNumber lego.SetNumber) (*lego.Set, error) {
+	ctx, span := tr.Start(ctx, "get_legoset")
+	defer span.End()
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
-		return "", err
+		return nil, tracing.Error(span, err)
 	}
 
-	info, err := bo.api.lookup(setBoid)
+	lookup, err := bo.api.lookup(setBoid)
 	if err != nil {
-		return "", err
+		return nil, tracing.Error(span, err)
 	}
 
-	return sanitiseKitName(info.Name), nil
+	parts, err := bo.getParts(setBoid)
+	if err != nil {
+		return nil, tracing.Error(span, err)
+	}
+
+	ls := &lego.Set{
+		Number: setNumber,
+		Name:   lego.SetName(lookup.Name),
+		Parts:  parts,
+	}
+
+	return ls, nil
 }
 
 var rx = regexp.MustCompile(`\s+(Set\s*\d+$)`)
@@ -42,12 +61,7 @@ func sanitiseKitName(name string) lego.SetName {
 	return lego.SetName(name)
 }
 
-func (bo *BrickOwlApi) GetParts(setNumber lego.SetNumber) ([]*lego.InventoryPart, error) {
-
-	setBoid, err := bo.api.lookupSetBoid(setNumber)
-	if err != nil {
-		return nil, err
-	}
+func (bo *BrickOwlApi) getParts(setBoid Boid) ([]*lego.InventoryPart, error) {
 
 	inventory, err := bo.api.getInventory(setBoid)
 	if err != nil {

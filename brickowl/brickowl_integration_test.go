@@ -17,10 +17,10 @@ func TestGetInventory(t *testing.T) {
 	owl := NewBrickOwlApi(os.Getenv("BRICKOWL_API_KEY"))
 	// owl := BrickOwlApi{api: &FakeApi{}}
 
-	parts, err := owl.GetParts("75193-1")
+	ls, err := owl.GetSet(t.Context(), "75193-1")
 
 	assert.NoError(t, err)
-	assert.Len(t, parts, 47)
+	assert.Len(t, ls.Parts, 47)
 }
 
 type FakeApi struct{}
