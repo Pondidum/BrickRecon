@@ -35,7 +35,7 @@ func (api *FakeApi) getInventory(boid Boid) ([]inventoryItem, error) {
 	return dto.Inventory, err
 }
 
-func (api *FakeApi) lookupSetBoid(setNumber lego.SetId) (Boid, error) {
+func (api *FakeApi) lookupSetBoid(setNumber lego.SetNumber) (Boid, error) {
 
 	var dto idlookupResponse
 	if err := readFile(&dto, "./responses/catalog-idlookup-set-%s.json", setNumber); err != nil {

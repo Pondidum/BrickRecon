@@ -13,7 +13,7 @@ type Boid string
 
 type Owlette interface {
 	getInventory(boid Boid) ([]inventoryItem, error)
-	lookupSetBoid(setNumber lego.SetId) (Boid, error)
+	lookupSetBoid(setNumber lego.SetNumber) (Boid, error)
 	lookupParts(boids []Boid) (map[Boid]lookupItem, error)
 	lookup(boid Boid) (*lookupItem, error)
 }
@@ -41,7 +41,7 @@ func (api *lowLevelApi) getInventory(boid Boid) ([]inventoryItem, error) {
 	return dto.Inventory, nil
 }
 
-func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetId) (Boid, error) {
+func (api *lowLevelApi) lookupSetBoid(setNumber lego.SetNumber) (Boid, error) {
 
 	args := map[string]string{
 		"type":    "Set",

@@ -17,7 +17,7 @@ func NewBrickOwlApi(key string) *BrickOwlApi {
 	}
 }
 
-func (bo *BrickOwlApi) GetSetName(setNumber lego.SetId) (lego.SetName, error) {
+func (bo *BrickOwlApi) GetSetName(setNumber lego.SetNumber) (lego.SetName, error) {
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
@@ -42,7 +42,7 @@ func sanitiseKitName(name string) lego.SetName {
 	return lego.SetName(name)
 }
 
-func (bo *BrickOwlApi) GetParts(setNumber lego.SetId) ([]*lego.InventoryPart, error) {
+func (bo *BrickOwlApi) GetParts(setNumber lego.SetNumber) ([]*lego.InventoryPart, error) {
 
 	setBoid, err := bo.api.lookupSetBoid(setNumber)
 	if err != nil {
