@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"brickrecon/domain"
 	"brickrecon/goes"
 	"brickrecon/tracing"
 	"context"
@@ -22,8 +23,8 @@ func NewClient(ctx context.Context, dbPath string) (*Client, error) {
 	}
 
 	eventStore := goes.NewSqliteStore(writer)
-	//eventStore.RegisterAggregate(goes.FactoryFor(lego.NewModel))
-	//eventStore.RegisterProjection(...)
+	eventStore.RegisterAggregate(goes.FactoryFor(domain.BlankProject))
+	eventStore.RegisterProjection(&goes.AutoProjection{})
 
 	if err := eventStore.Initialise(ctx); err != nil {
 		return nil, tracing.Error(span, err)

@@ -10,7 +10,7 @@ import (
 func BlankProject() *Project {
 	p := &Project{
 		AggregateState: goes.NewAggregateState(),
-		parts:          map[string]*ProjectPart{},
+		Parts:          map[string]*ProjectPart{},
 	}
 
 	goes.Register(p.AggregateState, p.onProjectCreated)
@@ -35,7 +35,8 @@ func CreateProject(name string) (*Project, error) {
 type Project struct {
 	*goes.AggregateState
 
-	parts map[string]*ProjectPart
+	Name  string
+	Parts map[string]*ProjectPart
 }
 
 type ProjectPart struct {
@@ -65,6 +66,7 @@ func keyFor(p lego.PartId, c lego.ColorId) string {
 
 func (p *Project) onProjectCreated(e ProjectCreated) {
 	goes.SetID(p.AggregateState, e.ID)
+	p.Name = e.Name
 }
 
 func (p *Project) ImportPartsList(parts []*lego.InventoryPart, source string) {
@@ -76,10 +78,10 @@ func (p *Project) ImportPartsList(parts []*lego.InventoryPart, source string) {
 
 func (p *Project) onPartsImported(e PartsImported) {
 	//for now, just wipe out everything and replace
-	p.parts = make(map[string]*ProjectPart, len(e.Parts))
+	p.Parts = make(map[string]*ProjectPart, len(e.Parts))
 
 	for _, part := range e.Parts {
-		p.parts[keyFor(part.Id, part.ColorId)] = newProjectPart(part)
+		p.Parts[keyFor(part.Id, part.ColorId)] = newProjectPart(part)
 	}
 }
 
@@ -96,10 +98,10 @@ func (p *Project) onPartsAdded(e PartsAdded) {
 	for _, add := range e.Parts {
 		key := keyFor(add.Id, add.ColorId)
 
-		if part, found := p.parts[key]; found {
+		if part, found := p.Parts[key]; found {
 			part.Wanted += add.Quantity
 		} else {
-			p.parts[key] = newProjectPart(add)
+			p.Parts[key] = newProjectPart(add)
 		}
 	}
 }
@@ -116,10 +118,10 @@ func (p *Project) onPartsRemoved(e PartsRemoved) {
 	for _, rem := range e.Parts {
 		key := keyFor(rem.Id, rem.ColorId)
 
-		if part, found := p.parts[key]; found {
+		if part, found := p.Parts[key]; found {
 			part.Wanted -= rem.Quantity
 			if part.Wanted <= 0 {
-				delete(p.parts, key)
+				delete(p.Parts, key)
 			}
 		}
 	}
@@ -138,7 +140,7 @@ func (p *Project) AddStock(part lego.PartId, color lego.ColorId, quantity int) e
 }
 
 func (p *Project) onStockAdded(e StockAdded) {
-	part := p.parts[keyFor(e.Part, e.Color)]
+	part := p.Parts[keyFor(e.Part, e.Color)]
 	part.Stock[part.Color] = part.Stock[part.Color] + e.Quantity
 }
 
@@ -157,7 +159,7 @@ func (p *Project) RemoveStock(part lego.PartId, color lego.ColorId, quantity int
 }
 
 func (p *Project) onStockRemoved(e StockRemoved) {
-	part := p.parts[keyFor(e.Part, e.Color)]
+	part := p.Parts[keyFor(e.Part, e.Color)]
 	part.Stock[part.Color] = max(part.Stock[part.Color]-e.Quantity, 0)
 }
 
