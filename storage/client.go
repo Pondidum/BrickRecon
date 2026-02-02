@@ -6,6 +6,8 @@ import (
 	"brickrecon/tracing"
 	"context"
 	"database/sql"
+
+	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -44,6 +46,14 @@ func NewClient(ctx context.Context, dbPath string) (*Client, error) {
 
 func (c *Client) BeginTx(ctx context.Context) (*sql.Tx, error) {
 	return c.db.BeginTx(ctx, nil)
+}
+
+func (c *Client) LoadAggregate(ctx context.Context, aggregateID uuid.UUID, aggregate goes.Aggregate) error {
+	return c.es.Load(ctx, aggregateID, aggregate)
+}
+
+func (c *Client) SaveAggregate(ctx context.Context, aggregate goes.Aggregate) error {
+	return c.es.Save(ctx, aggregate)
 }
 
 func createTables(ctx context.Context, writer *sql.DB) error {

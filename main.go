@@ -14,6 +14,7 @@ func main() {
 	defs := []command.CommandDefinition{
 		version.NewVersionCommand(),
 		command.NewImportSetCommand(),
+		command.NewProjectNewCommand(),
 	}
 
 	commands := make(map[string]cli.CommandFactory, len(defs))
