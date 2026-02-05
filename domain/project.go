@@ -11,6 +11,7 @@ func BlankProject() *Project {
 	p := &Project{
 		AggregateState: goes.NewAggregateState(),
 		Parts:          map[string]*ProjectPart{},
+		Stock:          Stock{},
 	}
 
 	goes.Register(p.AggregateState, p.onProjectCreated)
@@ -37,13 +38,19 @@ type Project struct {
 
 	Name  string
 	Parts map[string]*ProjectPart
+	Stock Stock
+}
+
+type ProjectView struct {
+	Name  string
+	Parts map[string]*ProjectPart
+	Stock Stock
 }
 
 type ProjectPart struct {
 	Number lego.PartId
 	Color  lego.ColorId
 	Wanted int
-	Stock  map[lego.ColorId]int
 }
 
 func newProjectPart(part *lego.InventoryPart) *ProjectPart {
@@ -51,7 +58,6 @@ func newProjectPart(part *lego.InventoryPart) *ProjectPart {
 		Number: part.Id,
 		Color:  part.ColorId,
 		Wanted: part.Quantity,
-		Stock:  map[lego.ColorId]int{},
 	}
 }
 
@@ -131,40 +137,39 @@ type PartsRemoved struct {
 	Parts []*lego.InventoryPart
 }
 
-func (p *Project) AddStock(part lego.PartId, color lego.ColorId, quantity int) error {
+func (p *Project) AddStock(stock Stock) error {
 	return goes.Apply(p.AggregateState, &StockAdded{
-		Part:     part,
-		Color:    color,
-		Quantity: quantity,
+		Added: stock,
 	})
 }
 
 func (p *Project) onStockAdded(e StockAdded) {
-	part := p.Parts[keyFor(e.Part, e.Color)]
-	part.Stock[part.Color] = part.Stock[part.Color] + e.Quantity
+	for part, colors := range e.Added {
+		for color, quantity := range colors {
+			AddStock(p.Stock, part, color, quantity)
+		}
+	}
 }
 
 type StockAdded struct {
-	Part     lego.PartId
-	Color    lego.ColorId
-	Quantity int
+	Added Stock
 }
 
-func (p *Project) RemoveStock(part lego.PartId, color lego.ColorId, quantity int) error {
+func (p *Project) RemoveStock(stock Stock) error {
 	return goes.Apply(p.AggregateState, &StockRemoved{
-		Part:     part,
-		Color:    color,
-		Quantity: quantity,
+		Removed: stock,
 	})
 }
 
 func (p *Project) onStockRemoved(e StockRemoved) {
-	part := p.Parts[keyFor(e.Part, e.Color)]
-	part.Stock[part.Color] = max(part.Stock[part.Color]-e.Quantity, 0)
+
+	for part, colors := range e.Removed {
+		for color, quantity := range colors {
+			RemoveStock(p.Stock, part, color, quantity)
+		}
+	}
 }
 
 type StockRemoved struct {
-	Part     lego.PartId
-	Color    lego.ColorId
-	Quantity int
+	Removed Stock
 }
