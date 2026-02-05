@@ -47,6 +47,26 @@ type ProjectView struct {
 	Stock Stock
 }
 
+func (pv *ProjectView) UniqueParts() int {
+	return len(pv.Parts)
+}
+func (pv *ProjectView) TotalParts() int {
+	sum := 0
+	for _, part := range pv.Parts {
+		sum += part.Wanted
+	}
+	return sum
+}
+func (pv *ProjectView) OwnedParts() int {
+	sum := 0
+	for _, colorStock := range pv.Stock {
+		for _, stock := range colorStock {
+			sum += stock
+		}
+	}
+	return sum
+}
+
 type ProjectPart struct {
 	Number lego.PartId
 	Color  lego.ColorId

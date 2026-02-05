@@ -15,6 +15,7 @@ func main() {
 		version.NewVersionCommand(),
 		command.NewImportSetCommand(),
 		command.NewProjectNewCommand(),
+		command.NewProjectListCommand(),
 		command.NewProjectPartsImportCommand(),
 	}
 
