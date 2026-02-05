@@ -15,6 +15,7 @@ func main() {
 		version.NewVersionCommand(),
 		command.NewImportSetCommand(),
 		command.NewProjectNewCommand(),
+		command.NewProjectPartsImportCommand(),
 	}
 
 	commands := make(map[string]cli.CommandFactory, len(defs))
