@@ -52,7 +52,7 @@ func ParseWantedList(ctx context.Context, content io.Reader) ([]*lego.InventoryP
 
 		parts = append(parts, part)
 
-		domain.AddStock(stock, part.Id, part.ColorId, wantedItem.Quantity)
+		domain.AddStock(stock, part.Id, part.ColorId, wantedItem.Inventory)
 	}
 
 	return parts, stock, nil
