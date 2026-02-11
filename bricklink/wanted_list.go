@@ -70,7 +70,7 @@ func wantedListFromParts(parts []*lego.InventoryPart, stock map[lego.PartId]map[
 		return colorStock[c]
 	}
 	for i, p := range parts {
-		color, err := lego.GetColor(p.ColorId, "bricklink")
+		color, err := lego.AsColorId(p.ColorId, "bricklink")
 		if err != nil {
 			color = string(p.ColorId)
 		}

@@ -79,7 +79,7 @@ func GetColorId(id string, source string) (ColorId, error) {
 	}
 }
 
-func GetColor(id ColorId, target string) (string, error) {
+func AsColorId(id ColorId, target string) (string, error) {
 	color, found := officialIndex[id]
 	if !found {
 		return "", fmt.Errorf("unknown official color %s", id)
