@@ -18,6 +18,7 @@ func main() {
 		command.NewProjectListCommand(),
 		command.NewProjectViewCommand(),
 		command.NewProjectPartsImportCommand(),
+		command.NewDatabaseSyncCommand(),
 	}
 
 	commands := make(map[string]cli.CommandFactory, len(defs))
