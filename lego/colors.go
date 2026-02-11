@@ -48,6 +48,14 @@ func init() {
 	}
 }
 
+func GetColorName(id ColorId) string {
+	if color, found := officialIndex[id]; found {
+		return color.Name
+	}
+
+	return "unknown"
+}
+
 func GetColorId(id string, source string) (ColorId, error) {
 	switch strings.ToLower(source) {
 	case "brickowl":
