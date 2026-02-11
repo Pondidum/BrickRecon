@@ -5,6 +5,7 @@ import (
 	"brickrecon/domain"
 	"brickrecon/storage"
 	"brickrecon/tracing"
+	"brickrecon/util"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -60,9 +61,14 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 		return tracing.Error(span, err)
 	}
 
-	for _, project := range projects {
-		fmt.Println(project.Name, project.UniqueParts(), project.TotalParts(), project.OwnedParts())
+	lines := make([]string, len(projects)+1)
+	lines[0] = "Name | Unique Parts | Total Parts | Owned Parts"
+
+	for i, project := range projects {
+		lines[i+1] = fmt.Sprintf("%s | %d | %d | %d", project.Name, project.UniqueParts(), project.TotalParts(), project.OwnedParts())
 	}
+
+	fmt.Println(util.TableOutput(lines))
 
 	return nil
 }
