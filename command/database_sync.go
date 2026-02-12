@@ -67,44 +67,19 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 	}
 
 	fmt.Println("Tables created")
-	// ensure tables
-	// fetch each gzipped csv (parallel)
-	// extract each csv (parallel)
-	// disable fks
-	// drop and insert to db (parallel?)
-	// enable fks
 
-	// i think this query param is just for cache busting
-	//https://cdn.rebrickable.com/media/downloads/themes.csv.gz?1770793920.0688798
-
-	columns := map[string]map[string]string{
+	mappings := map[string]map[string]string{
 		"colors": map[string]string{
-			"id":       "id",
-			"name":     "name",
-			"is_trans": "transparent",
-			"rgb":      "rgb",
+			"transparent": "is_trans",
 		},
-		"part_categories": map[string]string{
-			"id":   "id",
-			"name": "name",
-		},
+		"part_categories": map[string]string{},
 		"parts": map[string]string{
-			"part_num":    "part_num",
-			"name":        "name",
-			"part_cat_id": "category_id",
+			"category_id": "part_cat_id",
 		},
-		"inventories": map[string]string{
-			"id":      "id",
-			"version": "version",
-			"set_num": "set_num",
-		},
+		"inventories": map[string]string{},
 		"inventory_parts": map[string]string{
-			"inventory_id": "inventory_id",
-			"part_num":     "part_num",
-			"color_id":     "color_id",
-			"quantity":     "quantity",
-			"is_spare":     "spare",
-			"img_url":      "image_url",
+			"spare":     "is_spare",
+			"image_url": "img_url",
 		},
 	}
 
@@ -125,7 +100,26 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			return tracing.Error(span, err)
 		}
 
-		cols := columns[file]
+		cols := map[string]string{}
+
+		row, err := tx.QueryContext(ctx, "select name from pragma_table_info(@table)", sql.Named("table", "rebrickable_"+file))
+		if err != nil {
+			return tracing.Error(span, err)
+		}
+		defer row.Close()
+		for row.Next() {
+			column := ""
+			if err := row.Scan(&column); err != nil {
+				return tracing.Error(span, err)
+			}
+
+			if name, found := mappings[file][column]; found {
+				cols[name] = column
+			} else {
+				cols[column] = column
+			}
+		}
+
 		csvr := csv.NewReader(gzr)
 
 		header, err := csvr.Read()
@@ -176,9 +170,6 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 					args = append(args, record[i])
 				}
 			}
-			// for i, v := range record {
-			// 	args[i] = v
-			// }
 
 			if _, err := insert.ExecContext(ctx, args...); err != nil {
 				return tracing.Error(span, err)
@@ -204,45 +195,45 @@ func (c *DatabaseSyncCommand) ensureTables(ctx context.Context, tx *sql.Tx) erro
 	ctx, span := c.tr.Start(ctx, "ensure_tables")
 	defer span.End()
 
-	dropTables := `
-		drop table if exists rebrickable_inventories;
-		drop table if exists rebrickable_inventory_parts;
-		drop table if exists rebrickable_parts;
-		drop table if exists rebrickable_part_categories;
-		drop table if exists rebrickable_colors;
-	`
+	// dropTables := `
+	// 	drop table if exists rebrickable_inventories;
+	// 	drop table if exists rebrickable_inventory_parts;
+	// 	drop table if exists rebrickable_parts;
+	// 	drop table if exists rebrickable_part_categories;
+	// 	drop table if exists rebrickable_colors;
+	// `
 
-	if _, err := tx.ExecContext(ctx, dropTables); err != nil {
-		return tracing.Error(span, err)
-	}
+	// if _, err := tx.ExecContext(ctx, dropTables); err != nil {
+	// 	return tracing.Error(span, err)
+	// }
 
 	createTables := `
-		create table rebrickable_part_categories (
+		create table if not exists rebrickable_part_categories (
 			id int primary key,
 			name text not null
 		);
 
-		create table rebrickable_colors (
+		create table if not exists rebrickable_colors (
 			id int primary key,
 			name text not null,
 			rgb text,
 			transparent int
 		);
 		
-		create table rebrickable_parts (
+		create table if not exists rebrickable_parts (
 			part_num text primary key,
 			name text not null,
 			category_id int,
 			foreign key(category_id) references rebrickable_part_categories(id)
 		);
 		
-		create table rebrickable_inventories (
+		create table if not exists rebrickable_inventories (
 			id int primary key,
 			version int not null,
 			set_num text not null
 		);
 
-		create table rebrickable_inventory_parts (
+		create table if not exists rebrickable_inventory_parts (
 			inventory_id int,
 			part_num text not null,
 			color_id int not null,
@@ -256,6 +247,18 @@ func (c *DatabaseSyncCommand) ensureTables(ctx context.Context, tx *sql.Tx) erro
 	`
 
 	if _, err := tx.ExecContext(ctx, createTables); err != nil {
+		return tracing.Error(span, err)
+	}
+
+	clearTables := `
+		delete from rebrickable_inventory_parts where 1=1;
+		delete from rebrickable_inventories where 1=1;
+		delete from rebrickable_parts where 1=1;
+		delete from rebrickable_colors where 1=1;
+		delete from rebrickable_part_categories where 1=1;
+	`
+
+	if _, err := tx.ExecContext(ctx, clearTables); err != nil {
 		return tracing.Error(span, err)
 	}
 
