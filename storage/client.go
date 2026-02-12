@@ -48,6 +48,11 @@ func (c *Client) BeginTx(ctx context.Context) (*sql.Tx, error) {
 	return c.db.BeginTx(ctx, nil)
 }
 
+func (c *Client) Vacuum(ctx context.Context) error {
+	_, err := c.db.ExecContext(ctx, "vacuum")
+	return err
+}
+
 func (c *Client) LoadAggregate(ctx context.Context, aggregateID uuid.UUID, aggregate goes.Aggregate) error {
 	return c.es.Load(ctx, aggregateID, aggregate)
 }

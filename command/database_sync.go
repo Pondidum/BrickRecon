@@ -186,6 +186,11 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 		return tracing.Error(span, err)
 	}
 
+	fmt.Println("Compressing db...")
+	if err := db.Vacuum(ctx); err != nil {
+		return tracing.Error(span, err)
+	}
+
 	fmt.Println("Done.")
 
 	return nil
