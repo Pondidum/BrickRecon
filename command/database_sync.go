@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -30,6 +29,7 @@ var ColumnSources = map[string]map[string]string{
 		"category_id": "part_cat_id",
 	},
 	"inventories": map[string]string{},
+	"sets":        map[string]string{},
 	"inventory_parts": map[string]string{
 		"spare":     "is_spare",
 		"image_url": "img_url",
@@ -38,15 +38,12 @@ var ColumnSources = map[string]map[string]string{
 
 func NewDatabaseSyncCommand() *DatabaseSyncCommand {
 	return &DatabaseSyncCommand{
-		tr:                otel.Tracer("command.database.sync"),
-		rebrickableApiKey: os.Getenv("REBRICKABLE_API_KEY"),
+		tr: otel.Tracer("command.database.sync"),
 	}
 }
 
 type DatabaseSyncCommand struct {
 	tr trace.Tracer
-
-	rebrickableApiKey string
 }
 
 func (c *DatabaseSyncCommand) Name() string {
@@ -59,7 +56,6 @@ func (c *DatabaseSyncCommand) Synopsis() string {
 
 func (c *DatabaseSyncCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project view", pflag.ContinueOnError)
-	flags.StringVar(&c.rebrickableApiKey, "rebrickable-apikey", "", "")
 	return flags
 }
 
@@ -72,7 +68,7 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 		return tracing.Error(span, err)
 	}
 
-	tx, _ := db.BeginTx(ctx)
+	tx, err := db.BeginTx(ctx)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -84,13 +80,12 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 
 	fmt.Println("Tables created")
 
-	files := []string{"colors", "part_categories", "parts", "inventories", "inventory_parts"}
 	now := time.Now().UnixMilli()
 
-	for _, file := range files {
+	for tableName := range ColumnSources {
 
-		fmt.Println("Downloading", file, "...")
-		res, err := http.Get(fmt.Sprintf("https://cdn.rebrickable.com/media/downloads/%s.csv.gz?%d", file, now))
+		fmt.Println("Downloading", tableName, "...")
+		res, err := http.Get(fmt.Sprintf("https://cdn.rebrickable.com/media/downloads/%s.csv.gz?%d", tableName, now))
 		if err != nil {
 			return tracing.Error(span, err)
 		}
@@ -101,7 +96,9 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			return tracing.Error(span, err)
 		}
 
-		columnMapping, err := c.createColumnMapping(ctx, tx, file)
+		fmt.Println("Fetched", tableName)
+
+		columnMapping, err := c.createColumnMapping(ctx, tx, tableName)
 		if err != nil {
 			return tracing.Error(span, err)
 		}
@@ -113,7 +110,7 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			return tracing.Error(span, err)
 		}
 
-		stmt := c.insertStatement(file, header, columnMapping)
+		stmt := c.insertStatement(tableName, header, columnMapping)
 		insert, err := tx.PrepareContext(ctx, stmt)
 		if err != nil {
 			return tracing.Error(span, err)
@@ -143,7 +140,11 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			count++
 		}
 
-		fmt.Println("Inserted", count, file)
+		if err := insert.Close(); err != nil {
+			return tracing.Error(span, err)
+		}
+
+		fmt.Println("Inserted", count, tableName)
 	}
 
 	fmt.Println("Committing transaction...")
@@ -237,26 +238,30 @@ func (c *DatabaseSyncCommand) ensureTables(ctx context.Context, tx *sql.Tx) erro
 		create table if not exists rebrickable_parts (
 			part_num text primary key,
 			name text not null,
-			category_id int,
-			foreign key(category_id) references rebrickable_part_categories(id)
+			category_id int references rebrickable_part_categories(id) deferrable initially deferred
 		);
-		
+
+		create table if not exists rebrickable_sets (
+			set_num text primary key,
+			name text not null,
+			year int not null,
+			theme_id int not null,
+			num_parts int not null
+		);
+
 		create table if not exists rebrickable_inventories (
 			id int primary key,
 			version int not null,
-			set_num text not null
+			set_num text not null -- note, no fk here as this could also be from the minifigs table
 		);
 
 		create table if not exists rebrickable_inventory_parts (
-			inventory_id int,
-			part_num text not null,
-			color_id int not null,
+			inventory_id int references rebrickable_inventories(id) deferrable initially deferred,
+			part_num text not null references rebrickable_parts(part_num) deferrable initially deferred,
+			color_id int not null references rebrickable_colors(id) deferrable initially deferred,
 			quantity int not null,
 			spare int not null,
-			image_url text,
-			foreign key(inventory_id) references rebrickable_inventories(id),
-			foreign key(part_num) references rebrickable_parts(part_num),
-			foreign key(color_id) references rebrickable_colors(id)
+			image_url text
 		);
 	`
 
@@ -265,6 +270,7 @@ func (c *DatabaseSyncCommand) ensureTables(ctx context.Context, tx *sql.Tx) erro
 	}
 
 	clearTables := `
+		delete from rebrickable_sets where 1=1;
 		delete from rebrickable_inventory_parts where 1=1;
 		delete from rebrickable_inventories where 1=1;
 		delete from rebrickable_parts where 1=1;
