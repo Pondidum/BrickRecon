@@ -13,7 +13,6 @@ func main() {
 
 	defs := []command.CommandDefinition{
 		version.NewVersionCommand(),
-		command.NewImportSetCommand(),
 		command.NewProjectNewCommand(),
 		command.NewProjectListCommand(),
 		command.NewProjectViewCommand(),

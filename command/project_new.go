@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"os"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -17,15 +16,12 @@ import (
 
 func NewProjectNewCommand() *ProjectNewCommand {
 	return &ProjectNewCommand{
-		tr:             otel.Tracer("command.project.new"),
-		brickowlApiKey: os.Getenv("BRICKOWL_API_KEY"),
+		tr: otel.Tracer("command.project.new"),
 	}
 }
 
 type ProjectNewCommand struct {
 	tr trace.Tracer
-
-	brickowlApiKey string
 }
 
 func (c *ProjectNewCommand) Name() string {
@@ -38,7 +34,6 @@ func (c *ProjectNewCommand) Synopsis() string {
 
 func (c *ProjectNewCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project new", pflag.ContinueOnError)
-	flags.StringVar(&c.brickowlApiKey, "brickowl-apikey", "", "")
 	return flags
 }
 

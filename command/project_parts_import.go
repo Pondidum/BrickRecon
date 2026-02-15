@@ -19,15 +19,12 @@ import (
 
 func NewProjectPartsImportCommand() *ProjectPartsImportCommand {
 	return &ProjectPartsImportCommand{
-		tr:             otel.Tracer("command.project.parts.import"),
-		brickowlApiKey: os.Getenv("BRICKOWL_API_KEY"),
+		tr: otel.Tracer("command.project.parts.import"),
 	}
 }
 
 type ProjectPartsImportCommand struct {
 	tr trace.Tracer
-
-	brickowlApiKey string
 }
 
 func (c *ProjectPartsImportCommand) Name() string {
@@ -40,7 +37,6 @@ func (c *ProjectPartsImportCommand) Synopsis() string {
 
 func (c *ProjectPartsImportCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project parts import", pflag.ContinueOnError)
-	flags.StringVar(&c.brickowlApiKey, "brickowl-apikey", "", "")
 	return flags
 }
 
