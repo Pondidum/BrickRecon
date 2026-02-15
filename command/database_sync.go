@@ -20,6 +20,22 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// table dbcolumn csvcolumn
+var ColumnSources = map[string]map[string]string{
+	"colors": map[string]string{
+		"transparent": "is_trans",
+	},
+	"part_categories": map[string]string{},
+	"parts": map[string]string{
+		"category_id": "part_cat_id",
+	},
+	"inventories": map[string]string{},
+	"inventory_parts": map[string]string{
+		"spare":     "is_spare",
+		"image_url": "img_url",
+	},
+}
+
 func NewDatabaseSyncCommand() *DatabaseSyncCommand {
 	return &DatabaseSyncCommand{
 		tr:                otel.Tracer("command.database.sync"),
@@ -68,21 +84,6 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 
 	fmt.Println("Tables created")
 
-	mappings := map[string]map[string]string{
-		"colors": map[string]string{
-			"transparent": "is_trans",
-		},
-		"part_categories": map[string]string{},
-		"parts": map[string]string{
-			"category_id": "part_cat_id",
-		},
-		"inventories": map[string]string{},
-		"inventory_parts": map[string]string{
-			"spare":     "is_spare",
-			"image_url": "img_url",
-		},
-	}
-
 	files := []string{"colors", "part_categories", "parts", "inventories", "inventory_parts"}
 	now := time.Now().UnixMilli()
 
@@ -100,24 +101,9 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			return tracing.Error(span, err)
 		}
 
-		cols := map[string]string{}
-
-		row, err := tx.QueryContext(ctx, "select name from pragma_table_info(@table)", sql.Named("table", "rebrickable_"+file))
+		columnMapping, err := c.createColumnMapping(ctx, tx, file)
 		if err != nil {
 			return tracing.Error(span, err)
-		}
-		defer row.Close()
-		for row.Next() {
-			column := ""
-			if err := row.Scan(&column); err != nil {
-				return tracing.Error(span, err)
-			}
-
-			if name, found := mappings[file][column]; found {
-				cols[name] = column
-			} else {
-				cols[column] = column
-			}
 		}
 
 		csvr := csv.NewReader(gzr)
@@ -127,29 +113,8 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 			return tracing.Error(span, err)
 		}
 
-		sb := strings.Builder{}
-		sb.WriteString("insert into rebrickable_")
-		sb.WriteString(file)
-		sb.WriteString("(")
-
-		names := make([]string, 0, len(cols))
-		for _, h := range header {
-			if colName, found := cols[h]; found {
-				names = append(names, colName)
-			}
-		}
-
-		sb.WriteString(strings.ToLower(strings.Join(names, ", ")))
-
-		sb.WriteString(")\n")
-		sb.WriteString("values(")
-		sb.WriteString("?")
-		for range len(cols) - 1 {
-			sb.WriteString(", ?")
-		}
-		sb.WriteString(")")
-
-		insert, err := tx.PrepareContext(ctx, sb.String())
+		stmt := c.insertStatement(file, header, columnMapping)
+		insert, err := tx.PrepareContext(ctx, stmt)
 		if err != nil {
 			return tracing.Error(span, err)
 		}
@@ -164,9 +129,9 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 				return tracing.Error(span, err)
 			}
 
-			args := make([]any, 0, len(cols))
+			args := make([]any, 0, len(columnMapping))
 			for i, name := range header {
-				if _, found := cols[name]; found {
+				if _, found := columnMapping[name]; found {
 					args = append(args, record[i])
 				}
 			}
@@ -196,21 +161,65 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 	return nil
 }
 
+func (c *DatabaseSyncCommand) createColumnMapping(ctx context.Context, tx *sql.Tx, tableName string) (map[string]string, error) {
+
+	row, err := tx.QueryContext(ctx,
+		"select name from pragma_table_info(@table)",
+		sql.Named("table", "rebrickable_"+tableName))
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	mapping := map[string]string{}
+
+	for row.Next() {
+		dbColumn := ""
+
+		if err := row.Scan(&dbColumn); err != nil {
+			return nil, err
+		}
+
+		if csvColumn, found := ColumnSources[tableName][dbColumn]; found {
+			mapping[csvColumn] = dbColumn
+		} else {
+			mapping[dbColumn] = dbColumn
+		}
+	}
+
+	return mapping, nil
+}
+
+func (c *DatabaseSyncCommand) insertStatement(tableName string, csvHeaders []string, columnMapping map[string]string) string {
+
+	sb := strings.Builder{}
+	sb.WriteString("insert into rebrickable_")
+	sb.WriteString(tableName)
+	sb.WriteString("(")
+
+	names := make([]string, 0, len(columnMapping))
+	for _, h := range csvHeaders {
+		if colName, found := columnMapping[h]; found {
+			names = append(names, colName)
+		}
+	}
+
+	sb.WriteString(strings.ToLower(strings.Join(names, ", ")))
+
+	sb.WriteString(")\n")
+	sb.WriteString("values(")
+	sb.WriteString("?")
+	for range len(columnMapping) - 1 {
+		sb.WriteString(", ?")
+	}
+	sb.WriteString(")")
+
+	return sb.String()
+}
+
 func (c *DatabaseSyncCommand) ensureTables(ctx context.Context, tx *sql.Tx) error {
 	ctx, span := c.tr.Start(ctx, "ensure_tables")
 	defer span.End()
-
-	// dropTables := `
-	// 	drop table if exists rebrickable_inventories;
-	// 	drop table if exists rebrickable_inventory_parts;
-	// 	drop table if exists rebrickable_parts;
-	// 	drop table if exists rebrickable_part_categories;
-	// 	drop table if exists rebrickable_colors;
-	// `
-
-	// if _, err := tx.ExecContext(ctx, dropTables); err != nil {
-	// 	return tracing.Error(span, err)
-	// }
 
 	createTables := `
 		create table if not exists rebrickable_part_categories (
