@@ -71,6 +71,7 @@ func connectionString(filepath string) string {
 	conn := url.Values{}
 	conn.Add("_txlock", "immediate")
 	conn.Add("_journal_mode", "WAL")
+	conn.Add("_journal_size_limit", "6144000")
 	conn.Add("_busy_timeout", "5000")
 	conn.Add("_synchronous", "NORMAL")
 	conn.Add("_cache_size", "1000000000")

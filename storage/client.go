@@ -56,3 +56,7 @@ func (c *Client) LoadAggregate(ctx context.Context, aggregateID uuid.UUID, aggre
 func (c *Client) SaveAggregate(ctx context.Context, aggregate goes.Aggregate) error {
 	return c.es.Save(ctx, aggregate)
 }
+
+func (c *Client) Close(ctx context.Context) error {
+	return c.db.Close()
+}
