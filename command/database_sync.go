@@ -43,7 +43,9 @@ func NewDatabaseSyncCommand() *DatabaseSyncCommand {
 }
 
 type DatabaseSyncCommand struct {
-	tr trace.Tracer
+	tr     trace.Tracer
+	dryrun bool
+	debug  bool
 }
 
 func (c *DatabaseSyncCommand) Name() string {
@@ -56,6 +58,8 @@ func (c *DatabaseSyncCommand) Synopsis() string {
 
 func (c *DatabaseSyncCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project view", pflag.ContinueOnError)
+	flags.BoolVar(&c.dryrun, "dry-run", false, "")
+	flags.BoolVar(&c.debug, "debug", false, "")
 	return flags
 }
 
@@ -71,7 +75,7 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 	var writer writer
 
 	if c.dryrun {
-		writer = &drywriter{}
+		writer = &drywriter{debug: c.debug}
 	} else {
 		writer, err = NewDbWriter(ctx, db)
 		if err != nil {
@@ -148,12 +152,19 @@ func (c *DatabaseSyncCommand) syncTable(ctx context.Context, writer writer, tabl
 	return nil
 }
 
+type writer interface {
+	PrepareTables(ctx context.Context) error
+	Cancel() error
+	Prepare(ctx context.Context, tableName string, header []string) (func(record []string) error, func() error, error)
+	Finish(ctx context.Context) error
+}
+
 type dbwriter struct {
 	client *storage.Client
 	tx     *sql.Tx
 }
 
-func NewDbWriter(ctx context.Context, db *storage.Client) (*dbwriter, error) {
+func NewDbWriter(ctx context.Context, db *storage.Client) (writer, error) {
 
 	tx, err := db.BeginTx(ctx)
 	if err != nil {
@@ -345,5 +356,47 @@ func (db *dbwriter) Finish(ctx context.Context) error {
 		return err
 	}
 
+	return nil
+}
+
+var _ writer = &drywriter{}
+
+type drywriter struct {
+	debug    bool
+	finished bool
+}
+
+func (dw *drywriter) PrepareTables(ctx context.Context) error {
+	fmt.Println("Dry run starting...")
+	return nil
+}
+
+func (dw *drywriter) Cancel() error {
+	if !dw.finished {
+		fmt.Println("Dry run cancelled")
+	}
+	return nil
+}
+
+func (dw *drywriter) Prepare(ctx context.Context, tableName string, header []string) (func(record []string) error, func() error, error) {
+	counter := 0
+	if dw.debug {
+		fmt.Println("header", header)
+	}
+	return func(record []string) error {
+			if dw.debug && counter < 5 {
+				fmt.Println("insert", record)
+			}
+			counter++
+			return nil
+		}, func() error {
+			fmt.Println("Would have inserted", counter, tableName, "records")
+			return nil
+		}, nil
+}
+
+func (dw *drywriter) Finish(ctx context.Context) error {
+	dw.finished = true
+	fmt.Println("Dry run finished")
 	return nil
 }
