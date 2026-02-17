@@ -34,6 +34,7 @@ var ColumnSources = map[string]map[string]string{
 		"spare":     "is_spare",
 		"image_url": "img_url",
 	},
+	"part_relationships": map[string]string{},
 }
 
 func NewDatabaseSyncCommand() *DatabaseSyncCommand {
@@ -194,6 +195,12 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 			category_id int references rebrickable_part_categories(id) deferrable initially deferred
 		);
 
+		create table if not exists rebrickable_part_relationships (
+			rel_type text not null,
+			child_part_num text not null references rebrickable_parts(part_num) deferrable initially deferred,
+			parent_part_num text not null references rebrickable_parts(part_num) deferrable initially deferred
+		);
+
 		create table if not exists rebrickable_sets (
 			set_num text primary key,
 			name text not null,
@@ -228,6 +235,7 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 		delete from rebrickable_inventory_parts where 1=1;
 		delete from rebrickable_inventories where 1=1;
 		delete from rebrickable_parts where 1=1;
+		delete from rebrickable_part_relationships where 1=1;
 		delete from rebrickable_colors where 1=1;
 		delete from rebrickable_part_categories where 1=1;
 	`
