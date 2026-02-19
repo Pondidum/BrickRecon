@@ -1,9 +1,12 @@
 package command
 
 import (
+	"archive/zip"
 	"brickrecon/config"
 	"brickrecon/storage"
 	"brickrecon/tracing"
+	"bufio"
+	"bytes"
 	"compress/gzip"
 	"context"
 	"database/sql"
@@ -11,8 +14,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -21,20 +26,21 @@ import (
 
 // table dbcolumn csvcolumn
 var ColumnSources = map[string]map[string]string{
-	"colors": map[string]string{
+	"rebrickable_colors": map[string]string{
 		"transparent": "is_trans",
 	},
-	"part_categories": map[string]string{},
-	"parts": map[string]string{
+	"rebrickable_part_categories": map[string]string{},
+	"rebrickable_parts": map[string]string{
 		"category_id": "part_cat_id",
 	},
-	"inventories": map[string]string{},
-	"sets":        map[string]string{},
-	"inventory_parts": map[string]string{
+	"rebrickable_inventories": map[string]string{},
+	"rebrickable_sets":        map[string]string{},
+	"rebrickable_inventory_parts": map[string]string{
 		"spare":     "is_spare",
 		"image_url": "img_url",
 	},
-	"part_relationships": map[string]string{},
+	"rebrickable_part_relationships": map[string]string{},
+	"ldraw_moved_parts":              map[string]string{},
 }
 
 func NewDatabaseSyncCommand() *DatabaseSyncCommand {
@@ -90,7 +96,14 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 		return tracing.Error(span, err)
 	}
 
+	if err := c.syncLDraw(ctx, writer); err != nil {
+		return tracing.Error(span, err)
+	}
+
 	for tableName := range ColumnSources {
+		if !strings.HasPrefix(tableName, "rebrickable_") {
+			continue
+		}
 		if err := c.syncTable(ctx, writer, tableName); err != nil {
 			return tracing.Error(span, err)
 		}
@@ -109,9 +122,11 @@ func (c *DatabaseSyncCommand) syncTable(ctx context.Context, writer writer, tabl
 	ctx, span := c.tr.Start(ctx, "sync_table")
 	defer span.End()
 
-	fmt.Print("Downloading ", tableName, "...")
+	filename := strings.TrimPrefix(tableName, "rebrickable_")
+
+	fmt.Print("Downloading ", filename, "...")
 	now := time.Now().UnixMilli()
-	res, err := http.Get(fmt.Sprintf("https://cdn.rebrickable.com/media/downloads/%s.csv.gz?%d", tableName, now))
+	res, err := http.Get(fmt.Sprintf("https://cdn.rebrickable.com/media/downloads/%s.csv.gz?%d", filename, now))
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -151,6 +166,71 @@ func (c *DatabaseSyncCommand) syncTable(ctx context.Context, writer writer, tabl
 	}
 
 	return nil
+}
+
+func (c *DatabaseSyncCommand) syncLDraw(ctx context.Context, writer writer) error {
+	ctx, span := c.tr.Start(ctx, "sync_ldraw")
+	defer span.End()
+
+	res, err := http.Get("https://library.ldraw.org/library/updates/complete.zip")
+	if err != nil {
+		return tracing.Error(span, err)
+	}
+	defer res.Body.Close()
+
+	content, err := io.ReadAll(res.Body)
+	if err != nil {
+		return tracing.Error(span, err)
+	}
+
+	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	if err != nil {
+		return tracing.Error(span, err)
+	}
+
+	insert, done, err := writer.Prepare(ctx, "ldraw_moved_parts", []string{"old_part_num", "new_part_num"})
+	if err != nil {
+		return tracing.Error(span, err)
+	}
+	defer done()
+
+	for _, file := range zr.File {
+		if !strings.HasPrefix(file.Name, "ldraw/parts/") {
+			continue
+		}
+		if !strings.HasSuffix(file.Name, ".dat") {
+			continue
+		}
+
+		partNum := strings.TrimSuffix(path.Base(file.Name), ".dat")
+		if !unicode.IsDigit(rune(partNum[0])) {
+			continue
+		}
+
+		fr, err := file.Open()
+		if err != nil {
+			return tracing.Error(span, err)
+		}
+		defer fr.Close()
+
+		newPartNum, isMove := moved(fr)
+		if isMove {
+			insert([]string{partNum, newPartNum})
+		}
+	}
+
+	return nil
+}
+
+func moved(fr io.Reader) (string, bool) {
+
+	scanner := bufio.NewScanner(fr)
+	for scanner.Scan() {
+		if target, ok := strings.CutPrefix(scanner.Text(), "0 ~Moved to "); ok {
+			return target, true
+		}
+	}
+	return "", false
 }
 
 type writer interface {
@@ -223,6 +303,11 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 			spare int not null,
 			image_url text
 		);
+
+		create table if not exists ldraw_moved_parts (
+			old_part_num text,
+			new_part_num text
+		);
 	`
 
 	fmt.Println("Creating missing tables...")
@@ -238,6 +323,7 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 		delete from rebrickable_part_relationships where 1=1;
 		delete from rebrickable_colors where 1=1;
 		delete from rebrickable_part_categories where 1=1;
+		delete from ldraw_moved_parts where 1=1;
 	`
 
 	fmt.Println("Clearing old data...")
@@ -297,7 +383,7 @@ func (db *dbwriter) Prepare(ctx context.Context, tableName string, header []stri
 func (db *dbwriter) generateInsertSql(tableName string, csvHeaders []string, columnMapping map[string]string) string {
 
 	sb := strings.Builder{}
-	sb.WriteString("insert into rebrickable_")
+	sb.WriteString("insert into ")
 	sb.WriteString(tableName)
 	sb.WriteString("(")
 
@@ -325,7 +411,7 @@ func (db *dbwriter) createColumnMapping(ctx context.Context, tableName string) (
 
 	row, err := db.tx.QueryContext(ctx,
 		"select name from pragma_table_info(@table)",
-		sql.Named("table", "rebrickable_"+tableName))
+		sql.Named("table", tableName))
 	if err != nil {
 		return nil, err
 	}
