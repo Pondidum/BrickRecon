@@ -1,12 +1,10 @@
 package command
 
 import (
-	"archive/zip"
 	"brickrecon/config"
+	"brickrecon/ldraw"
 	"brickrecon/storage"
 	"brickrecon/tracing"
-	"bufio"
-	"bytes"
 	"compress/gzip"
 	"context"
 	"database/sql"
@@ -14,10 +12,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
 	"strings"
 	"time"
-	"unicode"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -74,6 +70,12 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 	ctx, span := c.tr.Start(ctx, "execute")
 	defer span.End()
 
+	if len(args) != 1 || (args[0] != "ldraw" && args[0] != "rebrickable") {
+		return fmt.Errorf("you must specify 'ldraw' or 'rebrickable'")
+	}
+
+	source := args[0]
+
 	db, err := storage.NewClient(ctx, config.DatabaseFile)
 	if err != nil {
 		return tracing.Error(span, err)
@@ -92,21 +94,30 @@ func (c *DatabaseSyncCommand) Execute(ctx context.Context, config *config.Config
 
 	defer writer.Cancel()
 
-	if err := writer.PrepareTables(ctx); err != nil {
+	if err := writer.PrepareTables(ctx, source); err != nil {
 		return tracing.Error(span, err)
 	}
 
-	if err := c.syncLDraw(ctx, writer); err != nil {
-		return tracing.Error(span, err)
-	}
-
-	for tableName := range ColumnSources {
-		if !strings.HasPrefix(tableName, "rebrickable_") {
-			continue
-		}
-		if err := c.syncTable(ctx, writer, tableName); err != nil {
+	switch source {
+	case "ldraw":
+		if err := c.syncLDraw(ctx, writer); err != nil {
 			return tracing.Error(span, err)
 		}
+
+	case "rebrickable":
+
+		for tableName := range ColumnSources {
+			if !strings.HasPrefix(tableName, "rebrickable_") {
+				continue
+			}
+			if err := c.syncTable(ctx, writer, tableName); err != nil {
+				return tracing.Error(span, err)
+			}
+		}
+
+	default:
+		return tracing.Errorf(span, "unsupported source %s", source)
+
 	}
 
 	if err := writer.Finish(ctx); err != nil {
@@ -178,12 +189,7 @@ func (c *DatabaseSyncCommand) syncLDraw(ctx context.Context, writer writer) erro
 	}
 	defer res.Body.Close()
 
-	content, err := io.ReadAll(res.Body)
-	if err != nil {
-		return tracing.Error(span, err)
-	}
-
-	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	parts, err := ldraw.ParseDatabaseArchive(ctx, res.Body)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -194,47 +200,20 @@ func (c *DatabaseSyncCommand) syncLDraw(ctx context.Context, writer writer) erro
 	}
 	defer done()
 
-	for _, file := range zr.File {
-		if !strings.HasPrefix(file.Name, "ldraw/parts/") {
-			continue
-		}
-		if !strings.HasSuffix(file.Name, ".dat") {
-			continue
-		}
+	for old, new := range parts {
+		if new != "" {
 
-		partNum := strings.TrimSuffix(path.Base(file.Name), ".dat")
-		if !unicode.IsDigit(rune(partNum[0])) {
-			continue
-		}
-
-		fr, err := file.Open()
-		if err != nil {
-			return tracing.Error(span, err)
-		}
-		defer fr.Close()
-
-		newPartNum, isMove := moved(fr)
-		if isMove {
-			insert([]string{partNum, newPartNum})
+			if err := insert([]string{old, new}); err != nil {
+				return tracing.Error(span, err)
+			}
 		}
 	}
 
 	return nil
 }
 
-func moved(fr io.Reader) (string, bool) {
-
-	scanner := bufio.NewScanner(fr)
-	for scanner.Scan() {
-		if target, ok := strings.CutPrefix(scanner.Text(), "0 ~Moved to "); ok {
-			return target, true
-		}
-	}
-	return "", false
-}
-
 type writer interface {
-	PrepareTables(ctx context.Context) error
+	PrepareTables(ctx context.Context, source string) error
 	Cancel() error
 	Prepare(ctx context.Context, tableName string, header []string) (func(record []string) error, func() error, error)
 	Finish(ctx context.Context) error
@@ -255,7 +234,19 @@ func NewDbWriter(ctx context.Context, db *storage.Client) (writer, error) {
 	return &dbwriter{client: db, tx: tx}, nil
 }
 
-func (db *dbwriter) PrepareTables(ctx context.Context) error {
+func (db *dbwriter) PrepareTables(ctx context.Context, source string) error {
+	switch source {
+	case "ldraw":
+		return db.PrepareLDrawTables(ctx)
+	case "rebrickable":
+		return db.PrepareRebrickableTables(ctx)
+	default:
+		return fmt.Errorf("unsupported source %s", source)
+	}
+}
+
+func (db *dbwriter) PrepareRebrickableTables(ctx context.Context) error {
+
 	createTables := `
 		create table if not exists rebrickable_part_categories (
 			id int primary key,
@@ -303,11 +294,6 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 			spare int not null,
 			image_url text
 		);
-
-		create table if not exists ldraw_moved_parts (
-			old_part_num text,
-			new_part_num text
-		);
 	`
 
 	fmt.Println("Creating missing tables...")
@@ -323,6 +309,33 @@ func (db *dbwriter) PrepareTables(ctx context.Context) error {
 		delete from rebrickable_part_relationships where 1=1;
 		delete from rebrickable_colors where 1=1;
 		delete from rebrickable_part_categories where 1=1;
+	`
+
+	fmt.Println("Clearing old data...")
+	if _, err := db.tx.ExecContext(ctx, clearTables); err != nil {
+		return err
+	}
+
+	fmt.Println("Tables created")
+
+	return nil
+}
+
+func (db *dbwriter) PrepareLDrawTables(ctx context.Context) error {
+
+	createTables := `
+		create table if not exists ldraw_moved_parts (
+			old_part_num text,
+			new_part_num text
+		);
+	`
+
+	fmt.Println("Creating missing tables...")
+	if _, err := db.tx.ExecContext(ctx, createTables); err != nil {
+		return err
+	}
+
+	clearTables := `
 		delete from ldraw_moved_parts where 1=1;
 	`
 
@@ -460,7 +473,7 @@ type drywriter struct {
 	finished bool
 }
 
-func (dw *drywriter) PrepareTables(ctx context.Context) error {
+func (dw *drywriter) PrepareTables(ctx context.Context, source string) error {
 	fmt.Println("Dry run starting...")
 	return nil
 }
