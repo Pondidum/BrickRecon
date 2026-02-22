@@ -17,8 +17,11 @@ import (
 var tr = otel.Tracer("goes")
 
 type partDto struct {
+	Name       string
 	PartNumber string
 	MovedTo    string
+
+	AlternateIds []string
 }
 
 type LDrawPart struct {
@@ -26,7 +29,7 @@ type LDrawPart struct {
 	OldPartNumbers []string
 }
 
-func ParseDatabaseArchive(ctx context.Context, archive io.Reader) (map[string]string, error) {
+func ParseDatabaseArchive(ctx context.Context, archive io.Reader) (map[string]*partDto, error) {
 	ctx, span := tr.Start(ctx, "parse_database_archive")
 	defer span.End()
 
@@ -40,7 +43,7 @@ func ParseDatabaseArchive(ctx context.Context, archive io.Reader) (map[string]st
 		return nil, tracing.Error(span, err)
 	}
 
-	dtos := map[string]string{}
+	parts := map[string]*partDto{}
 	for _, file := range zr.File {
 
 		dto, err := parsePart(file)
@@ -51,10 +54,10 @@ func ParseDatabaseArchive(ctx context.Context, archive io.Reader) (map[string]st
 			continue
 		}
 		// dtos = append(dtos, dto)
-		dtos[dto.PartNumber] = dto.MovedTo
+		parts[dto.PartNumber] = dto
 	}
 
-	parts := buildParts(dtos)
+	calculateNewestMoves(parts)
 
 	return parts, nil
 }
@@ -80,40 +83,73 @@ func parsePart(file *zip.File) (*partDto, error) {
 	}
 	defer fr.Close()
 
-	return &partDto{
-		PartNumber: partNum,
-		MovedTo:    movedTo(fr),
-	}, nil
+	part := parseDat(fr)
+	part.PartNumber = partNum
+
+	return part, nil
 }
 
-func movedTo(fr io.Reader) string {
+func parseDat(fr io.Reader) *partDto {
 
+	part := &partDto{}
 	scanner := bufio.NewScanner(fr)
+
+	first := true
 	for scanner.Scan() {
-		if target, ok := strings.CutPrefix(scanner.Text(), "0 ~Moved to "); ok {
-			return target
+		if len(scanner.Bytes()) == 0 {
+			continue
+		}
+
+		if len(bytes.TrimSpace(scanner.Bytes())) == 0 {
+			continue
+		}
+
+		line := scanner.Text()
+
+		if target, ok := strings.CutPrefix(line, "0 ~Moved to "); ok {
+			part.MovedTo = target
+		} else if first {
+
+			if name, ok := strings.CutPrefix(scanner.Text(), "0 "); ok {
+				part.Name = name
+			}
+		}
+
+		first = false
+
+		// https://www.ldraw.org/article/340.html#keywords
+		if raw, ok := strings.CutPrefix(line, "0 !KEYWORDS "); ok {
+
+			for statement := range strings.SplitSeq(raw, ", ") {
+				if id, ok := strings.CutPrefix(statement, "BrickLink "); ok {
+					part.AlternateIds = append(part.AlternateIds, strings.TrimSpace(id))
+				} else if id, ok := strings.CutPrefix(statement, "Rebrickable "); ok {
+					part.AlternateIds = append(part.AlternateIds, strings.TrimSpace(id))
+				}
+			}
+		}
+
+		if line[0] != '0' {
+			break
 		}
 	}
-	return ""
+
+	return part
 }
 
-func buildParts(input map[string]string) map[string]string {
+func calculateNewestMoves(input map[string]*partDto) {
 
-	for part, movedTo := range input {
-		if movedTo == "" {
+	for _, part := range input {
+		if part.MovedTo == "" {
 			continue
 		}
 
 		for {
-			newer, found := input[movedTo]
-			if !found || newer == "" {
+			newerPart, found := input[part.MovedTo]
+			if !found || newerPart.MovedTo == "" {
 				break
 			}
-			movedTo = newer
+			part.MovedTo = newerPart.MovedTo
 		}
-
-		input[part] = movedTo
 	}
-
-	return input
 }
