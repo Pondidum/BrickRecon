@@ -26,7 +26,7 @@ func AsXmlWantedList(parts []*lego.InventoryPart, stock domain.Stock) (string, e
 	return marshal(wantedListFromParts(parts, stock))
 }
 
-func ParseWantedList(ctx context.Context, content io.Reader) ([]*lego.InventoryPart, domain.Stock, error) {
+func ParseWantedList(ctx context.Context, getPart func(p lego.PartId) (*lego.Part, error), content io.Reader) ([]*lego.InventoryPart, domain.Stock, error) {
 	var wantedList *wantedList
 
 	if err := xml.NewDecoder(content).Decode(&wantedList); err != nil {
@@ -42,17 +42,18 @@ func ParseWantedList(ctx context.Context, content io.Reader) ([]*lego.InventoryP
 			return nil, nil, err
 		}
 
-		part := &lego.InventoryPart{
-			Part: lego.Part{
-				Id: lego.PartId(wantedItem.ID),
-			},
-			ColorId:  color,
-			Quantity: wantedItem.Quantity,
+		part, err := getPart(lego.PartId(wantedItem.ID))
+		if err != nil {
+			return nil, nil, err
 		}
 
-		parts = append(parts, part)
+		parts = append(parts, &lego.InventoryPart{
+			Part:     *part,
+			ColorId:  color,
+			Quantity: wantedItem.Quantity,
+		})
 
-		domain.AddStock(stock, part.Id, part.ColorId, wantedItem.Inventory)
+		domain.AddStock(stock, part.Id, color, wantedItem.Inventory)
 	}
 
 	return parts, stock, nil

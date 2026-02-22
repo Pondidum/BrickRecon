@@ -7,12 +7,7 @@ type Part struct {
 	Id   PartId
 	Name PartName
 
-	Sources []Source
-}
-
-type Source struct {
-	SourceName string
-	PartId     string
+	Category string
 }
 
 func NewPart(partId PartId, name PartName) *Part {
