@@ -8,8 +8,6 @@ import (
 	"brickrecon/tracing"
 	"brickrecon/util"
 	"context"
-	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -60,7 +58,7 @@ func (c *ProjectViewCommand) Execute(ctx context.Context, config *config.Config,
 
 	name := args[0]
 
-	project, err := GetProjectViewByName(ctx, store, name)
+	project, err := storage.GetProjectViewByName(ctx, store, name)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -92,29 +90,4 @@ func (c *ProjectViewCommand) Execute(ctx context.Context, config *config.Config,
 	}
 
 	return nil
-}
-
-func GetProjectViewByName(ctx context.Context, client *storage.Client, name string) (*domain.ProjectView, error) {
-
-	tx, err := client.BeginTx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRowContext(ctx,
-		`select view from auto_projections where aggregate_type = 'Project' and view ->> '$.Name' == @name`,
-		sql.Named("name", name))
-
-	var viewJson []byte
-	if err := row.Scan(&viewJson); err != nil {
-		return nil, err
-	}
-
-	view := &domain.ProjectView{}
-	if err := json.Unmarshal(viewJson, view); err != nil {
-		return nil, err
-	}
-
-	return view, nil
 }

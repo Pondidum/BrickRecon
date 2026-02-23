@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/trace"
@@ -59,7 +58,7 @@ func (c *ProjectPartsImportCommand) Execute(ctx context.Context, config *config.
 	name := args[0]
 	wantedList := args[1]
 
-	project, err := GetProjectByName(ctx, store, name)
+	project, err := storage.GetProjectByName(ctx, store, name)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -130,36 +129,6 @@ func (c *ProjectPartsImportCommand) Execute(ctx context.Context, config *config.
 	fmt.Println("Done")
 
 	return nil
-}
-
-func GetProjectByName(ctx context.Context, client *storage.Client, name string) (*domain.Project, error) {
-
-	tx, err := client.BeginTx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRowContext(ctx,
-		`select aggregate_id from auto_projections where aggregate_type = 'Project' and view ->> '$.Name' == @name`,
-		sql.Named("name", name))
-
-	var id uuid.UUID
-	if err := row.Scan(&id); err != nil {
-		return nil, err
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	project := domain.BlankProject()
-
-	if err := client.LoadAggregate(ctx, id, project); err != nil {
-		return nil, err
-	}
-
-	return project, nil
 }
 
 func GetPart(ctx context.Context, tx *sql.Tx, partId lego.PartId) ([]*lego.Part, error) {

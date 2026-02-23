@@ -2,12 +2,10 @@ package command
 
 import (
 	"brickrecon/config"
-	"brickrecon/domain"
 	"brickrecon/storage"
 	"brickrecon/tracing"
 	"brickrecon/util"
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -51,7 +49,7 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 		return tracing.Error(span, err)
 	}
 
-	projects, err := GetAllProjects(ctx, store)
+	projects, err := storage.GetProjectViewsAll(ctx, store)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
@@ -66,36 +64,4 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 	fmt.Println(util.TableOutput(lines))
 
 	return nil
-}
-
-func GetAllProjects(ctx context.Context, client *storage.Client) ([]*domain.ProjectView, error) {
-
-	tx, err := client.BeginTx(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer tx.Rollback()
-
-	row, err := tx.QueryContext(ctx, `select view from auto_projections where aggregate_type = 'Project'`)
-	if err != nil {
-		return nil, err
-	}
-
-	projects := []*domain.ProjectView{}
-	for row.Next() {
-
-		var viewJson []byte
-		if err := row.Scan(&viewJson); err != nil {
-			return nil, err
-		}
-
-		view := &domain.ProjectView{}
-		if err := json.Unmarshal(viewJson, view); err != nil {
-			return nil, err
-		}
-
-		projects = append(projects, view)
-	}
-
-	return projects, nil
 }

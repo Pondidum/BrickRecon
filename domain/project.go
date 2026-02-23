@@ -42,9 +42,10 @@ type Project struct {
 }
 
 type ProjectView struct {
-	Name  string
-	Parts map[string]*ProjectPart
-	Stock Stock
+	AggregateID uuid.UUID
+	Name        string
+	Parts       map[string]*ProjectPart
+	Stock       Stock
 }
 
 func (pv *ProjectView) UniqueParts() int {

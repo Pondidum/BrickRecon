@@ -6,7 +6,6 @@ import (
 	"brickrecon/storage"
 	"brickrecon/tracing"
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/spf13/pflag"
@@ -52,24 +51,11 @@ func (c *ProjectNewCommand) Execute(ctx context.Context, config *config.Config, 
 
 	name := args[0]
 
-	tx, err := store.BeginTx(ctx)
-	if err != nil {
+	view, err := storage.GetProjectViewByName(ctx, store, name)
+	if err != nil && err != storage.ErrViewNotFound {
 		return tracing.Error(span, err)
 	}
-	defer tx.Rollback()
-
-	row := tx.QueryRowContext(ctx,
-		`select count(*) from auto_projections where view ->> '$.Name' = @name`,
-		sql.Named("name", name))
-
-	count := 0
-	if err := row.Scan(&count); err != nil {
-		return tracing.Error(span, err)
-	}
-
-	tx.Rollback()
-
-	if count > 0 {
+	if view != nil {
 		return tracing.Errorf(span, "There is already a project called %s", name)
 	}
 
@@ -81,10 +67,6 @@ func (c *ProjectNewCommand) Execute(ctx context.Context, config *config.Config, 
 	if err := store.SaveAggregate(ctx, project); err != nil {
 		return tracing.Error(span, err)
 	}
-
-	// if err := tx.Commit(); err != nil {
-	// 	return tracing.Error(span, err)
-	// }
 
 	fmt.Println("Done")
 
