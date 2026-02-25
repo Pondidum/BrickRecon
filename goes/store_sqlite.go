@@ -20,6 +20,7 @@ var tr = otel.Tracer("goes")
 type Store interface {
 	Save(ctx context.Context, aggregate Aggregate) error
 	Load(ctx context.Context, aggregateID uuid.UUID, aggregate Aggregate) error
+	Delete(ctx context.Context, aggregateID uuid.UUID) error
 }
 
 type SqliteStore struct {
@@ -123,6 +124,31 @@ func (s *SqliteStore) Save(ctx context.Context, aggregate Aggregate) error {
 
 	state.sequence = state.pendingEvents[pending-1].Sequence
 	state.pendingEvents = nil
+
+	return nil
+}
+
+func (s *SqliteStore) Delete(ctx context.Context, aggregateID uuid.UUID) error {
+	ctx, span := tr.Start(ctx, "delete")
+	defer span.End()
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return tracing.Error(span, err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, `delete from events where aggregate_id = @id`, sql.Named("id", aggregateID)); err != nil {
+		return tracing.Error(span, err)
+	}
+
+	if err := s.rebuildAllProjections(ctx, tx); err != nil {
+		return tracing.Error(span, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return tracing.Error(span, err)
+	}
 
 	return nil
 }
@@ -272,14 +298,26 @@ func (s *SqliteStore) allEvents(ctx context.Context, tx *sql.Tx) iter.Seq2[Event
 }
 
 func (s *SqliteStore) RebuildAll(ctx context.Context) error {
-	ctx, span := tr.Start(ctx, "rebuild")
-	defer span.End()
-
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return tracing.Error(span, err)
+		return err
 	}
 	defer tx.Rollback()
+
+	if err := s.rebuildAllProjections(ctx, tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *SqliteStore) rebuildAllProjections(ctx context.Context, tx *sql.Tx) error {
+	ctx, span := tr.Start(ctx, "rebuild")
+	defer span.End()
 
 	aggregates := map[uuid.UUID]Aggregate{}
 
@@ -323,10 +361,6 @@ func (s *SqliteStore) RebuildAll(ctx context.Context) error {
 			return tracing.Error(span, err)
 		}
 
-	}
-
-	if err := tx.Commit(); err != nil {
-		return tracing.Error(span, err)
 	}
 
 	return nil
