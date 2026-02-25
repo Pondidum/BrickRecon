@@ -11,6 +11,7 @@ import (
 type AggregateProjection interface {
 	Initialise(ctx context.Context, tx *sql.Tx) error
 	Project(ctx context.Context, tx *sql.Tx, aggregate Aggregate) error
+	Clear(ctx context.Context, tx *sql.Tx) error
 }
 
 type AutoProjection struct{}
@@ -49,6 +50,17 @@ func (ap *AutoProjection) Project(ctx context.Context, tx *sql.Tx, aggregate Agg
 		sql.Named("aggregate_type", reflect.TypeOf(aggregate).Elem().Name()),
 		sql.Named("view", string(view)))
 	if err != nil {
+		return tracing.Error(span, err)
+	}
+
+	return nil
+}
+
+func (ap *AutoProjection) Clear(ctx context.Context, tx *sql.Tx) error {
+	ctx, span := tr.Start(ctx, "clear")
+	defer span.End()
+
+	if _, err := tx.ExecContext(ctx, `delete from auto_projections`); err != nil {
 		return tracing.Error(span, err)
 	}
 
