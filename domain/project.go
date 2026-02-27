@@ -20,6 +20,7 @@ func BlankProject() *Project {
 	goes.Register(p.AggregateState, p.onPartsRemoved)
 	goes.Register(p.AggregateState, p.onStockAdded)
 	goes.Register(p.AggregateState, p.onStockRemoved)
+	goes.Register(p.AggregateState, p.onArchived)
 
 	return p
 }
@@ -36,9 +37,10 @@ func CreateProject(name string) (*Project, error) {
 type Project struct {
 	*goes.AggregateState
 
-	Name  string
-	Parts map[string]*ProjectPart
-	Stock Stock
+	Name     string
+	Parts    map[string]*ProjectPart
+	Stock    Stock
+	Archived bool
 }
 
 type ProjectView struct {
@@ -46,6 +48,7 @@ type ProjectView struct {
 	Name        string
 	Parts       map[string]*ProjectPart
 	Stock       Stock
+	Archived    bool
 }
 
 func (pv *ProjectView) UniqueParts() int {
@@ -193,4 +196,19 @@ func (p *Project) onStockRemoved(e StockRemoved) {
 
 type StockRemoved struct {
 	Removed Stock
+}
+
+func (p *Project) Archive() error {
+	if p.Archived {
+		return nil
+	}
+
+	return goes.Apply(p.AggregateState, &ProjectArchived{})
+}
+
+func (p *Project) onArchived(e ProjectArchived) {
+	p.Archived = true
+}
+
+type ProjectArchived struct {
 }

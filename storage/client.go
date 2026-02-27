@@ -57,6 +57,10 @@ func (c *Client) SaveAggregate(ctx context.Context, aggregate goes.Aggregate) er
 	return c.es.Save(ctx, aggregate)
 }
 
+func (c *Client) DeleteAggregate(ctx context.Context, aggregate goes.Aggregate) error {
+	return c.es.Delete(ctx, goes.AggregateID(aggregate))
+}
+
 func (c *Client) Close(ctx context.Context) error {
 	return c.db.Close()
 }
