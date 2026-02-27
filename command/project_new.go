@@ -51,7 +51,7 @@ func (c *ProjectNewCommand) Execute(ctx context.Context, config *config.Config, 
 
 	name := args[0]
 
-	view, err := storage.GetProjectViewByName(ctx, store, name)
+	view, err := storage.GetProjectView(ctx, store, storage.IncludeArchived(), storage.WithName(name))
 	if err != nil && err != storage.ErrViewNotFound {
 		return tracing.Error(span, err)
 	}

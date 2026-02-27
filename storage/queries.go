@@ -13,6 +13,31 @@ import (
 
 var ErrViewNotFound = errors.New("no matching view found")
 
+type ViewOptions struct {
+	includeArchived bool
+	name            string
+}
+
+func (vo *ViewOptions) apply(funcs []ViewOption) {
+	for _, fn := range funcs {
+		fn(vo)
+	}
+}
+
+type ViewOption func(o *ViewOptions)
+
+func IncludeArchived() ViewOption {
+	return func(o *ViewOptions) {
+		o.includeArchived = true
+	}
+}
+
+func WithName(name string) ViewOption {
+	return func(o *ViewOptions) {
+		o.name = name
+	}
+}
+
 func GetProjectByName(ctx context.Context, client *Client, name string) (*domain.Project, error) {
 
 	row := client.db.QueryRowContext(
@@ -37,12 +62,22 @@ func GetProjectByName(ctx context.Context, client *Client, name string) (*domain
 	return project, nil
 }
 
-func GetProjectViewByName(ctx context.Context, client *Client, name string) (*domain.ProjectView, error) {
-	row := client.db.QueryRowContext(
-		ctx,
-		`select aggregate_id, view from auto_projections where aggregate_type = 'Project' and view ->> '$.Name' == @name`,
-		sql.Named("name", name),
-	)
+func GetProjectView(ctx context.Context, client *Client, options ...ViewOption) (*domain.ProjectView, error) {
+
+	opt := &ViewOptions{}
+	opt.apply(options)
+
+	stmt := `select aggregate_id, view from auto_projections where aggregate_type = 'Project'`
+	params := []any{}
+	if !opt.includeArchived {
+		stmt = stmt + ` and (view ->> '$.Archived' is null or view ->> '$.Archived' = false)`
+	}
+	if opt.name != "" {
+		stmt = stmt + ` and view ->> '$.Name' == @name`
+		params = append(params, sql.Named("name", opt.name))
+	}
+
+	row := client.db.QueryRowContext(ctx, stmt, params)
 
 	var aggregateId uuid.UUID
 	var viewJson []byte
@@ -62,10 +97,17 @@ func GetProjectViewByName(ctx context.Context, client *Client, name string) (*do
 
 	return view, nil
 }
+func GetProjectViews(ctx context.Context, client *Client, options ...ViewOption) ([]*domain.ProjectView, error) {
 
-func GetProjectViewsAll(ctx context.Context, client *Client) ([]*domain.ProjectView, error) {
+	opt := &ViewOptions{}
+	opt.apply(options)
 
-	row, err := client.db.QueryContext(ctx, `select aggregate_id, view from auto_projections where aggregate_type = 'Project'`)
+	stmt := `select aggregate_id, view from auto_projections where aggregate_type = 'Project'`
+	if !opt.includeArchived {
+		stmt = stmt + ` and (view ->> '$.Archived' is null or view ->> '$.Archived' = false)`
+	}
+
+	row, err := client.db.QueryContext(ctx, stmt)
 	if err != nil {
 		return nil, err
 	}

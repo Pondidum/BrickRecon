@@ -20,7 +20,8 @@ func NewProjectListCommand() *ProjectListCommand {
 }
 
 type ProjectListCommand struct {
-	tr trace.Tracer
+	tr       trace.Tracer
+	archived bool
 }
 
 func (c *ProjectListCommand) Name() string {
@@ -33,6 +34,7 @@ func (c *ProjectListCommand) Synopsis() string {
 
 func (c *ProjectListCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project list", pflag.ContinueOnError)
+	flags.BoolVar(&c.archived, "archived", false, "include archived projects")
 	return flags
 }
 
@@ -49,7 +51,12 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 		return tracing.Error(span, err)
 	}
 
-	projects, err := storage.GetProjectViewsAll(ctx, store)
+	opts := []storage.ViewOption{}
+	if c.archived {
+		opts = append(opts, storage.IncludeArchived())
+	}
+
+	projects, err := storage.GetProjectViews(ctx, store, opts...)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
