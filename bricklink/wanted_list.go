@@ -7,7 +7,11 @@ import (
 	"context"
 	"encoding/xml"
 	"io"
+
+	"go.opentelemetry.io/otel"
 )
+
+var tr = otel.Tracer("bricklink")
 
 type wantedList struct {
 	XMLName xml.Name         `xml:"INVENTORY"`
@@ -27,6 +31,9 @@ func AsXmlWantedList(parts []*lego.InventoryPart, stock domain.Stock) (string, e
 }
 
 func ParseWantedList(ctx context.Context, getPart func(p lego.PartId) (*lego.Part, error), content io.Reader) ([]*lego.InventoryPart, domain.Stock, error) {
+	ctx, span := tr.Start(ctx, "parse_wanted_list")
+	defer span.End()
+
 	var wantedList *wantedList
 
 	if err := xml.NewDecoder(content).Decode(&wantedList); err != nil {
