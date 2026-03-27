@@ -60,7 +60,7 @@ func GetColorId(id string, source string) (ColorId, error) {
 	switch strings.ToLower(source) {
 	case "brickowl":
 		color := brickowlIndex[id]
-		if len(color.OfficialData) == 0 {
+		if color == nil || len(color.OfficialData) == 0 {
 			return "", fmt.Errorf("no official data for %s", id)
 		}
 
@@ -68,7 +68,7 @@ func GetColorId(id string, source string) (ColorId, error) {
 
 	case "bricklink":
 		color := bricklinkIndex[id]
-		if len(color.OfficialData) == 0 {
+		if color == nil || len(color.OfficialData) == 0 {
 			return "", fmt.Errorf("no official data for %s", id)
 		}
 
@@ -76,7 +76,7 @@ func GetColorId(id string, source string) (ColorId, error) {
 
 	case "ldraw":
 		color := ldrawIndex[id]
-		if len(color.OfficialData) == 0 {
+		if color == nil || len(color.OfficialData) == 0 {
 			return "", fmt.Errorf("no official data for %s", id)
 		}
 
