@@ -18,6 +18,7 @@ func main() {
 		command.NewProjectViewCommand(),
 		command.NewProjectRmCommand(),
 		command.NewProjectPartsImportCommand(),
+		command.NewProjectSetPreviewCommand(),
 		command.NewDatabaseSyncCommand(),
 	}
 

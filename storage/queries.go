@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strconv"
 
 	"github.com/google/uuid"
 )
@@ -193,6 +194,82 @@ func FindMatchingParts(ctx context.Context, client *Client, partId lego.PartId) 
 		if err := rows.Scan(&part.Id, &part.Name, &part.Category, &priority); err != nil {
 			return nil, err
 		}
+
+		parts = append(parts, part)
+	}
+
+	return parts, nil
+
+}
+
+func GetLegoSet(ctx context.Context, client *Client, setNumber lego.SetNumber) (*lego.Set, error) {
+	stmt := `
+	select rs.set_num, rs.name, rs.year, max(ri.version)
+	from rebrickable_sets rs
+	join rebrickable_inventories ri on ri.set_num = rs.set_num
+	where rs.set_num = @set_num
+
+	union
+
+	select rs.set_num, rs.name, rs.year, max(ri.version)
+	from rebrickable_sets rs
+	join rebrickable_inventories ri on ri.set_num = rs.set_num
+	where rs.set_num like concat(@set_num, '%')
+`
+
+	row := client.db.QueryRowContext(ctx, stmt, sql.Named("set_num", setNumber))
+
+	set := &lego.Set{}
+	version := 0
+	if err := row.Scan(&set.Number, &set.Name, &set.Year, &version); err != nil {
+		return nil, err
+	}
+
+	parts, err := GetLegoSetParts(ctx, client, set.Number)
+	if err != nil {
+		return nil, err
+	}
+
+	set.Parts = parts
+
+	return set, nil
+}
+
+func GetLegoSetParts(ctx context.Context, client *Client, setNumber lego.SetNumber) ([]*lego.InventoryPart, error) {
+	stmt := `
+	select rp.part_num, rp.name, rpc.name, rip.color_id, rip.quantity
+	from rebrickable_parts rp
+	join rebrickable_inventory_parts rip on rip.part_num = rp.part_num
+	join rebrickable_inventories ri on ri.id = rip.inventory_id
+	join rebrickable_part_categories rpc on rpc.id = rp.category_id
+	where ri.set_num = @set_num
+	  and ri.version = (
+	    select max(i.version)
+	    from rebrickable_inventories i
+	    where i.set_num = ri.set_num
+	  )`
+
+	rows, err := client.db.QueryContext(ctx, stmt, sql.Named("set_num", setNumber))
+	if err != nil {
+		return nil, err
+	}
+
+	parts := []*lego.InventoryPart{}
+	for rows.Next() {
+
+		part := &lego.InventoryPart{}
+
+		colorId := 0
+		if err := rows.Scan(&part.Id, &part.Name, &part.Category, &colorId, &part.Quantity); err != nil {
+			return nil, err
+		}
+
+		id, err := lego.GetColorId(strconv.Itoa(colorId), "ldraw")
+		if err != nil {
+			return nil, err
+		}
+
+		part.ColorId = id
 
 		parts = append(parts, part)
 	}
