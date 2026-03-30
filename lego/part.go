@@ -1,5 +1,7 @@
 package lego
 
+import "fmt"
+
 type PartName string
 type PartId string
 
@@ -19,4 +21,8 @@ type InventoryPart struct {
 
 	ColorId  ColorId
 	Quantity int
+}
+
+func (p *InventoryPart) Key() string {
+	return fmt.Sprintf("%s|%s", p.Id, p.ColorId)
 }

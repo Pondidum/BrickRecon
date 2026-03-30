@@ -3,7 +3,7 @@ package domain
 import (
 	"brickrecon/goes"
 	"brickrecon/lego"
-	"fmt"
+
 	"github.com/google/uuid"
 )
 
@@ -90,10 +90,6 @@ type ProjectCreated struct {
 	Name string
 }
 
-func keyFor(p lego.PartId, c lego.ColorId) string {
-	return fmt.Sprintf("%s|%s", p, c)
-}
-
 func (p *Project) onProjectCreated(e ProjectCreated) {
 	goes.SetID(p.AggregateState, e.ID)
 	p.Name = e.Name
@@ -111,7 +107,7 @@ func (p *Project) onPartsImported(e PartsImported) {
 	p.Parts = make(map[string]*ProjectPart, len(e.Parts))
 
 	for _, part := range e.Parts {
-		p.Parts[keyFor(part.Id, part.ColorId)] = newProjectPart(part)
+		p.Parts[part.Key()] = newProjectPart(part)
 	}
 }
 
@@ -126,7 +122,7 @@ func (p *Project) AddParts(parts []*lego.InventoryPart) error {
 
 func (p *Project) onPartsAdded(e PartsAdded) {
 	for _, add := range e.Parts {
-		key := keyFor(add.Id, add.ColorId)
+		key := add.Key()
 
 		if part, found := p.Parts[key]; found {
 			part.Wanted += add.Quantity
@@ -146,7 +142,7 @@ func (p *Project) RemoveParts(parts []*lego.InventoryPart) error {
 
 func (p *Project) onPartsRemoved(e PartsRemoved) {
 	for _, rem := range e.Parts {
-		key := keyFor(rem.Id, rem.ColorId)
+		key := rem.Key()
 
 		if part, found := p.Parts[key]; found {
 			part.Wanted -= rem.Quantity
