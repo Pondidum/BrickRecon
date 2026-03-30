@@ -6,6 +6,7 @@ import (
 	"brickrecon/lego"
 	"brickrecon/storage"
 	"brickrecon/tracing"
+	"brickrecon/util"
 	"context"
 	"fmt"
 
@@ -67,6 +68,9 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 		return tracing.Error(span, err)
 	}
 
+	lines := make([]string, 0, len(set.Parts)+1)
+	lines = append(lines, "PartNo | Part Name | Color | Stock | Change")
+
 	for _, part := range set.Parts {
 
 		if inv, found := project.Parts[part.Key()]; found {
@@ -77,20 +81,20 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 			}
 			newStock := min(currentStock+part.Quantity, inv.Wanted)
 
-			trailer := ""
-			if newStock == inv.Wanted {
-				trailer = "(complete)"
-			}
-
-			fmt.Printf("%s %s: %d/%d (+%d) %s\n",
-				lego.GetColorName(part.ColorId), part.Name,
+			lines = append(lines, fmt.Sprintf("%s | %s | %s | %d/%d | +%d",
+				part.Id,
+				part.Name,
+				lego.GetColorName(part.ColorId),
 				newStock, inv.Wanted,
 				part.Quantity,
-				trailer,
-			)
+			))
 
 		}
 
+	}
+
+	if len(lines) > 1 {
+		fmt.Println(util.TableOutput(lines))
 	}
 
 	return nil
