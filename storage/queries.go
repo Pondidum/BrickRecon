@@ -15,27 +15,27 @@ import (
 
 var ErrViewNotFound = errors.New("no matching view found")
 
-type ViewOptions struct {
+type QueryOptions struct {
 	includeArchived bool
 	name            string
 }
 
-func (vo *ViewOptions) apply(funcs []ViewOption) {
+func (vo *QueryOptions) apply(funcs []QueryOption) {
 	for _, fn := range funcs {
 		fn(vo)
 	}
 }
 
-type ViewOption func(o *ViewOptions)
+type QueryOption func(o *QueryOptions)
 
-func IncludeArchived() ViewOption {
-	return func(o *ViewOptions) {
+func IncludeArchived() QueryOption {
+	return func(o *QueryOptions) {
 		o.includeArchived = true
 	}
 }
 
-func WithName(name string) ViewOption {
-	return func(o *ViewOptions) {
+func WithName(name string) QueryOption {
+	return func(o *QueryOptions) {
 		o.name = name
 	}
 }
@@ -64,9 +64,9 @@ func GetProjectByName(ctx context.Context, client *Client, name string) (*domain
 	return project, nil
 }
 
-func GetProjectView(ctx context.Context, client *Client, options ...ViewOption) (*domain.ProjectView, error) {
+func GetProjectView(ctx context.Context, client *Client, options ...QueryOption) (*domain.ProjectView, error) {
 
-	opt := &ViewOptions{}
+	opt := &QueryOptions{}
 	opt.apply(options)
 
 	stmt := `select aggregate_id, view from auto_projections where aggregate_type = 'Project'`
@@ -99,9 +99,9 @@ func GetProjectView(ctx context.Context, client *Client, options ...ViewOption) 
 
 	return view, nil
 }
-func GetProjectViews(ctx context.Context, client *Client, options ...ViewOption) ([]*domain.ProjectView, error) {
+func GetProjectViews(ctx context.Context, client *Client, options ...QueryOption) ([]*domain.ProjectView, error) {
 
-	opt := &ViewOptions{}
+	opt := &QueryOptions{}
 	opt.apply(options)
 
 	stmt := `select aggregate_id, view from auto_projections where aggregate_type = 'Project'`

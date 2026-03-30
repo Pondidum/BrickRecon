@@ -51,7 +51,7 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 		return tracing.Error(span, err)
 	}
 
-	opts := []storage.ViewOption{}
+	opts := []storage.QueryOption{}
 	if c.archived {
 		opts = append(opts, storage.IncludeArchived())
 	}
