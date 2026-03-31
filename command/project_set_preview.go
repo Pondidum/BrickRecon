@@ -63,7 +63,7 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 		return tracing.Error(span, err)
 	}
 
-	set, err := storage.GetLegoSet(ctx, store, setNumber)
+	set, err := storage.GetLegoSet(ctx, store, storage.WithSetNumber(setNumber))
 	if err != nil {
 		return tracing.Error(span, err)
 	}

@@ -18,6 +18,7 @@ var ErrViewNotFound = errors.New("no matching view found")
 type QueryOptions struct {
 	includeArchived bool
 	name            string
+	setNumber       lego.SetNumber
 }
 
 func (vo *QueryOptions) apply(funcs []QueryOption) {
@@ -37,6 +38,12 @@ func IncludeArchived() QueryOption {
 func WithName(name string) QueryOption {
 	return func(o *QueryOptions) {
 		o.name = name
+	}
+}
+
+func WithSetNumber(setNumber lego.SetNumber) QueryOption {
+	return func(o *QueryOptions) {
+		o.setNumber = setNumber
 	}
 }
 
@@ -202,7 +209,11 @@ func FindMatchingParts(ctx context.Context, client *Client, partId lego.PartId) 
 
 }
 
-func GetLegoSet(ctx context.Context, client *Client, setNumber lego.SetNumber) (*lego.Set, error) {
+func GetLegoSet(ctx context.Context, client *Client, options ...QueryOption) (*lego.Set, error) {
+
+	opt := &QueryOptions{}
+	opt.apply(options)
+
 	stmt := `
 	select rs.set_num, rs.name, rs.year, max(ri.version)
 	from rebrickable_sets rs
@@ -217,7 +228,7 @@ func GetLegoSet(ctx context.Context, client *Client, setNumber lego.SetNumber) (
 	where rs.set_num like concat(@set_num, '%')
 `
 
-	row := client.db.QueryRowContext(ctx, stmt, sql.Named("set_num", setNumber))
+	row := client.db.QueryRowContext(ctx, stmt, sql.Named("set_num", opt.setNumber))
 
 	set := &lego.Set{}
 	version := 0
