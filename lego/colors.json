@@ -7,7 +7,7 @@
       null
     ],
     "ldraw_ids": [
-      null
+      "9999"
     ],
     "bl_ids": [
       "0"
@@ -15,7 +15,12 @@
     "bl_names": [
       "N/A"
     ],
-    "lego_colors": []
+    "lego_colors": [
+      {
+        "lego_id": "0",
+        "raw_name": "NOT APPLICABLE"
+      }
+    ]
   },
   "2": {
     "id": "2",
@@ -2621,7 +2626,8 @@
       "TrPurple"
     ],
     "ldraw_ids": [
-      "37"
+      "37",
+      "52"
     ],
     "bl_ids": [
       "51"
@@ -4164,7 +4170,7 @@
       null
     ],
     "ldraw_ids": [
-      null
+      "1059"
     ],
     "bl_ids": [
       "230"
