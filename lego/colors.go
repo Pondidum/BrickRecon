@@ -57,34 +57,25 @@ func GetColorName(id ColorId) string {
 }
 
 func GetColorId(id string, source string) (ColorId, error) {
+
+	var color *colorDto
+
 	switch strings.ToLower(source) {
 	case "brickowl":
-		color := brickowlIndex[id]
-		if color == nil || len(color.OfficialData) == 0 {
-			return "", fmt.Errorf("no official data for %s", id)
-		}
-
-		return color.OfficialData[0].LegoId, nil
-
+		color = brickowlIndex[id]
 	case "bricklink":
-		color := bricklinkIndex[id]
-		if color == nil || len(color.OfficialData) == 0 {
-			return "", fmt.Errorf("no official data for %s", id)
-		}
-
-		return color.OfficialData[0].LegoId, nil
-
+		color = bricklinkIndex[id]
 	case "ldraw":
-		color := ldrawIndex[id]
-		if color == nil || len(color.OfficialData) == 0 {
-			return "", fmt.Errorf("no official data for %s", id)
-		}
-
-		return color.OfficialData[0].LegoId, nil
-
+		color = ldrawIndex[id]
 	default:
 		return "", fmt.Errorf("unknown source %s", source)
 	}
+
+	if color == nil || len(color.OfficialData) == 0 {
+		return "unknown", nil
+	}
+
+	return color.OfficialData[0].LegoId, nil
 }
 
 func AsColorId(id ColorId, target string) (string, error) {
@@ -96,6 +87,9 @@ func AsColorId(id ColorId, target string) (string, error) {
 	switch strings.ToLower(target) {
 	case "bricklink":
 		return color.BrickLinkIds[0], nil
+
+	case "ldraw":
+		return color.LDrawIds[0], nil
 
 	default:
 		return "", fmt.Errorf("unknown target %s", target)
