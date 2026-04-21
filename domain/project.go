@@ -3,6 +3,7 @@ package domain
 import (
 	"brickrecon/goes"
 	"brickrecon/lego"
+	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -75,6 +76,10 @@ type ProjectPart struct {
 	Number lego.PartId
 	Color  lego.ColorId
 	Wanted int
+}
+
+func (p *ProjectPart) Key() string {
+	return fmt.Sprintf("%s|%s", p.Number, p.Color)
 }
 
 func newProjectPart(part *lego.InventoryPart) *ProjectPart {

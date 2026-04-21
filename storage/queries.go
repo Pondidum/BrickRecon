@@ -209,6 +209,56 @@ func FindMatchingParts(ctx context.Context, client *Client, partId lego.PartId) 
 
 }
 
+type SetSummary struct {
+	SetNumber lego.SetNumber
+	SetName   lego.SetName
+	SetYear   int
+
+	TotalParts int
+
+	PartNumber   lego.PartId
+	PartColor    lego.ColorId
+	PartQuantity int
+}
+
+func GetLegoSetsForPart(ctx context.Context, client *Client, partNumber lego.PartId, color lego.ColorId) ([]*SetSummary, error) {
+
+	stmt := `
+	select rs.set_num, rs.name, rs.year, rs.num_parts, rip.quantity
+	from rebrickable_inventory_parts rip
+	join rebrickable_inventories ri on ri.id = rip.inventory_id
+	join rebrickable_sets rs on rs.set_num  = ri.set_num
+	where rip.part_num = @part_num
+	  and rip.color_id = @color
+	`
+
+	c, err := lego.AsColorId(color, "ldraw")
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := client.db.QueryContext(ctx, stmt, sql.Named("part_num", partNumber), sql.Named("color", c))
+	if err != nil {
+		return nil, err
+	}
+
+	sets := []*SetSummary{}
+
+	for rows.Next() {
+		s := &SetSummary{
+			PartNumber: partNumber,
+			PartColor:  color,
+		}
+
+		if err := rows.Scan(&s.SetNumber, &s.SetName, &s.SetYear, &s.TotalParts, &s.PartQuantity); err != nil {
+			return nil, err
+		}
+		sets = append(sets, s)
+	}
+
+	return sets, nil
+}
+
 func GetLegoSet(ctx context.Context, client *Client, options ...QueryOption) (*lego.Set, error) {
 
 	opt := &QueryOptions{}
