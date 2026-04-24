@@ -6,6 +6,7 @@ import (
 	"brickrecon/lego"
 	"brickrecon/storage"
 	"brickrecon/tracing"
+	"brickrecon/util"
 	"context"
 	"fmt"
 	"sort"
@@ -133,14 +134,21 @@ func (c *ProjectSetFindCommand) Execute(ctx context.Context, config *config.Conf
 			return len(groups[i]) > len(groups[j])
 		})
 
+		lines := make([]string, 0, len(groups)+2)
+		lines = append(lines, "Set Number | Set Name | Year | Total Parts | Stock | Stock Percent")
+
 		for _, group := range groups {
-			fmt.Printf("* %s, %s (%d): +%d (total: %d)\n",
+			lines = append(lines, fmt.Sprintf("%s | %s | %d | %d | %d | %.2f",
 				group[0].SetNumber,
 				group[0].SetName,
 				group[0].SetYear,
+				group[0].TotalParts,
 				len(group),
-				group[0].TotalParts)
+				float64(len(group))/float64(group[0].TotalParts)*100,
+			))
 		}
+
+		fmt.Println(util.TableOutput(lines))
 	}
 	return nil
 }
