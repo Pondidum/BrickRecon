@@ -2,6 +2,7 @@ package command
 
 import (
 	"brickrecon/util"
+	"encoding/json"
 	"fmt"
 	"io"
 	"reflect"
@@ -11,7 +12,14 @@ import (
 type Renderer = func(w io.Writer, thing any) error
 
 func Render(rendererType string, w io.Writer, thing any) error {
-	return TableRenderer(w, thing)
+	switch strings.ToLower(rendererType) {
+	case "table":
+		return TableRenderer(w, thing)
+	case "json":
+		return JsonRenderer(w, thing)
+	default:
+		return fmt.Errorf("unsupported renderer: %s", rendererType)
+	}
 }
 
 func TableRenderer(w io.Writer, thing any) error {
@@ -46,4 +54,10 @@ func TableRenderer(w io.Writer, thing any) error {
 	fmt.Fprintln(w, util.TableOutput(lines))
 
 	return nil
+}
+
+func JsonRenderer(w io.Writer, thing any) error {
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(thing)
 }
