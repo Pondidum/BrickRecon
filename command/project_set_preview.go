@@ -6,9 +6,9 @@ import (
 	"brickrecon/lego"
 	"brickrecon/storage"
 	"brickrecon/tracing"
-	"brickrecon/util"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -24,8 +24,7 @@ func NewProjectSetPreviewCommand() *ProjectSetPreviewCommand {
 type ProjectSetPreviewCommand struct {
 	tr trace.Tracer
 
-	details   bool
-	remaining bool
+	renderer string
 }
 
 func (c *ProjectSetPreviewCommand) Name() string {
@@ -38,6 +37,7 @@ func (c *ProjectSetPreviewCommand) Synopsis() string {
 
 func (c *ProjectSetPreviewCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project set preview", pflag.ContinueOnError)
+	flags.StringVar(&c.renderer, "format", "table", "")
 	return flags
 }
 
@@ -56,7 +56,6 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 
 	name := args[0]
 	setNumber := lego.SetNumber(args[1])
-	// partKey := fmt.Sprintf("%s|%s", args[1], args[2])
 
 	project, err := storage.GetProjectView(ctx, store, storage.WithName(name))
 	if err != nil {
@@ -68,8 +67,7 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 		return tracing.Error(span, err)
 	}
 
-	lines := make([]string, 0, len(set.Parts)+1)
-	lines = append(lines, "PartNo | Part Name | Color | Stock | Change")
+	parts := make([]partDiff, 0, len(set.Parts))
 
 	for _, part := range set.Parts {
 
@@ -81,21 +79,30 @@ func (c *ProjectSetPreviewCommand) Execute(ctx context.Context, config *config.C
 			}
 			newStock := min(currentStock+part.Quantity, inv.Wanted)
 
-			lines = append(lines, fmt.Sprintf("%s | %s | %s | %d/%d | +%d",
-				part.Id,
-				part.Name,
-				lego.GetColorName(part.ColorId),
-				newStock, inv.Wanted,
-				part.Quantity,
-			))
-
+			parts = append(parts, partDiff{
+				PartNo:   part.Id,
+				PartName: part.Name,
+				Colour:   lego.GetColorName(part.ColorId),
+				Stock:    fmt.Sprintf("%d/%d", newStock, inv.Wanted),
+				Change:   part.Quantity,
+			})
 		}
 
 	}
 
-	if len(lines) > 1 {
-		fmt.Println(util.TableOutput(lines))
+	if len(parts) > 1 {
+		if err := Render(c.renderer, os.Stdout, parts); err != nil {
+			return tracing.Error(span, err)
+		}
 	}
 
 	return nil
+}
+
+type partDiff struct {
+	PartNo   lego.PartId
+	PartName lego.PartName
+	Colour   string
+	Stock    string
+	Change   int
 }

@@ -4,9 +4,8 @@ import (
 	"brickrecon/config"
 	"brickrecon/storage"
 	"brickrecon/tracing"
-	"brickrecon/util"
 	"context"
-	"fmt"
+	"os"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -21,6 +20,7 @@ func NewProjectListCommand() *ProjectListCommand {
 
 type ProjectListCommand struct {
 	tr       trace.Tracer
+	renderer string
 	archived bool
 }
 
@@ -34,6 +34,7 @@ func (c *ProjectListCommand) Synopsis() string {
 
 func (c *ProjectListCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project list", pflag.ContinueOnError)
+	flags.StringVar(&c.renderer, "format", "table", "")
 	flags.BoolVar(&c.archived, "archived", false, "include archived projects")
 	return flags
 }
@@ -56,19 +57,32 @@ func (c *ProjectListCommand) Execute(ctx context.Context, config *config.Config,
 		opts = append(opts, storage.IncludeArchived())
 	}
 
-	projects, err := storage.GetProjectViews(ctx, store, opts...)
+	views, err := storage.GetProjectViews(ctx, store, opts...)
 	if err != nil {
 		return tracing.Error(span, err)
 	}
 
-	lines := make([]string, len(projects)+1)
-	lines[0] = "Name | Unique Parts | Total Parts | Owned Parts"
+	projects := make([]projectSummary, 0, len(views))
 
-	for i, project := range projects {
-		lines[i+1] = fmt.Sprintf("%s | %d | %d | %d", project.Name, project.UniqueParts(), project.TotalParts(), project.OwnedParts())
+	for _, view := range views {
+		projects = append(projects, projectSummary{
+			Name:        view.Name,
+			UniqueParts: view.UniqueParts(),
+			TotalParts:  view.TotalParts(),
+			Stock:       view.OwnedParts(),
+		})
 	}
 
-	fmt.Println(util.TableOutput(lines))
+	if err := Render(c.renderer, os.Stdout, projects); err != nil {
+		return tracing.Error(span, err)
+	}
 
 	return nil
+}
+
+type projectSummary struct {
+	Name        string
+	UniqueParts int
+	TotalParts  int
+	Stock       int
 }

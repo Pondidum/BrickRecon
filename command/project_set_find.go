@@ -6,9 +6,9 @@ import (
 	"brickrecon/lego"
 	"brickrecon/storage"
 	"brickrecon/tracing"
-	"brickrecon/util"
 	"context"
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/spf13/pflag"
@@ -24,6 +24,8 @@ func NewProjectSetFindCommand() *ProjectSetFindCommand {
 
 type ProjectSetFindCommand struct {
 	tr trace.Tracer
+
+	renderer string
 }
 
 func (c *ProjectSetFindCommand) Name() string {
@@ -36,6 +38,7 @@ func (c *ProjectSetFindCommand) Synopsis() string {
 
 func (c *ProjectSetFindCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project set find", pflag.ContinueOnError)
+	flags.StringVar(&c.renderer, "format", "table", "")
 	return flags
 }
 
@@ -88,12 +91,12 @@ func (c *ProjectSetFindCommand) Execute(ctx context.Context, config *config.Conf
 
 	setGroups := map[lego.SetNumber][]*storage.SetSummary{}
 
-	for key, sets := range setSummaries {
+	for partKey, sets := range setSummaries {
 		switch len(sets) {
 		case 0:
-			noSetParts[key] = true
+			noSetParts[partKey] = true
 		case 1:
-			singleSetParts[key] = sets[0]
+			singleSetParts[partKey] = sets[0]
 		default:
 			for _, summary := range sets {
 
@@ -115,40 +118,75 @@ func (c *ProjectSetFindCommand) Execute(ctx context.Context, config *config.Conf
 	}
 
 	if len(singleSetParts) > 0 {
-		fmt.Printf("%d parts are 1 set only:\n", len(singleSetParts))
-		for key, summary := range singleSetParts {
-			fmt.Printf("* %s: %s, %s (%d)\n", key, summary.SetNumber, summary.SetName, summary.SetYear)
+		fmt.Printf("%d parts are 1 set only:\n\n", len(singleSetParts))
+
+		sets := make([]setSummary, 0, len(singleSetParts))
+
+		for _, s := range singleSetParts {
+			stockPercent := float64(s.PartQuantity) / float64(s.TotalParts) * 100
+
+			sets = append(sets, setSummary{
+				SetNumber:        s.SetNumber,
+				SetName:          s.SetName,
+				Year:             s.SetYear,
+				TotalParts:       s.TotalParts,
+				Stock:            s.PartQuantity,
+				StockPercent:     fmt.Sprintf("%.2f", stockPercent),
+				stockPercentSort: stockPercent,
+			})
 		}
+
+		if err := Render(c.renderer, os.Stdout, sets); err != nil {
+			return tracing.Error(span, err)
+		}
+
+		fmt.Println()
 	}
 
 	if len(setGroups) > 0 {
 
-		fmt.Printf("%d sets provide parts:\n", len(setGroups))
+		fmt.Printf("%d sets provide parts:\n\n", len(setGroups))
+		sets := make([]setSummary, 0, len(setGroups))
 
-		groups := make([][]*storage.SetSummary, 0, len(setGroups))
 		for _, group := range setGroups {
-			groups = append(groups, group)
+
+			totalAdding := 0
+			for _, s := range group {
+				totalAdding += s.PartQuantity
+			}
+
+			stockPercent := float64(totalAdding) / float64(group[0].TotalParts) * 100
+
+			g := group[0]
+			sets = append(sets, setSummary{
+				SetNumber:        g.SetNumber,
+				SetName:          g.SetName,
+				Year:             g.SetYear,
+				TotalParts:       g.TotalParts,
+				Stock:            totalAdding,
+				StockPercent:     fmt.Sprintf("%.2f", stockPercent),
+				stockPercentSort: stockPercent,
+			})
 		}
 
-		sort.Slice(groups, func(i, j int) bool {
-			return len(groups[i]) > len(groups[j])
+		sort.Slice(sets, func(i, j int) bool {
+			return sets[i].StockPercent > sets[j].StockPercent
 		})
 
-		lines := make([]string, 0, len(groups)+2)
-		lines = append(lines, "Set Number | Set Name | Year | Total Parts | Stock | Stock Percent")
-
-		for _, group := range groups {
-			lines = append(lines, fmt.Sprintf("%s | %s | %d | %d | %d | %.2f",
-				group[0].SetNumber,
-				group[0].SetName,
-				group[0].SetYear,
-				group[0].TotalParts,
-				len(group),
-				float64(len(group))/float64(group[0].TotalParts)*100,
-			))
+		if err := Render(c.renderer, os.Stdout, sets); err != nil {
+			return tracing.Error(span, err)
 		}
-
-		fmt.Println(util.TableOutput(lines))
 	}
 	return nil
+}
+
+type setSummary struct {
+	SetNumber    lego.SetNumber
+	SetName      lego.SetName
+	Year         int
+	TotalParts   int
+	Stock        int
+	StockPercent string
+
+	stockPercentSort float64
 }

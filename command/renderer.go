@@ -30,23 +30,23 @@ func TableRenderer(w io.Writer, thing any) error {
 	}
 
 	lines := make([]string, 0, t.Len()+1)
-	fields := reflect.VisibleFields(reflect.TypeOf(thing).Elem())
+	headers := getHeaders(thing)
 
 	th := strings.Builder{}
-	for i, h := range fields {
+	for i, h := range headers {
 		if i > 0 {
 			th.WriteString(" | ")
 		}
-		th.WriteString(h.Name)
+		th.WriteString(h)
 	}
 	lines = append(lines, th.String())
 
 	for i := 0; i < t.Len(); i++ {
 		elem := t.Index(i)
 
-		values := make([]string, 0, len(fields))
-		for _, field := range fields {
-			values = append(values, fmt.Sprint(elem.FieldByName(field.Name)))
+		values := make([]string, 0, len(headers))
+		for _, header := range headers {
+			values = append(values, fmt.Sprint(elem.FieldByName(header)))
 		}
 		lines = append(lines, strings.Join(values, " | "))
 	}
@@ -54,6 +54,20 @@ func TableRenderer(w io.Writer, thing any) error {
 	fmt.Fprintln(w, util.TableOutput(lines))
 
 	return nil
+}
+
+func getHeaders(thing any) []string {
+
+	fields := reflect.VisibleFields(reflect.TypeOf(thing).Elem())
+	headers := make([]string, 0, len(fields))
+
+	for _, field := range fields {
+		if field.IsExported() {
+			headers = append(headers, field.Name)
+		}
+	}
+
+	return headers
 }
 
 func JsonRenderer(w io.Writer, thing any) error {

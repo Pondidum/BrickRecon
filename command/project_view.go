@@ -6,9 +6,9 @@ import (
 	"brickrecon/lego"
 	"brickrecon/storage"
 	"brickrecon/tracing"
-	"brickrecon/util"
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/spf13/pflag"
 	"go.opentelemetry.io/otel"
@@ -24,7 +24,7 @@ func NewProjectViewCommand() *ProjectViewCommand {
 type ProjectViewCommand struct {
 	tr trace.Tracer
 
-	details   bool
+	renderer  string
 	remaining bool
 }
 
@@ -38,7 +38,7 @@ func (c *ProjectViewCommand) Synopsis() string {
 
 func (c *ProjectViewCommand) Flags() *pflag.FlagSet {
 	flags := pflag.NewFlagSet("project view", pflag.ContinueOnError)
-	flags.BoolVar(&c.details, "details", false, "")
+	flags.StringVar(&c.renderer, "format", "table", "")
 	flags.BoolVar(&c.remaining, "remaining", false, "")
 	return flags
 }
@@ -65,28 +65,35 @@ func (c *ProjectViewCommand) Execute(ctx context.Context, config *config.Config,
 
 	fmt.Println(project.UniqueParts(), " unique parts, ", project.TotalParts(), " total parts, ", project.OwnedParts(), " stocked parts")
 
-	if c.details {
-		for _, part := range project.Parts {
-			fmt.Println(part.Number, part.Color, part.Wanted, domain.GetStock(project.Stock, part.Number, part.Color))
-		}
-	} else if c.remaining {
-		lines := make([]string, 0, len(project.Parts)+1)
+	type PartSummary struct {
+		PartNo   lego.PartId
+		PartName lego.PartName
+		Colour   string
+		Wanted   int
+		Stock    int
+	}
 
-		lines = append(lines, "Part No | Part Name | Colour | Wanted | Owned")
+	summary := make([]PartSummary, 0, len(project.Parts))
+	for _, part := range project.Parts {
+		stock := domain.GetStock(project.Stock, part.Number, part.Color)
 
-		for _, part := range project.Parts {
-			stock := domain.GetStock(project.Stock, part.Number, part.Color)
-
-			if stock >= part.Wanted {
-				continue
-			}
-
-			color := lego.GetColorName(part.Color)
-
-			lines = append(lines, fmt.Sprintf("%s | %s | %s | %d | %d", part.Number, "?", color, part.Wanted, stock))
+		if c.remaining && stock >= part.Wanted {
+			continue
 		}
 
-		fmt.Println(util.TableOutput(lines))
+		color := lego.GetColorName(part.Color)
+
+		summary = append(summary, PartSummary{
+			PartNo:   part.Number,
+			PartName: "?",
+			Colour:   color,
+			Wanted:   part.Wanted,
+			Stock:    stock,
+		})
+	}
+
+	if err := Render(c.renderer, os.Stdout, summary); err != nil {
+		return tracing.Error(span, err)
 	}
 
 	return nil
