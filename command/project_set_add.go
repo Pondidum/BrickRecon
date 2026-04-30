@@ -121,3 +121,11 @@ func (c *ProjectSetAddCommand) Execute(ctx context.Context, config *config.Confi
 
 	return nil
 }
+
+type partDiff struct {
+	PartNo   lego.PartId
+	PartName lego.PartName
+	Colour   string
+	Stock    string
+	Change   int
+}
